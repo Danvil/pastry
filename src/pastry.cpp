@@ -1,4 +1,5 @@
 #include <pastry/pastry.hpp>
+#include "SOIL2/SOIL2.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -168,6 +169,22 @@ namespace pastry
 	void remove_renderling(const renderling_ptr& r)
 	{
 		s_engine->get_scene()->remove(r);
+	}
+
+	texture load_texture(const std::string& fn)
+	{
+		texture tex;
+		GLuint q = SOIL_load_OGL_texture(
+			fn.data(),
+			SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID,
+			SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS
+		);
+		if(q == 0) {
+			std::cerr << "ERROR in load_texture: Failed to load image '" << fn << "'" << std::endl;
+		}
+		tex.id_set(q);
+		return tex;
 	}
 
 }

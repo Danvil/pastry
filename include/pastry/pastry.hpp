@@ -4,6 +4,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include "pastry_gl.hpp"
 
 typedef struct GLFWwindow GLFWwindow;
 
@@ -93,6 +94,8 @@ namespace pastry
 		add_renderling(f);
 		return f;
 	}
+
+	texture load_texture(const std::string& fn);
 
 }
 #endif

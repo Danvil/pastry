@@ -16,12 +16,12 @@ int main(void)
 	pastry::array_buffer vbo;
 	vbo.id_create();
 	float vertices[] = {
-		-0.5f, +0.5f, -1.0f, +1.0f,
-		+0.5f, +0.5f, +1.0f, +1.0f,
-		+0.5f, -0.5f, +1.0f, -1.0f,
-		-0.5f, +0.5f, -1.0f, +1.0f,
-		+0.5f, -0.5f, +1.0f, -1.0f,
-		-0.5f, -0.5f, -1.0f, -1.0f
+		-0.8f, +0.8f, -1.0f, +1.0f,
+		+0.8f, +0.8f, +1.0f, +1.0f,
+		+0.8f, -0.8f, +1.0f, -1.0f,
+		-0.8f, +0.8f, -1.0f, +1.0f,
+		+0.8f, -0.8f, +1.0f, -1.0f,
+		-0.8f, -0.8f, -1.0f, -1.0f
 	};
 	vbo.data(vertices, sizeof(vertices), GL_STATIC_DRAW);
 
@@ -42,9 +42,12 @@ int main(void)
 	std::string fragmentSource =GLSL(
 		in vec2 Texcoord;
 		out vec4 outColor;
-		uniform sampler2D tex;
+		uniform sampler2D tex1;
+		uniform sampler2D tex2;
 		void main() {
-			outColor = texture(tex, Texcoord);
+			vec4 col1 = texture(tex1, Texcoord);
+			vec4 col2 = texture(tex2, Texcoord);
+			outColor = mix(col1, col2, 1-abs(Texcoord.x*Texcoord.y));
 		});
 	pastry::fragment_shader sf(fragmentSource);
 
@@ -70,12 +73,28 @@ int main(void)
 	std::vector<float> tex_pixels(3*tex_w*tex_h);
 	for(int y=0,i=0; y<tex_h; y++) {
 		for(int x=0; x<tex_w; x++,i+=3) {
-			tex_pixels[i  ] = static_cast<float>(x % 256) / 255.0f;
-			tex_pixels[i+1] = static_cast<float>(y % 256) / 255.0f;
-			tex_pixels[i+2] = static_cast<float>((x*y) % 256) / 255.0f;
+			float cr, cg, cb;
+			switch((x + y) % 7) {
+				case 0: cr=0; cg=0; cb=0; break;
+				case 1: cr=1; cg=0; cb=0; break;
+				case 2: cr=1; cg=1; cb=0; break;
+				case 3: cr=0; cg=1; cb=0; break;
+				case 4: cr=0; cg=1; cb=1; break;
+				case 5: cr=0; cg=0; cb=1; break;
+				case 6: cr=1; cg=1; cb=1; break;
+			}
+			tex_pixels[i  ] = cr;
+			tex_pixels[i+1] = cg;
+			tex_pixels[i+2] = cb;
 		}
 	}
-	pastry::texture tex(160, 120, tex_pixels.data());
+	glActiveTexture(GL_TEXTURE0);
+	pastry::texture tex1(160, 120, tex_pixels.data());
+	glUniform1i(sp.get_uniform_location("tex1"), 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	pastry::texture tex2 = pastry::load_texture("assets/kitten.jpg");
+	glUniform1i(sp.get_uniform_location("tex2"), 1);
 
 	pastry::add_renderling(
 		[]() {

@@ -213,6 +213,9 @@ namespace pastry
 			va.id_set(a);
 			return va;
 		}
+		GLuint get_uniform_location(const std::string& name) {
+			return glGetUniformLocation(id(), name.data());
+		}
 	};
 
 	struct texture : public detail::resource<texture_id>
