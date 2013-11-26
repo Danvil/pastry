@@ -1,0 +1,12 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+FUNCTION(CreateExample NAME)
+	SET(SAMPLE_NAME pastry-example-${NAME})
+	ADD_EXECUTABLE(${SAMPLE_NAME} ${NAME}.cpp)
+	TARGET_LINK_LIBRARIES(${SAMPLE_NAME} pastry)
+ENDFUNCTION(CreateExample)
+
+CreateExample(hello)
+CreateExample(quad)
+CreateExample(mesh)
+CreateExample(particles)
