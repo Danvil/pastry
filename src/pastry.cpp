@@ -139,8 +139,9 @@ namespace pastry
 				last_time = current_time;
 				num_frames = 0;
 				// update fps
-				if(fps < 0) fps = current_fps;
-				fps += 0.40f * (current_fps - fps);
+				// if(fps < 0) fps = current_fps;
+				// fps += 0.40f * (current_fps - fps);
+				fps = current_fps;
 				// set window title
 				char buffer[512];
 				sprintf(buffer, "pastry - %.0f fps\0", fps);
