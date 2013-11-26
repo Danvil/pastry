@@ -9,12 +9,12 @@ pastry is a small C\+\+ toolbox for modern OpenGL 3.x/4.x programming.
 Most functionality is provided as light-weight C\+\+ wrappers for commonly used OpenGL objects like shader programs, vertex buffers, frame buffers or textures.
 This is *NOT* a complete 3D engine. 
 
-** This version is an early alpha and be no means a sufficiently tested. **
+** This version is an early alpha and be no means complete or sufficiently tested. **
 
 I plan to used this for the [Ludum Dare #48 game competition](http://www.ludumdare.com/compo/).
 To the Ludum Dare folks: Feel free to use this and give me feedback :)
 
-Tested under Ubuntu 13.10. Also tested under Windows 7 64-bit using mingw-w64 as cross compiler.
+Runs and compiles well under Ubuntu 13.10. Also runs under Windows 7 64-bit using mingw-w64 as cross compiler.
 
 
 Installation
