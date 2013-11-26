@@ -29,11 +29,12 @@ Requirements:
 Dependencies:
 
 * [GLEW](http://glew.sourceforge.net/)
-* [glfw 3.x](http://www.glfw.org/). Need to pull from git, compile from source (`make`) and install (`make install`). Note that Ubuntu (13.10) package managemer version is tool old!
-* [SOIL2](https://bitbucket.org/SpartanJ/soil2). Code included in this repository.
+* [glfw 3.x](http://www.glfw.org/): Need to pull from git, compile from source (`make`) and install (`make install`). Note that Ubuntu (13.10) package manager version is tool old!
+* [SOIL2](https://bitbucket.org/SpartanJ/soil2): Code included in this repository.
 * [Eigen 3.x](http://eigen.tuxfamily.org)
 
-Ubuntu apt-get line:
+Ubuntu apt-get line to install them all:
+
 `sudo apt-get install build-essential cmake libglew-dev libeigen3-dev`
 
 Building:
