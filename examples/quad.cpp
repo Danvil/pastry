@@ -2,6 +2,7 @@
 #include <pastry/pastry.hpp>
 #include <pastry/pastry_gl.hpp>
 #include <iostream>
+#include <cmath>
 
 int main(void)
 {
@@ -38,8 +39,9 @@ int main(void)
 	std::string fragmentSource =
 		"#version 150\n"
 		"out vec4 outColor;\n"
+		"uniform vec3 color;\n"
 		"void main() {\n"
-		"	outColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+		"	outColor = vec4(color, 1.0);\n"
 		"}\n";
 	pastry::fragment_shader sf(fragmentSource);
 
@@ -48,21 +50,21 @@ int main(void)
 	pastry::program sp(sv,sf);
 	sp.use();
 
-	std::cout << "glGetAttribLocation" << std::endl;
+	std::cout << "Setting vertex attributes" << std::endl;
 
 	pastry::vertex_attribute va = sp.get_attribute("position");
 	va.configure(2, GL_FLOAT, GL_FALSE, 0, 0);
 	va.enable();
 
-	// std::cout << "glBindVertexArray" << std::endl;
-
-	// GLuint vao;
-	// glGenVertexArrays(1, &vao);
-	// glBindVertexArray(vao);
+	std::cout << "Adding renderling" << std::endl;
 
 	pastry::add_renderling(
-		[]() {
+		[&sp]() {
 			glDrawArrays(GL_TRIANGLES, 0, 6);
+		},
+		[&sp](float t, float dt) {
+			float a = (1.0f + std::sin(t*4.0f))/2.0f;
+			sp.get_uniform<float,3>("color").set({a, 0.0f, 1.0f-a});
 		});
 
 	std::cout << "Running main loop" << std::endl;

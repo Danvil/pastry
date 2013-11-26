@@ -42,11 +42,11 @@ int main(void)
 	std::string fragmentSource =GLSL(
 		in vec2 Texcoord;
 		out vec4 outColor;
-		uniform sampler2D tex1;
-		uniform sampler2D tex2;
+		uniform sampler2D texPattern;
+		uniform sampler2D texKitten;
 		void main() {
-			vec4 col1 = texture(tex1, Texcoord);
-			vec4 col2 = texture(tex2, Texcoord);
+			vec4 col1 = texture(texPattern, Texcoord);
+			vec4 col2 = texture(texKitten, Texcoord);
 			outColor = mix(col1, col2, 1-abs(Texcoord.x*Texcoord.y));
 		});
 	pastry::fragment_shader sf(fragmentSource);
@@ -94,8 +94,8 @@ int main(void)
 	pastry::texture::activate_unit(1);
 	pastry::texture tex2 = pastry::load_texture("assets/kitten.jpg");
 
-	sp.get_uniform<int,1>("tex1").set({0});
-	sp.get_uniform<int,1>("tex2").set({1});
+	sp.get_uniform<int>("texPattern").set(0);
+	sp.get_uniform<int>("texKitten").set(1);
 
 	pastry::add_renderling(
 		[]() {

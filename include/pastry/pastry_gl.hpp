@@ -118,7 +118,11 @@ namespace pastry
 				return id();
 			}
 			id_t id() const {
-				return ptr_ ? ptr_->id() : INVALID_ID;
+				if(ptr_) {
+					return ptr_->id();
+				}
+				std::cerr << "ERROR: Invalid resource ID!" << std::endl;
+				return INVALID_ID;
 			}
 		};
 
@@ -201,32 +205,97 @@ namespace pastry
 			PASTRY_UNIFORM_TYPES_FN(F,3) \
 			PASTRY_UNIFORM_TYPES_FN(F,4)
 
-		template<typename TYPE, unsigned int NUM>
+		template<typename TYPE, unsigned int LEN, unsigned int NUM>
 		struct uniform_impl;
 
-		#define PASTRY_UNIFORM_DEF(TYPE,NUM,SETVEC,GETVEC) \
-			template<>\
-			struct uniform_impl<TYPE,NUM> {\
+		#define PASTRY_UNIFORM_DEF(TYPE,LEN,SETVEC,GETVEC) \
+			template<unsigned int NUM>\
+			struct uniform_impl<TYPE,LEN,NUM> {\
 				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, v); }\
 				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); }\
 			};
 
 		PASTRY_UNIFORM_TYPES_F(PASTRY_UNIFORM_DEF)
-
 	}
 
-	template<typename T, unsigned int NUM>
+	/**
+	 * T: uniform type, must be float (GLSL: float), int (GLSL: int) or unsigned int (GLSL: uint)
+	 * LEN: length of uniform type: 1 for integral, N for vecN
+	 * NUM: length of uniform array: 1 for single value, M for vecN[M] or T[M]
+	 */
+	template<typename T, unsigned int LEN, unsigned int NUM>
 	struct uniform : public detail::resource<uniform_id>
 	{
 		uniform() {}
-		// template<typename ...Args>
-		// void set(Args... varargs) {
-		// 	std::array<T,sizeof(Args...)> a{{varargs}};
-		// 	set(a.begin());
-		// }
+		void set(std::initializer_list<std::initializer_list<T>> values_list) {
+			if(values_list.size() != NUM) {
+				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
+				return;
+			}
+			// format into buffer
+			T buff[NUM*LEN];
+			for(int i=0; i<NUM; i++) {
+				if((values_list.begin() + i)->size() != LEN) {
+					std::cerr << "ERROR in uniform::set: Wrong number of arguments!" << std::endl;
+				}
+				for(int j=0; j<LEN; j++) {
+					buff[j + i*LEN] = *((values_list.begin() + i)->begin() + j);
+				}
+			}
+			// write data
+			set_ptr(buff);
+		}
+		std::array<std::array<T,LEN>,NUM> get(id_t prog_id) {
+			// get raw data
+			T buff[LEN*NUM];
+			get_ptr(prog_id, buff);
+			// format into list of arrays
+			std::array<std::array<T,LEN>,NUM> a;
+			for(int i=0; i<NUM; i++) {
+				std::array<T,LEN> a;
+			}
+			return a;
+		}
+		void set_ptr(const T* v) {
+			detail::uniform_impl<T,LEN,NUM>::set(id(), v);
+		}
+		void get_ptr(id_t prog_id, const T* v) {
+			detail::uniform_impl<T,LEN,NUM>::get(prog_id, id(), v);
+		}
+	};
+
+	template<typename T, unsigned int LEN>
+	struct uniform<T,LEN,1> : public detail::resource<uniform_id>
+	{
+		uniform() {}
+		void set(std::initializer_list<T> values) {
+			if(values.size() != LEN) {
+				std::cerr << "ERROR in uniform::set: Wrong number of arguments!" << std::endl;
+			}
+			else {
+				set_ptr(values.begin());
+			}
+		}
+		std::array<T,LEN> get(id_t prog_id) {
+			std::array<T,LEN> a;
+			get_ptr(prog_id, a.begin());
+			return a;
+		}
+		void set_ptr(const T* v) {
+			detail::uniform_impl<T,LEN,1>::set(id(), v);
+		}
+		void get_ptr(id_t prog_id, const T* v) {
+			detail::uniform_impl<T,LEN,1>::get(prog_id, id(), v);
+		}
+	};
+
+	template<typename T, unsigned int NUM>
+	struct uniform<T,1,NUM> : public detail::resource<uniform_id>
+	{
+		uniform() {}
 		void set(std::initializer_list<T> values) {
 			if(values.size() != NUM) {
-				std::cerr << "ERROR in uniform::set: Wrong number of arguments!" << std::endl;
+				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
 			}
 			else {
 				set_ptr(values.begin());
@@ -237,12 +306,32 @@ namespace pastry
 			get_ptr(prog_id, a.begin());
 			return a;
 		}
-	private:
 		void set_ptr(const T* v) {
-			detail::uniform_impl<T,NUM>::set(id(), v);
+			detail::uniform_impl<T,1,NUM>::set(id(), v);
 		}
 		void get_ptr(id_t prog_id, const T* v) {
-			detail::uniform_impl<T,NUM>::get(prog_id, id(), v);
+			detail::uniform_impl<T,1,NUM>::get(prog_id, id(), v);
+		}
+	};
+
+	template<typename T>
+	struct uniform<T,1,1> : public detail::resource<uniform_id>
+	{
+		uniform() {}
+		void set(T value) {
+			set_ptr(&value);
+		}
+		T get(id_t prog_id) {
+			T a;
+			get_ptr(prog_id, &a);
+			return a;
+		}
+	private:
+		void set_ptr(const T* v) {
+			detail::uniform_impl<T,1,1>::set(id(), v);
+		}
+		void get_ptr(id_t prog_id, const T* v) {
+			detail::uniform_impl<T,1,1>::get(prog_id, id(), v);
 		}
 	};
 
@@ -275,20 +364,18 @@ namespace pastry
 			GLint a = glGetAttribLocation(id(), name.data());
 			if(a == -1) {
 				std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
-				a = 0;
 			}
 			else {
 				va.id_set(a);
 			}
 			return va;
 		}
-		template<typename T, unsigned int NUM>
-		uniform<T,NUM> get_uniform(const std::string& name) {
-			uniform<T,NUM> u;
+		template<typename T, unsigned int LEN=1, unsigned int NUM=1>
+		uniform<T,LEN,NUM> get_uniform(const std::string& name) {
+			uniform<T,LEN,NUM> u;
 			GLint a = glGetUniformLocation(id(), name.data());
 			if(a == -1) {
 				std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
-				a = 0;
 			}
 			else {
 				u.id_set(a);
