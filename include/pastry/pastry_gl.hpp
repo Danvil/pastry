@@ -15,6 +15,7 @@ namespace pastry
 	struct vertex_shader_id {};
 	struct fragment_shader_id {};
 	struct program_id {};
+	struct texture_id {};
 
 	namespace detail
 	{
@@ -49,6 +50,12 @@ namespace pastry
 		{
 			static id_t gl_create() { return glCreateProgram(); }
 			static void gl_delete(id_t id) { glDeleteProgram(id); }
+		};
+
+		template<> struct handler<texture_id>
+		{
+			static id_t gl_create() { id_t id; glGenTextures(1, &id); return id; }
+			static void gl_delete(id_t id) { glDeleteTextures(1, &id); }
 		};
 
 		constexpr id_t INVALID_ID = 0;
@@ -205,6 +212,52 @@ namespace pastry
 			vertex_attribute va;
 			va.id_set(a);
 			return va;
+		}
+	};
+
+	struct texture : public detail::resource<texture_id>
+	{
+		static constexpr GLenum target = GL_TEXTURE_2D;
+		texture() {}
+		texture(int w, int h, float* data_rgb_f) {
+			id_create();
+			bind();
+			set_wrap(GL_REPEAT);
+			set_filter(GL_LINEAR);
+			image_2d_rgb_f(w, h, data_rgb_f);
+		}
+		void bind() {
+			glBindTexture(target, id());
+		}
+		void set_wrap_s(GLint value) {
+			glTexParameteri(target, GL_TEXTURE_WRAP_S, value);
+		}
+		void set_wrap_t(GLint value) {
+			glTexParameteri(target, GL_TEXTURE_WRAP_T, value);
+		}
+		void set_wrap(GLint value) {
+			set_wrap_s(value);
+			set_wrap_t(value);
+		}
+		void set_border_color(float cr, float cg, float cb) {
+			float color[] = {cr, cg, cb};
+			glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR, color);
+		}
+		void set_min_filter(GLint value) {
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, value);
+		}
+		void set_mag_filter(GLint value) {
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, value);
+		}
+		void set_filter(GLint value) {
+			set_min_filter(value);
+			set_mag_filter(value);
+		}
+		// void generate_mipmap() {
+		// 	glGenerateMipmap(target);
+		// }
+		void image_2d_rgb_f(int w, int h, float* data_rgb_f) {
+			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_FLOAT, data_rgb_f);
 		}
 	};
 

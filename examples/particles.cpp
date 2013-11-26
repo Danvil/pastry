@@ -75,7 +75,7 @@ public:
 		glDeleteVertexArrays(1, &vao);
 	}
 
-	void create_mesh(float t) {
+	void update(float t, float dt) {
 		constexpr int num = 100;
 		float a = radius_*std::sin(t * speed_);
 
@@ -104,10 +104,6 @@ public:
 
 		vbo.bind();
 		vbo.data(vertices_.data(), vertices_.size()*sizeof(vertex), GL_DYNAMIC_DRAW);
-	}
-
-	void update(float t, float dt) {
-		create_mesh(t);
 	}
 
 	void render() {

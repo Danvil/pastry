@@ -8,5 +8,5 @@ ENDFUNCTION(CreateExample)
 
 CreateExample(hello)
 CreateExample(quad)
-CreateExample(mesh)
 CreateExample(particles)
+CreateExample(texture)
