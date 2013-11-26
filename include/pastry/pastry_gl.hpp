@@ -4,7 +4,9 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <iostream>
+#include <string>
 #include <memory>
+#include <array>
 
 namespace pastry
 {
@@ -15,6 +17,7 @@ namespace pastry
 	struct vertex_shader_id {};
 	struct fragment_shader_id {};
 	struct program_id {};
+	struct uniform_id {};
 	struct texture_id {};
 
 	namespace detail
@@ -50,6 +53,12 @@ namespace pastry
 		{
 			static id_t gl_create() { return glCreateProgram(); }
 			static void gl_delete(id_t id) { glDeleteProgram(id); }
+		};
+
+		template<> struct handler<uniform_id>
+		{
+			static id_t gl_create() { return 0; }
+			static void gl_delete(id_t) { }
 		};
 
 		template<> struct handler<texture_id>
@@ -179,6 +188,64 @@ namespace pastry
 		}
 	};
 
+	namespace detail
+	{
+		#define PASTRY_UNIFORM_TYPES_FN(F,N) \
+			F(float, N, glUniform##N##fv, glGetUniformfv) \
+			F(int, N, glUniform##N##iv, glGetUniformiv) \
+			F(unsigned int, N, glUniform##N##uiv, glGetUniformuiv)
+
+		#define PASTRY_UNIFORM_TYPES_F(F) \
+			PASTRY_UNIFORM_TYPES_FN(F,1) \
+			PASTRY_UNIFORM_TYPES_FN(F,2) \
+			PASTRY_UNIFORM_TYPES_FN(F,3) \
+			PASTRY_UNIFORM_TYPES_FN(F,4)
+
+		template<typename TYPE, unsigned int NUM>
+		struct uniform_impl;
+
+		#define PASTRY_UNIFORM_DEF(TYPE,NUM,SETVEC,GETVEC) \
+			template<>\
+			struct uniform_impl<TYPE,NUM> {\
+				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, v); }\
+				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); }\
+			};
+
+		PASTRY_UNIFORM_TYPES_F(PASTRY_UNIFORM_DEF)
+
+	}
+
+	template<typename T, unsigned int NUM>
+	struct uniform : public detail::resource<uniform_id>
+	{
+		uniform() {}
+		// template<typename ...Args>
+		// void set(Args... varargs) {
+		// 	std::array<T,sizeof(Args...)> a{{varargs}};
+		// 	set(a.begin());
+		// }
+		void set(std::initializer_list<T> values) {
+			if(values.size() != NUM) {
+				std::cerr << "ERROR in uniform::set: Wrong number of arguments!" << std::endl;
+			}
+			else {
+				set_ptr(values.begin());
+			}
+		}
+		std::array<T,NUM> get(id_t prog_id) {
+			std::array<T,NUM> a;
+			get_ptr(prog_id, a.begin());
+			return a;
+		}
+	private:
+		void set_ptr(const T* v) {
+			detail::uniform_impl<T,NUM>::set(id(), v);
+		}
+		void get_ptr(id_t prog_id, const T* v) {
+			detail::uniform_impl<T,NUM>::get(prog_id, id(), v);
+		}
+	};
+
 	struct program : public detail::resource<program_id>
 	{
 		program() {}
@@ -204,17 +271,29 @@ namespace pastry
 			link();
 		}
 		vertex_attribute get_attribute(const std::string& name) {
+			vertex_attribute va;
 			GLint a = glGetAttribLocation(id(), name.data());
 			if(a == -1) {
-				std::cerr << "ERROR: Inactive or invalid vertex attribute" << std::endl;
+				std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
 				a = 0;
 			}
-			vertex_attribute va;
-			va.id_set(a);
+			else {
+				va.id_set(a);
+			}
 			return va;
 		}
-		GLuint get_uniform_location(const std::string& name) {
-			return glGetUniformLocation(id(), name.data());
+		template<typename T, unsigned int NUM>
+		uniform<T,NUM> get_uniform(const std::string& name) {
+			uniform<T,NUM> u;
+			GLint a = glGetUniformLocation(id(), name.data());
+			if(a == -1) {
+				std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
+				a = 0;
+			}
+			else {
+				u.id_set(a);
+			}
+			return u;
 		}
 	};
 
@@ -261,6 +340,9 @@ namespace pastry
 		// }
 		void image_2d_rgb_f(int w, int h, float* data_rgb_f) {
 			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_FLOAT, data_rgb_f);
+		}
+		static void activate_unit(unsigned int num) {
+			glActiveTexture(GL_TEXTURE0 + num);
 		}
 	};
 

@@ -88,13 +88,14 @@ int main(void)
 			tex_pixels[i+2] = cb;
 		}
 	}
-	glActiveTexture(GL_TEXTURE0);
+	pastry::texture::activate_unit(0);
 	pastry::texture tex1(160, 120, tex_pixels.data());
-	glUniform1i(sp.get_uniform_location("tex1"), 0);
 
-	glActiveTexture(GL_TEXTURE1);
+	pastry::texture::activate_unit(1);
 	pastry::texture tex2 = pastry::load_texture("assets/kitten.jpg");
-	glUniform1i(sp.get_uniform_location("tex2"), 1);
+
+	sp.get_uniform<int,1>("tex1").set({0});
+	sp.get_uniform<int,1>("tex2").set({1});
 
 	pastry::add_renderling(
 		[]() {
