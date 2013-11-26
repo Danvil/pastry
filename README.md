@@ -5,8 +5,8 @@ pastry - A C++ toolbox for modern OpenGL
 Overview
 ----
 
-pastry is a small C&#43;&#43; toolbox for modern OpenGL 3.x/4.x programming.
-Most functionality is provided as light-weight C&#43;&#43; wrappers for commonly used OpenGL objects like shader programs, vertex buffers, frame buffers or textures.
+pastry is a small C\+\+ toolbox for modern OpenGL 3.x/4.x programming.
+Most functionality is provided as light-weight C\+\+ wrappers for commonly used OpenGL objects like shader programs, vertex buffers, frame buffers or textures.
 This is *NOT* a complete 3D engine. 
 
 ** This version is an early alpha and be no means a sufficiently tested. **
@@ -14,24 +14,27 @@ This is *NOT* a complete 3D engine.
 I plan to used this for the [Ludum Dare #48 game competition](http://www.ludumdare.com/compo/).
 To the Ludum Dare folks: Feel free to use this and give me feedback :)
 
+Tested under Ubuntu 13.10. Also tested under Windows 7 64-bit using mingw-w64 as cross compiler.
+
 
 Installation
 ----
 
 Requirements:
 
-* C++11 compatible compiler (e.g. gcc 4.8). Ubuntu: `sudo apt-get install build-essentials`
-* OpenGL 3.x compatible graphics card and drivers
-* CMake. Ubuntu: `sudo apt-get install cmake`
+* C++11 compatible compiler (e.g. gcc 4.8).
+* OpenGL 3.x compatible graphics card and properly installed drivers
+* CMake
 
 Dependencies:
 
-* [GLEW](http://glew.sourceforge.net/): Need to download, compile from source and install. Under Ubuntu the package management version can be used: `sudo apt-get install libglew-dev`
-* [glfw 3.x](http://www.glfw.org/): Need to download, compile from source and install. Note that Ubuntu package managemer version is tool old (2.x)!
-* [SOIL2](https://bitbucket.org/SpartanJ/soil2) (included in the repository)
+* [GLEW](http://glew.sourceforge.net/)
+* [glfw 3.x](http://www.glfw.org/). Need to pull from git, compile from source (`make`) and install (`make install`). Note that Ubuntu (13.10) package managemer version is tool old!
+* [SOIL2](https://bitbucket.org/SpartanJ/soil2). Code included in this repository.
+* [Eigen 3.x](http://eigen.tuxfamily.org)
 
 Ubuntu apt-get line:
-`sudo apt-get install libglew-dev
+`sudo apt-get install build-essential cmake libglew-dev libeigen3-dev`
 
 Building:
 
