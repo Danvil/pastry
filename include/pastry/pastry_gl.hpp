@@ -13,10 +13,11 @@ namespace pastry
 	typedef GLuint id_t;
 
 	struct array_buffer_id {};
-	struct attribute_id {};
 	struct vertex_shader_id {};
 	struct fragment_shader_id {};
 	struct program_id {};
+	struct vertex_attribute_id {};
+	struct vertex_array_id {};
 	struct uniform_id {};
 	struct texture_id {};
 
@@ -29,12 +30,6 @@ namespace pastry
 		{
 			static id_t gl_create() { id_t id; glGenBuffers(1, &id); return id; }
 			static void gl_delete(id_t id) { glDeleteBuffers(1, &id); }
-		};
-
-		template<> struct handler<attribute_id>
-		{
-			static id_t gl_create() { return 0; }
-			static void gl_delete(id_t) { }
 		};
 
 		template<> struct handler<vertex_shader_id>
@@ -53,6 +48,18 @@ namespace pastry
 		{
 			static id_t gl_create() { return glCreateProgram(); }
 			static void gl_delete(id_t id) { glDeleteProgram(id); }
+		};
+
+		template<> struct handler<vertex_attribute_id>
+		{
+			static id_t gl_create() { return 0; }
+			static void gl_delete(id_t) { }
+		};
+
+		template<> struct handler<vertex_array_id>
+		{
+			static id_t gl_create() { id_t id; glGenVertexArrays(1, &id); return id; }
+			static void gl_delete(id_t id) { glDeleteVertexArrays(1, &id); }
 		};
 
 		template<> struct handler<uniform_id>
@@ -181,7 +188,7 @@ namespace pastry
 		}
 	};
 
-	struct vertex_attribute : public detail::resource<attribute_id>
+	struct vertex_attribute : public detail::resource<vertex_attribute_id>
 	{
 		vertex_attribute() {}
 		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
@@ -191,6 +198,21 @@ namespace pastry
 			glEnableVertexAttribArray(id());
 		}
 	};
+
+	struct vertex_array : public detail::resource<vertex_array_id>
+	{
+		vertex_array() {}
+		void bind() {
+			glBindVertexArray(id());
+		}
+	};
+
+	// namespace detail
+	// {
+	// 	template<typename T, int N> struct entry;
+
+	// 	void configure
+	// }
 
 	namespace detail
 	{

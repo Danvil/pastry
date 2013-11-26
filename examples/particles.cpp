@@ -39,7 +39,7 @@ private:
 
 	pastry::array_buffer vbo;
 	pastry::program sp;
-	GLuint vao;
+	pastry::vertex_array va;
 
 	std::vector<particle> particles_;
 	std::vector<vertex> vertices_;
@@ -61,18 +61,14 @@ public:
 		pastry::fragment_shader sf = pastry::fragment_shader(fragmentSource);
 		sp = pastry::program(sv, sf);
 		sp.use();
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
+		va.id_create();
+		va.bind();
 		pastry::vertex_attribute va1 = sp.get_attribute("position");
 		va1.configure(2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
 		va1.enable();
 		pastry::vertex_attribute va2 = sp.get_attribute("color");
 		va2.configure(3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
 		va2.enable();
-	}
-
-	~particle_effect() {
-		glDeleteVertexArrays(1, &vao);
 	}
 
 	void update(float t, float dt) {
@@ -109,7 +105,7 @@ public:
 	void render() {
 		sp.use();
 		vbo.bind();
-		glBindVertexArray(vao);
+		va.bind();
 		glDrawArrays(GL_TRIANGLES, 0, vertices_.size());
 	}
 };
