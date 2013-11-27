@@ -424,12 +424,6 @@ namespace pastry
 			std::size_t offset_end;
 		};
 
-		struct va_conf_rec_data
-		{
-			std::vector<va_data> attributes;
-			std::size_t offset;
-		};
-
 		void va_conf_rec(std::vector<va_data>&) {}
 
 		template<typename T, int N, typename... Args>
