@@ -19,7 +19,7 @@ public:
 		float cr, cg, cb;
 	};
 private:
-	const char* vertexSource = 
+	static constexpr char* vertexSource = 
 		"#version 150\n"
 		"in vec2 position;\n"
 		"in vec3 color;\n"
@@ -29,7 +29,7 @@ private:
 		"	vcolor = color;\n"
 		"}\n";
 
-	const char* fragmentSource =
+	static constexpr char* fragmentSource =
 		"#version 150\n"
 		"in vec3 vcolor;\n"
 		"out vec4 outColor;\n"
