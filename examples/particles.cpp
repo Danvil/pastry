@@ -57,18 +57,11 @@ public:
 		color_b_ = color_b;
 		vbo.id_create();
 		vbo.bind();
-		pastry::vertex_shader sv = pastry::vertex_shader(vertexSource);
-		pastry::fragment_shader sf = pastry::fragment_shader(fragmentSource);
-		sp = pastry::program(sv, sf);
-		sp.use();
-		va.id_create();
-		va.bind();
-		pastry::vertex_attribute va1 = sp.get_attribute("position");
-		va1.configure(2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
-		va1.enable();
-		pastry::vertex_attribute va2 = sp.get_attribute("color");
-		va2.configure(3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
-		va2.enable();
+		sp = pastry::program(vertexSource, fragmentSource);
+		va = pastry::vertex_array(sp,
+			pastry::va<float,2>("position"),
+			pastry::va<float,3>("color")
+		);
 	}
 
 	void update(float t, float dt) {
@@ -104,7 +97,6 @@ public:
 
 	void render() {
 		sp.use();
-		vbo.bind();
 		va.bind();
 		glDrawArrays(GL_TRIANGLES, 0, vertices_.size());
 	}

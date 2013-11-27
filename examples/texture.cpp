@@ -56,15 +56,13 @@ int main(void)
 	pastry::program sp(sv,sf);
 	sp.use();
 
-	std::cout << "glGetAttribLocation" << std::endl;
+	std::cout << "Setting up vertex arrays" << std::endl;
 
-	pastry::vertex_attribute va1 = sp.get_attribute("position");
-	va1.configure(2, GL_FLOAT, GL_FALSE, 4*sizeof(float), 0);
-	va1.enable();
-
-	pastry::vertex_attribute va2 = sp.get_attribute("texcoord");
-	va2.configure(2, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*)(2*sizeof(float)));
-	va2.enable();
+	pastry::vertex_array va(sp,
+		pastry::va<float,2>("position"),
+		pastry::va<float,2>("texcoord")
+	);
+	va.bind();
 
 	std::cout << "Texture" << std::endl;
 
@@ -90,9 +88,11 @@ int main(void)
 	}
 	pastry::texture::activate_unit(0);
 	pastry::texture tex1(160, 120, tex_pixels.data());
+	tex1.bind();
 
 	pastry::texture::activate_unit(1);
 	pastry::texture tex2 = pastry::load_texture("assets/kitten.jpg");
+	tex2.bind();
 
 	sp.get_uniform<int>("texPattern").set(0);
 	sp.get_uniform<int>("texKitten").set(1);

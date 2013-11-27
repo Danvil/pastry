@@ -52,9 +52,10 @@ int main(void)
 
 	std::cout << "Setting vertex attributes" << std::endl;
 
-	pastry::vertex_attribute va = sp.get_attribute("position");
-	va.configure(2, GL_FLOAT, GL_FALSE, 0, 0);
-	va.enable();
+	pastry::vertex_array va(sp,
+		pastry::va<float,2>("position")
+	);
+	va.bind();
 
 	std::cout << "Adding renderling" << std::endl;
 
