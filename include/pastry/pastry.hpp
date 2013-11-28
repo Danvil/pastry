@@ -104,5 +104,7 @@ namespace pastry
 
 	texture load_texture(const std::string& fn);
 
+	void save_texture(const texture& tex, const std::string& fn);
+
 }
 #endif

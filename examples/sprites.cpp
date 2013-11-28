@@ -14,7 +14,7 @@ int main()
 
 	pastry::sprites::add_sprite_sheet({
 		"player",
-		"assets/player.png",
+		pastry::load_texture("assets/player.png"),
 		{
 			{"a00",  0*17, 0, 17, 17},
 			{"a01",  1*17, 0, 17, 17},

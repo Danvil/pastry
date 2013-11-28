@@ -47,7 +47,7 @@ public:
 	kitten_manager() {
 		pastry::sprites::add_sprite_sheet({
 			"kitten",
-			"assets/kitten.jpg",
+			pastry::load_texture("assets/kitten.jpg"),
 			{
 				{"kitten", 0, 0, 1024, 786}
 			}

@@ -20,7 +20,7 @@ namespace pastry
 		struct def_sheet
 		{
 			std::string tag;
-			std::string path;
+			texture tex;
 			std::vector<def_sprite> sprites;
 		};
 

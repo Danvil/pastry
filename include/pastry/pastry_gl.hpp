@@ -473,17 +473,18 @@ namespace pastry
 	public:
 		std::vector<detail::va_data> layout_;
 
-		array_buffer() : num_bytes_(0) {}
+		array_buffer()
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {}
 
 		array_buffer(std::initializer_list<detail::layout_item> list)
-		: num_bytes_(0) {
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
 			id_create();
 			bind();
 			set_layout(list);
 		}
 
 		array_buffer(std::initializer_list<detail::layout_item> list, std::size_t num_bytes, GLuint usage)
-		: num_bytes_(0) {
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
 			id_create();
 			bind();
 			set_layout(list);
@@ -661,17 +662,25 @@ namespace pastry
 		static constexpr GLenum target = GL_TEXTURE_2D;
 		int width_;
 		int height_;
+		int channels_;
 		texture() {}
 		texture(int w, int h, float* data_rgb_f) {
+			create();
+			image_2d_rgb_f(w, h, data_rgb_f);
+		}
+		texture(int w, int h, unsigned char* data_rgb_ub) {
+			create();
+			image_2d_rgb_ub(w, h, data_rgb_ub);
+		}
+		void create() {
 			id_create();
 			bind();
 			set_wrap(GL_REPEAT);
 			set_filter(GL_LINEAR);
-			image_2d_rgb_f(w, h, data_rgb_f);
 		}
 		int width() const { return width_; }
 		int height() const { return height_; }
-		void bind() {
+		void bind() const {
 			glBindTexture(target, id());
 		}
 		void set_wrap_s(GLint value) {
@@ -704,18 +713,37 @@ namespace pastry
 		void image_2d_rgb_f(int w, int h, float* data_rgb_f) {
 			width_ = w;
 			height_ = h;
+			channels_ = 3;
 			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_FLOAT, data_rgb_f);
 		}
-		int get_param_i(GLenum pname) {
+		void image_2d_rgb_ub(int w, int h, unsigned char* data_rgb_ub) {
+			width_ = w;
+			height_ = h;
+			channels_ = 3;
+			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data_rgb_ub);
+		}
+		std::vector<unsigned char> get_image_rgb_ub() const {
+			bind();
+			std::vector<unsigned char> buff(width_*height_*3);
+			glGetTexImage(target, 0, GL_RGB, GL_UNSIGNED_BYTE, buff.data());
+			return buff;
+		}
+		std::vector<unsigned char> get_image_red_ub() const {
+			bind();
+			std::vector<unsigned char> buff(width_*height_*1);
+			glGetTexImage(target, 0, GL_RED, GL_UNSIGNED_BYTE, buff.data());
+			return buff;
+		}
+		int get_param_i(GLenum pname) const {
 			bind();
 			GLint val;
 			glGetTexLevelParameteriv(target, 0, pname, &val);
 			return val;
 		}
-		int get_width() {
+		int get_width() const {
 			return get_param_i(GL_TEXTURE_WIDTH);
 		}
-		int get_height() {
+		int get_height() const {
 			return get_param_i(GL_TEXTURE_HEIGHT);
 		}
 		static void activate_unit(unsigned int num) {

@@ -64,7 +64,7 @@ namespace pastry
 		glfwWindowHint(GLFW_DEPTH_BITS, 16);
 
 		// create window (windowed)
-		window = glfwCreateWindow(640, 480, "pastry", NULL, NULL);
+		window = glfwCreateWindow(512, 512, "pastry", NULL, NULL);
 		if(!window) {
 			std::cerr << "ERROR: glfwCreateWindow failed!" << std::endl;
 			return;
@@ -191,6 +191,19 @@ namespace pastry
 		tex.width_ = tex.get_width();
 		tex.height_ = tex.get_height();
 		return tex;
+	}
+
+	void save_texture(const texture& tex, const std::string& fn)
+	{
+		std::vector<unsigned char> img;
+		if(tex.channels_ == 1) img = tex.get_image_red_ub();
+		if(tex.channels_ == 3) img = tex.get_image_rgb_ub();
+		SOIL_save_image(
+			fn.data(),
+			SOIL_SAVE_TYPE_PNG,
+			tex.width(), tex.height(), tex.channels_,
+			img.data()
+		);
 	}
 
 }

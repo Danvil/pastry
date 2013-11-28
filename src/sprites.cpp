@@ -91,7 +91,7 @@ namespace pastry
 				{"texcoord", g.vbo, "uv"}
 			});
 
-			g.tex = load_texture(sheet.path);
+			g.tex = sheet.tex;
 			g.tex.set_filter(GL_NEAREST);
 			g.w = g.tex.width();
 			g.h = g.tex.height();
