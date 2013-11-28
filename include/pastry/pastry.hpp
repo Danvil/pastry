@@ -118,11 +118,11 @@ void save_texture(const texture& tex, const std::string& fn);
 
 // ----- TEXT RENDERING --------------------------------------------------------
 
-void text_render(float x, float y, const std::string& txt);
+void render_text(float x, float y, const std::string& txt);
 
 // ----- SPRITES ---------------------------------------------------------------
 
-namespace sprites
+namespace detail
 {
 	struct def_sprite
 	{
@@ -150,42 +150,41 @@ namespace sprites
 		std::vector<def_anim_frame> frames;
 	};
 
-	struct sprite
-	{
-		std::string tag;
-		float x, y;
-		float sx, sy;
-		float t;
-	};
-
-	struct vertex
+	struct sprite_vertex
 	{
 		float x, y;
 		float u, v;
 	};
-
-	typedef std::shared_ptr<sprite> sprite_ptr;
-
-	void add_sprite_sheet(const def_sheet& sheet);
-
-	void add_sprite_animation(const def_anim& anim);
-
-	class sprite_group
-	: public renderling
-	{
-	public:
-		sprite_group();
-		~sprite_group();
-		sprite_ptr add_sprite(const std::string& tag);
-		void remove_sprite(const sprite_ptr& s);
-		void update(float t, float dt);
-		void render();
-	private:
-		std::vector<sprite_ptr> sprites_;
-		std::map<std::string, std::vector<vertex>> vertices_;
-	};
-
 }
+
+struct sprite
+{
+	std::string tag;
+	float x, y;
+	float sx, sy;
+	float t;
+};
+
+typedef std::shared_ptr<sprite> sprite_ptr;
+
+void add_sprite_sheet(const detail::def_sheet& sheet);
+
+void add_sprite_animation(const detail::def_anim& anim);
+
+class sprite_group
+: public renderling
+{
+public:
+	sprite_group();
+	~sprite_group();
+	sprite_ptr add_sprite(const std::string& tag);
+	void remove_sprite(const sprite_ptr& s);
+	void update(float t, float dt);
+	void render();
+private:
+	std::vector<sprite_ptr> sprites_;
+	std::map<std::string, std::vector<detail::sprite_vertex>> vertices_;
+};
 
 // ----- THE END ---------------------------------------------------------------
 

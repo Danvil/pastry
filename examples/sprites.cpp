@@ -11,7 +11,7 @@ int main()
 
 	std::cout << "Initialize sprites" << std::endl;
 
-	pastry::sprites::add_sprite_sheet({
+	pastry::add_sprite_sheet({
 		"player",
 		pastry::load_texture("assets/player.png"),
 		{
@@ -30,7 +30,7 @@ int main()
 		}
 	});
 
-	pastry::sprites::add_sprite_animation({"blah", {
+	pastry::add_sprite_animation({"blah", {
 		{"a00", 0.13f},
 		{"a01", 0.13f},
 		{"a02", 0.13f},
@@ -47,11 +47,11 @@ int main()
 
 	std::cout << "Create sprites" << std::endl;
 
-	std::shared_ptr<pastry::sprites::sprite_group> sprites = std::make_shared<pastry::sprites::sprite_group>();
+	std::shared_ptr<pastry::sprite_group> sprites = std::make_shared<pastry::sprite_group>();
 
 	constexpr int NUM = 12;
 	for(int i=0; i<NUM; i++) {
-		std::shared_ptr<pastry::sprites::sprite> s = sprites->add_sprite("blah");
+		pastry::sprite_ptr s = sprites->add_sprite("blah");
 		float phi = 2.0f * 3.1415f * (float)(i) / (float)(NUM);
 		s->x = 0.7f*std::cos(phi);
 		s->y = 0.7f*std::sin(phi);

@@ -13,7 +13,7 @@ pastry::program spo;
 pastry::vertex_array vao;
 pastry::texture tex;
 
-void text_initialize()
+void initialize_text()
 {
 	vbo = pastry::array_buffer{
 		{"xy", GL_FLOAT, 2},
@@ -64,14 +64,14 @@ void text_initialize()
 
 }
 
-void text_render(float x, float y, const std::string& txt)
+void render_text(float x, float y, const std::string& txt)
 {
 	spo.use();
 	pastry::texture::activate_unit(0);
 	tex.bind();
 	vao.bind();
 	const char* text = txt.data();
-	float scl = 0.005f;
+	float scl = 0.003f;
 	x /= scl;
 	y /= scl;
 	struct vertex { float x, y, u, v; };
