@@ -32,8 +32,8 @@ public:
 			gx = uniform_dist(s_rnd);
 			gy = uniform_dist(s_rnd);
 		}
-		s->x += (gx - s->x)*dt*0.04f;
-		s->y += (gy - s->y)*dt*0.04f;
+		s->x += (gx - s->x)*dt*0.34f;
+		s->y += (gy - s->y)*dt*0.34f;
 	}
 };
 
