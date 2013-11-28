@@ -61,6 +61,7 @@ public:
 			{"position", GL_FLOAT, 2},
 			{"color", GL_FLOAT, 3}
 		});
+		vbo.init_data(GL_DYNAMIC_DRAW);
 		sp = pastry::program(vertexSource, fragmentSource);
 		va = pastry::vertex_array(sp, {
 			{"position", vbo},
@@ -95,7 +96,7 @@ public:
 			vertices_.push_back(vertex{p.x-size_, p.y-size_, p.cr, p.cg, p.cb});
 		}
 
-		vbo.data(vertices_, GL_DYNAMIC_DRAW);
+		vbo.update_data(vertices_);
 	}
 
 	void render() {

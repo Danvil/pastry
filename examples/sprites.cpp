@@ -38,6 +38,7 @@ public:
 			{"xy", GL_FLOAT, 2},
 			{"uv", GL_FLOAT, 2}
 		});
+		vbo.init_data(GL_DYNAMIC_DRAW);
 		std::string vert_src = PASTRY_GLSL(
 			in vec2 position;
 			in vec2 texcoord;
@@ -94,7 +95,7 @@ public:
 			vertices_.push_back(vertex{s.x+s.sx, s.y-s.sy, st.u+st.su, st.v      });
 			vertices_.push_back(vertex{s.x-s.sx, s.y-s.sy, st.u      , st.v      });
 		}
-		vbo.data(vertices_, GL_DYNAMIC_DRAW);
+		vbo.update_data(vertices_);
 	}
 	void render() {
 		vbo.bind();
@@ -144,7 +145,7 @@ class kittens : public pastry::renderling
 	sprites sprites_;
 	std::vector<kitten> kittens_;
 public:
-	static constexpr int NUM = 64;
+	static constexpr int NUM = 200000;
 	kittens() {
 		// create templates
 		sprite_template st;

@@ -466,14 +466,28 @@ namespace pastry
 
 	struct array_buffer : public detail::resource<array_buffer_id>
 	{
+	private:
+		std::size_t num_bytes_;
+		GLuint usage_;
+
+	public:
 		std::vector<detail::va_data> layout_;
 
-		array_buffer() {}
+		array_buffer() : num_bytes_(0) {}
 
-		array_buffer(std::initializer_list<detail::layout_item> list) {
+		array_buffer(std::initializer_list<detail::layout_item> list)
+		: num_bytes_(0) {
 			id_create();
 			bind();
 			set_layout(list);
+		}
+
+		array_buffer(std::initializer_list<detail::layout_item> list, std::size_t num_bytes, GLuint usage)
+		: num_bytes_(0) {
+			id_create();
+			bind();
+			set_layout(list);
+			init_data(num_bytes, usage);
 		}
 
 		void set_layout(std::initializer_list<detail::layout_item> list) {
@@ -485,20 +499,50 @@ namespace pastry
 		}
 		
 		template<typename T>
-		void data(const std::vector<T>& v, GLuint usage) {
-			data(v.data(), v.size(), usage);
+		void init_data(const std::vector<T>& v, GLuint usage) {
+			init_data(v.data(), v.size(), usage);
 		}
 		
 		template<typename T>
-		void data(const T* buf, std::size_t num_elements, GLuint usage) {
-			data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements, usage);
+		void init_data(const T* buf, std::size_t num_elements, GLuint usage) {
+			init_data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements, usage);
 		}
 		
-		void data(const void* buf, std::size_t buf_num_bytes, GLuint usage) {
+		void init_data(const void* buf, std::size_t num_bytes, GLuint usage) {
+			usage_ = usage;
+			num_bytes_ = num_bytes;
 			bind();
-			glBufferData(GL_ARRAY_BUFFER, buf_num_bytes, buf, usage);
+			glBufferData(GL_ARRAY_BUFFER, num_bytes_, buf, usage);
+		}
+
+		void init_data(std::size_t num_bytes, GLuint usage) {
+			init_data(NULL, num_bytes_, usage);
+		}
+
+		void init_data(GLuint usage) {
+			init_data(NULL, 0, usage);
+		}
+
+		template<typename T>
+		void update_data(const std::vector<T>& v) {
+			update_data(v.data(), v.size());
 		}
 		
+		template<typename T>
+		void update_data(const T* buf, std::size_t num_elements) {
+			update_data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements);
+		}
+		
+		void update_data(const void* buf, std::size_t num_bytes) {
+			if(num_bytes != num_bytes_) {
+				init_data(buf, num_bytes, usage_);
+			}
+			else {
+				bind();
+				glBufferSubData(GL_ARRAY_BUFFER, 0, num_bytes, buf);
+			}
+		}
+
 		static void unbind() {
 			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
 		}

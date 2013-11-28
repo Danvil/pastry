@@ -21,7 +21,7 @@ int main(void)
 		 0.5f, -0.5f,
 		-0.5f, -0.5f 
 	};
-	vbo.data(vertices, GL_STATIC_DRAW);
+	vbo.init_data(vertices, GL_STATIC_DRAW);
 
 	std::cout << "Compiling vertex shader" << std::endl;
 
