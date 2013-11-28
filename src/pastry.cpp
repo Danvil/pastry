@@ -152,12 +152,14 @@ namespace pastry
 
 	std::shared_ptr<engine> s_engine;
 
-	namespace sprites { void initialize(); }
+	namespace sprites { void initialize_sprites(); }
+	void text_initialize();
 
 	void initialize()
 	{
 		s_engine = std::make_shared<engine>();
-		sprites::initialize();
+		sprites::initialize_sprites();
+		text_initialize();
 	}
 
 	void run()

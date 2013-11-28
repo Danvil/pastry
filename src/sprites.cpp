@@ -129,7 +129,7 @@ namespace pastry
 
 		std::shared_ptr<sprite_manager> s_sprite_manager;
 
-		void initialize()
+		void initialize_sprites()
 		{
 			s_sprite_manager = std::make_shared<sprite_manager>();
 		}

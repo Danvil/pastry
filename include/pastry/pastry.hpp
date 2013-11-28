@@ -116,6 +116,10 @@ texture load_texture(const std::string& fn);
 
 void save_texture(const texture& tex, const std::string& fn);
 
+// ----- TEXT RENDERING --------------------------------------------------------
+
+void text_render(float x, float y, const std::string& txt);
+
 // ----- SPRITES ---------------------------------------------------------------
 
 namespace sprites

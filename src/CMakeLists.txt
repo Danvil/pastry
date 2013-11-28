@@ -4,7 +4,7 @@ ADD_LIBRARY(pastry SHARED
 	# pastry
 	pastry.cpp
 	sprites.cpp
-	stb_truetype.c
+	text.cpp
 	# SOIL
 	SOIL2/etc1_utils.c
 	SOIL2/image_DXT.c
