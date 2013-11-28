@@ -241,7 +241,9 @@ namespace pastry
 			// format into list of arrays
 			std::array<std::array<T,LEN>,NUM> a;
 			for(int i=0; i<NUM; i++) {
-				std::array<T,LEN> a;
+				for(int j=0; j<LEN; j++) {
+					a[i][j] = buff[j + i*LEN];
+				}
 			}
 			return a;
 		}
