@@ -1,6 +1,5 @@
 
 #include <pastry/pastry.hpp>
-#include <pastry/sprites.hpp>
 #include <random>
 #include <memory>
 #include <string>

@@ -1,6 +1,5 @@
 
 #include <pastry/pastry.hpp>
-#include <pastry/sprites.hpp>
 
 namespace pastry
 {
