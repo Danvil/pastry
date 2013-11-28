@@ -78,8 +78,8 @@ namespace pastry
 	// workaround for gcc 4.6
 	template<typename T>
 	void add_renderling(const std::shared_ptr<T>& r) {
-		renderling_ptr ri = r;
-		add_renderling(r);
+		renderling_ptr rr = r;
+		add_renderling(rr);
 	}
 
 	/** Removes a renderling to the scene */
