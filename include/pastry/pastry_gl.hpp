@@ -141,7 +141,7 @@ namespace pastry
 
 	namespace detail
 	{
-		void compile_shader(id_t q, const std::string& source) {
+		inline void compile_shader(id_t q, const std::string& source) {
 			GLint len = source.size();
 			const GLchar* str = source.data();
 			glShaderSource(q, 1, &str, &len);
@@ -659,6 +659,8 @@ namespace pastry
 	struct texture : public detail::resource<texture_id>
 	{
 		static constexpr GLenum target = GL_TEXTURE_2D;
+		int width_;
+		int height_;
 		texture() {}
 		texture(int w, int h, float* data_rgb_f) {
 			id_create();
@@ -667,6 +669,8 @@ namespace pastry
 			set_filter(GL_LINEAR);
 			image_2d_rgb_f(w, h, data_rgb_f);
 		}
+		int width() const { return width_; }
+		int height() const { return height_; }
 		void bind() {
 			glBindTexture(target, id());
 		}
@@ -698,7 +702,21 @@ namespace pastry
 		// 	glGenerateMipmap(target);
 		// }
 		void image_2d_rgb_f(int w, int h, float* data_rgb_f) {
+			width_ = w;
+			height_ = h;
 			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_FLOAT, data_rgb_f);
+		}
+		int get_param_i(GLenum pname) {
+			bind();
+			GLint val;
+			glGetTexLevelParameteriv(target, 0, pname, &val);
+			return val;
+		}
+		int get_width() {
+			return get_param_i(GL_TEXTURE_WIDTH);
+		}
+		int get_height() {
+			return get_param_i(GL_TEXTURE_HEIGHT);
 		}
 		static void activate_unit(unsigned int num) {
 			glActiveTexture(GL_TEXTURE0 + num);

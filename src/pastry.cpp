@@ -121,6 +121,7 @@ namespace pastry
 			// update stuff
 			float current_time = get_current_time();
 			float delta_time = current_time - last_time;
+			last_time = current_time;
 			scene_->update(current_time, delta_time);
 			
 			// render stuff
@@ -136,7 +137,6 @@ namespace pastry
 			num_frames ++;
 			if(num_frames >= 100 && delta_time >= 1.0f) {
 				float current_fps = static_cast<float>(num_frames) / delta_time;
-				last_time = current_time;
 				num_frames = 0;
 				// update fps
 				// if(fps < 0) fps = current_fps;
@@ -152,9 +152,12 @@ namespace pastry
 
 	std::shared_ptr<engine> s_engine;
 
+	namespace sprites { void initialize(); }
+
 	void initialize()
 	{
 		s_engine = std::make_shared<engine>();
+		sprites::initialize();
 	}
 
 	void run()
@@ -179,12 +182,14 @@ namespace pastry
 			fn.data(),
 			SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID,
-			SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS
+			SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS
 		);
 		if(q == 0) {
 			std::cerr << "ERROR in load_texture: Failed to load image '" << fn << "'" << std::endl;
 		}
 		tex.id_set(q);
+		tex.width_ = tex.get_width();
+		tex.height_ = tex.get_height();
 		return tex;
 	}
 

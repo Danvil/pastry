@@ -3,6 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 ADD_LIBRARY(pastry SHARED
 	# pastry
 	pastry.cpp
+	sprites.cpp
 	# SOIL
 	SOIL2/etc1_utils.c
 	SOIL2/image_DXT.c
