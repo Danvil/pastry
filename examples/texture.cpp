@@ -98,6 +98,8 @@ int main(void)
 	sp.get_uniform<int>("texPattern").set(0);
 	sp.get_uniform<int>("texKitten").set(1);
 
+	std::cout << "Adding renderling" << std::endl;
+
 	pastry::add_renderling(
 		[]() {
 			glDrawArrays(GL_TRIANGLES, 0, 6);

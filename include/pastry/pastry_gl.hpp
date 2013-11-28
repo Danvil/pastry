@@ -484,17 +484,15 @@ namespace pastry
 		
 		template<typename T>
 		void data(const std::vector<T>& v, GLuint usage) {
-			bind();
-			glBufferData(GL_ARRAY_BUFFER, sizeof(T)*v.size(), v.data(), usage);
+			data(reinterpret_cast<const void*>(v.data()), sizeof(T)*v.size(), usage);
 		}
 		
 		template<typename T>
 		void data(T buf[], GLuint usage) {
-			bind();
-			glBufferData(GL_ARRAY_BUFFER, sizeof(buf), (GLvoid*)buf, usage);
+			data(reinterpret_cast<const void*>(buf), sizeof(buf), usage);
 		}
 		
-		void data(void* buf, std::size_t buf_num_bytes, GLuint usage) {
+		void data(const void* buf, std::size_t buf_num_bytes, GLuint usage) {
 			bind();
 			glBufferData(GL_ARRAY_BUFFER, buf_num_bytes, buf, usage);
 		}

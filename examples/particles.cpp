@@ -21,7 +21,7 @@ public:
 	};
 
 private:
-	static constexpr char* vertexSource = PASTRY_GLSL(
+	static constexpr const char* vertexSource = PASTRY_GLSL(
 		in vec2 position;
 		in vec3 color;
 		out vec3 vcolor;
@@ -31,7 +31,7 @@ private:
 		}
 	);
 
-	static constexpr char* fragmentSource = PASTRY_GLSL(
+	static constexpr const char* fragmentSource = PASTRY_GLSL(
 		in vec3 vcolor;
 		out vec4 outColor;
 		void main() {
@@ -95,7 +95,6 @@ public:
 			vertices_.push_back(vertex{p.x-size_, p.y-size_, p.cr, p.cg, p.cb});
 		}
 
-		vbo.bind();
 		vbo.data(vertices_, GL_DYNAMIC_DRAW);
 	}
 
