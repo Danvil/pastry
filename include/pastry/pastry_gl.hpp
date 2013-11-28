@@ -3,10 +3,14 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <memory>
+#include <tuple>
 #include <array>
+
+#define PASTRY_GLSL(src) "#version 150\n" #src
 
 namespace pastry
 {
@@ -134,20 +138,6 @@ namespace pastry
 		};
 
 	}
-
-	struct array_buffer : public detail::resource<array_buffer_id>
-	{
-		void bind() {
-			glBindBuffer(GL_ARRAY_BUFFER, id());
-		}
-		void data(void* buf, std::size_t buf_num_bytes, GLuint usage) {
-			bind();
-			glBufferData(GL_ARRAY_BUFFER, buf_num_bytes, buf, usage);
-		}
-		static void unbind() {
-			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
-		}
-	};
 
 	namespace detail
 	{
@@ -390,6 +380,11 @@ namespace pastry
 		va(const std::string& n) : name(n) {}
 	};
 
+	template<int LEN>
+	struct va_skip {
+		static constexpr int len = LEN;
+	};
+
 	namespace detail
 	{
 		#define PASTRY_VERTEXARRAY_TYPES(F) \
@@ -440,6 +435,20 @@ namespace pastry
 			va_conf_rec(q, args...);
 		}
 
+		template<int LEN, typename... Args>
+		void va_conf_rec(std::vector<va_data>& q, const va_skip<LEN>& va, Args... args) {
+			va_data dat;
+			dat.name = "";
+			dat.size = 1;
+			dat.type = 0;
+			dat.bytes_per_element = va.len;
+			dat.bytes_total = dat.size * dat.bytes_per_element;
+			dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
+			dat.offset_end = dat.offset_begin + dat.bytes_total;
+			q.push_back(dat);
+			va_conf_rec(q, args...);
+		}
+
 		template<typename... Args>
 		std::vector<va_data> va_conf(Args... args) {
 			std::vector<va_data> data;
@@ -472,15 +481,71 @@ namespace pastry
 		return va;
 	}
 
+	struct array_buffer : public detail::resource<array_buffer_id>
+	{
+		void bind() const {
+			glBindBuffer(GL_ARRAY_BUFFER, id());
+		}
+		
+		void data(void* buf, std::size_t buf_num_bytes, GLuint usage) {
+			bind();
+			glBufferData(GL_ARRAY_BUFFER, buf_num_bytes, buf, usage);
+		}
+		
+		std::vector<detail::va_data> layout_;
+
+		template<typename... Args>
+		void set_layout(Args... args) {
+			layout_ = detail::va_conf(args...);
+		}
+		
+		static void unbind() {
+			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
+		}
+	};
+
 	struct vertex_array : public detail::resource<vertex_array_id>
 	{
+		struct mapping {
+			std::string shader_name;
+			array_buffer vb;
+			std::string vb_name;
+		};
+
 		vertex_array() {}
+
+		vertex_array(const program& p, std::initializer_list<mapping> list) {
+			id_create();
+			bind();
+			for(const mapping& m : list) {
+				const std::string& shader_name = m.shader_name;
+				const array_buffer& vb = m.vb;
+				const std::string& vn_name = m.vb_name;
+				// find name in array
+				auto it = std::find_if(vb.layout_.begin(), vb.layout_.end(),
+					[&vn_name](const detail::va_data& x) { return x.name == vn_name; });
+				if(it == vb.layout_.end()) {
+					std::cerr << "ERROR: Could not find variable '" << vn_name << "' in buffer layout!" << std::endl;
+					continue;
+				}
+				// need to bind array buffer to establish connection between shader and buffer
+				vb.bind();
+				// create vertex attribute
+				vertex_attribute va = p.get_attribute(shader_name);
+				va.configure(it->size, it->type, GL_FALSE, vb.layout_.back().offset_end, (GLvoid*)it->offset_begin);
+				va.enable();
+			}
+		}
+
 		template<typename... Args>
 		vertex_array(const program& p, Args... args) {
 			id_create();
 			bind();
 			std::vector<detail::va_data> dat = detail::va_conf(args...);
 			for(auto x : dat) {
+				if(x.name.empty()) {
+					continue;
+				}
 				vertex_attribute va = p.get_attribute(x.name);
 				va.configure(x.size, x.type, GL_FALSE, dat.back().offset_end, (GLvoid*)x.offset_begin);
 				va.enable();
