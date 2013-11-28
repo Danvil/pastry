@@ -12,8 +12,7 @@ int main(void)
 
 	std::cout << "Generating array buffer" << std::endl;
 
-	pastry::array_buffer vbo;
-	vbo.id_create();
+	pastry::array_buffer vbo{{"pos", GL_FLOAT, 2}};
 	float vertices[] = {
 		-0.5f,  0.5f,
 		+0.5f,  0.5f,
@@ -22,27 +21,27 @@ int main(void)
 		 0.5f, -0.5f,
 		-0.5f, -0.5f 
 	};
-	vbo.data(vertices, sizeof(vertices), GL_STATIC_DRAW);
+	vbo.data(vertices, GL_STATIC_DRAW);
 
 	std::cout << "Compiling vertex shader" << std::endl;
 
-	std::string vertexSource = 
-		"#version 150\n"
-		"in vec2 position;\n"
-		"void main() {\n"
-		"	gl_Position = vec4(position, 0.0, 1.0);\n"
-		"}\n";
+	std::string vertexSource = PASTRY_GLSL(
+		in vec2 position;
+		void main() {
+			gl_Position = vec4(position, 0.0, 1.0);
+		}
+	);
 	pastry::vertex_shader sv(vertexSource);
 
 	std::cout << "Compiling fragment shader" << std::endl;
 
-	std::string fragmentSource =
-		"#version 150\n"
-		"out vec4 outColor;\n"
-		"uniform vec3 color;\n"
-		"void main() {\n"
-		"	outColor = vec4(color, 1.0);\n"
-		"}\n";
+	std::string fragmentSource = PASTRY_GLSL(
+		out vec4 outColor;
+		uniform vec3 color;
+		void main() {
+			outColor = vec4(color, 1.0);
+		}
+	);
 	pastry::fragment_shader sf(fragmentSource);
 
 	std::cout << "Creating shader program" << std::endl;
@@ -52,9 +51,9 @@ int main(void)
 
 	std::cout << "Setting vertex attributes" << std::endl;
 
-	pastry::vertex_array va(sp,
-		pastry::va<float,2>("position")
-	);
+	pastry::vertex_array va(sp, {
+		{"position", vbo, "pos"}
+	});
 	va.bind();
 
 	std::cout << "Adding renderling" << std::endl;

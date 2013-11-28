@@ -13,8 +13,10 @@ int main(void)
 
 	std::cout << "Generating array buffer" << std::endl;
 
-	pastry::array_buffer vbo;
-	vbo.id_create();
+	pastry::array_buffer vbo{
+		{"pos", GL_FLOAT, 2},
+		{"uv", GL_FLOAT, 2}
+	};
 	float vertices[] = {
 		-0.8f, +0.8f, -1.0f, +1.0f,
 		+0.8f, +0.8f, +1.0f, +1.0f,
@@ -23,7 +25,7 @@ int main(void)
 		+0.8f, -0.8f, +1.0f, -1.0f,
 		-0.8f, -0.8f, -1.0f, -1.0f
 	};
-	vbo.data(vertices, sizeof(vertices), GL_STATIC_DRAW);
+	vbo.data(vertices, GL_STATIC_DRAW);
 
 	std::cout << "Compiling vertex shader" << std::endl;
 
@@ -58,11 +60,10 @@ int main(void)
 
 	std::cout << "Setting up vertex arrays" << std::endl;
 
-	pastry::vertex_array va(sp,
-		pastry::va<float,2>("position"),
-		pastry::va<float,2>("texcoord")
-	);
-	va.bind();
+	pastry::vertex_array va(sp, {
+		{"position", vbo, "pos"},
+		{"texcoord", vbo, "uv"}
+	});
 
 	std::cout << "Texture" << std::endl;
 

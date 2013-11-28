@@ -11,8 +11,12 @@ int main(void)
 
 	std::cout << "Generating array buffer" << std::endl;
 
-	pastry::array_buffer vbo;
-	vbo.id_create();
+	pastry::array_buffer vbo{
+		{"pos", GL_FLOAT, 2},
+		{"uv", GL_FLOAT, 2},
+		pastry::layout_skip_bytes(4),
+		{"color", GL_FLOAT, 3}
+	};
 	float vertices[] = {
 		-0.8f, +0.8f, -1.0f, +1.0f, 234.0f, 1.0f, 0.0f, 0.0f,
 		+0.8f, +0.8f, +1.0f, +1.0f, 234.0f, 1.0f, 1.0f, 0.0f,
@@ -21,13 +25,7 @@ int main(void)
 		+0.8f, -0.8f, +1.0f, -1.0f, 234.0f, 0.0f, 1.0f, 1.0f,
 		-0.8f, -0.8f, -1.0f, -1.0f, 234.0f, 0.0f, 0.0f, 1.0f
 	};
-	vbo.data(vertices, sizeof(vertices), GL_STATIC_DRAW);
-	vbo.set_layout(
-		pastry::va<float,2>("pos"),
-		pastry::va<float,2>("uv"),
-		pastry::va_skip<4>(),
-		pastry::va<float,3>("col")
-	);
+	vbo.data(vertices, GL_STATIC_DRAW);
 
 	std::cout << "Compiling vertex shader" << std::endl;
 
@@ -67,7 +65,7 @@ int main(void)
 	pastry::vertex_array va(sp, {
 		{"position", vbo, "pos"},
 		{"texcoord", vbo, "uv"},
-		{"color", vbo, "col"}
+		{"color", vbo}
 	});
 	va.bind();
 

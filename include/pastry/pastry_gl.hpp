@@ -324,7 +324,185 @@ namespace pastry
 		}
 	};
 
-	struct vertex_attribute;
+	// template<typename T, int N>
+	// struct va {
+	// 	typedef T type;
+	// 	static constexpr int num = N;
+	// 	std::string name;
+	// 	va() {}
+	// 	va(const std::string& n) : name(n) {}
+	// };
+
+	// template<int LEN>
+	// struct va_skip {
+	// 	static constexpr int len = LEN;
+	// };
+
+	namespace detail
+	{
+		// #define PASTRY_VERTEXARRAY_TYPES(F) \
+		// 	F(int8_t, 1, GL_BYTE) \
+		// 	F(uint8_t, 1, GL_UNSIGNED_BYTE) \
+		// 	F(int16_t, 2, GL_SHORT) \
+		// 	F(uint16_t, 2, GL_UNSIGNED_SHORT) \
+		// 	F(int32_t, 4, GL_INT) \
+		// 	F(uint32_t, 4, GL_UNSIGNED_INT) \
+		// 	F(float, 4, GL_FLOAT) \
+		// 	F(double, 8, GL_DOUBLE)
+
+		// template<typename T>
+		// struct type_to_gl;
+
+		// #define PASTRY_VERTEXARRAY_TYPETOGL(TYPE,SIZE,GLENUM) \
+		// 	template<> struct type_to_gl<TYPE> { \
+		// 		static constexpr GLenum glenum = GLENUM; \
+		// 		static constexpr int size = SIZE; \
+		// 	};
+
+		// PASTRY_VERTEXARRAY_TYPES(PASTRY_VERTEXARRAY_TYPETOGL)
+
+		struct va_data
+		{
+			std::string name;
+			GLenum type;
+			GLint size;
+			std::size_t bytes_per_element;
+			std::size_t bytes_total;
+			std::size_t offset_begin;
+			std::size_t offset_end;
+		};
+
+		// void va_conf_rec(std::vector<va_data>&) {}
+
+		// template<typename T, int N, typename... Args>
+		// void va_conf_rec(std::vector<va_data>& q, const va<T,N>& va, Args... args) {
+		// 	va_data dat;
+		// 	dat.name = va.name;
+		// 	dat.type = type_to_gl<T>::glenum;
+		// 	dat.size = N;
+		// 	dat.bytes_per_element = type_to_gl<T>::size;
+		// 	dat.bytes_total = dat.size * dat.bytes_per_element;
+		// 	dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
+		// 	dat.offset_end = dat.offset_begin + dat.bytes_total;
+		// 	q.push_back(dat);
+		// 	va_conf_rec(q, args...);
+		// }
+
+		// template<int LEN, typename... Args>
+		// void va_conf_rec(std::vector<va_data>& q, const va_skip<LEN>& va, Args... args) {
+		// 	va_data dat;
+		// 	dat.name = "";
+		// 	dat.type = 0;
+		// 	dat.size = 1;
+		// 	dat.bytes_per_element = va.len;
+		// 	dat.bytes_total = dat.size * dat.bytes_per_element;
+		// 	dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
+		// 	dat.offset_end = dat.offset_begin + dat.bytes_total;
+		// 	q.push_back(dat);
+		// 	va_conf_rec(q, args...);
+		// }
+
+		// template<typename... Args>
+		// std::vector<va_data> va_conf(Args... args) {
+		// 	std::vector<va_data> data;
+		// 	va_conf_rec(data, args...);
+		// 	return data;
+		// }
+
+		struct layout_item {
+			std::string name;
+			GLenum type;
+			int size;
+		};
+
+		inline std::size_t bytes_per_element(GLenum type) {
+			switch(type) {
+			case GL_BYTE: return 1;
+			case GL_UNSIGNED_BYTE: return 1;
+			case GL_SHORT: return 2;
+			case GL_UNSIGNED_SHORT: return 2;
+			case GL_INT: return 4;
+			case GL_UNSIGNED_INT: return 4;
+			case GL_FLOAT: return 4;
+			case GL_DOUBLE: return 8;
+			default: return 1;
+			}
+		}
+
+		inline std::vector<va_data> va_conf(std::initializer_list<layout_item> list) {
+			std::vector<va_data> q;
+			q.reserve(list.size());
+			for(const layout_item& i : list) {
+				va_data dat;
+				dat.name = i.name;
+				dat.type = i.type;
+				dat.size = i.size;
+				dat.bytes_per_element = bytes_per_element(i.type);
+				dat.bytes_total = dat.size * dat.bytes_per_element;
+				dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
+				dat.offset_end = dat.offset_begin + dat.bytes_total;
+				q.push_back(dat);
+			}
+			return q;
+		}
+	}
+
+	inline detail::layout_item layout_skip_bytes(int a) {
+		return {"", 0, a};
+	}
+
+	struct vertex_attribute : public detail::resource<vertex_attribute_id>
+	{
+		vertex_attribute() {}
+		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
+			glVertexAttribPointer(id(), size, type, normalized, stride, pointer);
+		}
+		void enable() {
+			glEnableVertexAttribArray(id());
+		}
+	};
+
+	struct array_buffer : public detail::resource<array_buffer_id>
+	{
+		std::vector<detail::va_data> layout_;
+
+		array_buffer() {}
+
+		array_buffer(std::initializer_list<detail::layout_item> list) {
+			id_create();
+			bind();
+			set_layout(list);
+		}
+
+		void set_layout(std::initializer_list<detail::layout_item> list) {
+			layout_ = detail::va_conf(list);
+		}
+		
+		void bind() const {
+			glBindBuffer(GL_ARRAY_BUFFER, id());
+		}
+		
+		template<typename T>
+		void data(const std::vector<T>& v, GLuint usage) {
+			bind();
+			glBufferData(GL_ARRAY_BUFFER, sizeof(T)*v.size(), v.data(), usage);
+		}
+		
+		template<typename T>
+		void data(T buf[], GLuint usage) {
+			bind();
+			glBufferData(GL_ARRAY_BUFFER, sizeof(buf), (GLvoid*)buf, usage);
+		}
+		
+		void data(void* buf, std::size_t buf_num_bytes, GLuint usage) {
+			bind();
+			glBufferData(GL_ARRAY_BUFFER, buf_num_bytes, buf, usage);
+		}
+		
+		static void unbind() {
+			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
+		}
+	};
 
 	struct program : public detail::resource<program_id>
 	{
@@ -356,7 +534,19 @@ namespace pastry
 			attach(fs);
 			link();
 		}
-		vertex_attribute get_attribute(const std::string& name) const;
+
+		vertex_attribute get_attribute(const std::string& name) const {
+			vertex_attribute va;
+			GLint a = glGetAttribLocation(id(), name.data());
+			if(a == -1) {
+				std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
+			}
+			else {
+				va.id_set(a);
+			}
+			return va;
+		}
+
 		template<typename T, unsigned int LEN=1, unsigned int NUM=1>
 		uniform<T,LEN,NUM> get_uniform(const std::string& name) {
 			uniform<T,LEN,NUM> u;
@@ -371,153 +561,31 @@ namespace pastry
 		}
 	};
 
-	template<typename T, int N>
-	struct va {
-		typedef T type;
-		static constexpr int num = N;
-		std::string name;
-		va() {}
-		va(const std::string& n) : name(n) {}
-	};
-
-	template<int LEN>
-	struct va_skip {
-		static constexpr int len = LEN;
-	};
-
 	namespace detail
 	{
-		#define PASTRY_VERTEXARRAY_TYPES(F) \
-			F(int8_t, 1, GL_BYTE) \
-			F(uint8_t, 1, GL_UNSIGNED_BYTE) \
-			F(int16_t, 2, GL_SHORT) \
-			F(uint16_t, 2, GL_UNSIGNED_SHORT) \
-			F(int32_t, 4, GL_INT) \
-			F(uint32_t, 4, GL_UNSIGNED_INT) \
-			F(float, 4, GL_FLOAT) \
-			F(double, 8, GL_DOUBLE)
-
-		template<typename T>
-		struct type_to_gl;
-
-		#define PASTRY_VERTEXARRAY_TYPETOGL(TYPE,SIZE,GLENUM) \
-			template<> struct type_to_gl<TYPE> { \
-				static constexpr GLenum glenum = GLENUM; \
-				static constexpr int size = SIZE; \
-			};
-
-		PASTRY_VERTEXARRAY_TYPES(PASTRY_VERTEXARRAY_TYPETOGL)
-
-		struct va_data
+		struct mapping
 		{
-			std::string name;
-			GLint size;
-			GLenum type;
-			std::size_t bytes_per_element;
-			std::size_t bytes_total;
-			std::size_t offset_begin;
-			std::size_t offset_end;
-		};
-
-		void va_conf_rec(std::vector<va_data>&) {}
-
-		template<typename T, int N, typename... Args>
-		void va_conf_rec(std::vector<va_data>& q, const va<T,N>& va, Args... args) {
-			va_data dat;
-			dat.name = va.name;
-			dat.size = N;
-			dat.type = type_to_gl<T>::glenum;
-			dat.bytes_per_element = type_to_gl<T>::size;
-			dat.bytes_total = dat.size * dat.bytes_per_element;
-			dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
-			dat.offset_end = dat.offset_begin + dat.bytes_total;
-			q.push_back(dat);
-			va_conf_rec(q, args...);
-		}
-
-		template<int LEN, typename... Args>
-		void va_conf_rec(std::vector<va_data>& q, const va_skip<LEN>& va, Args... args) {
-			va_data dat;
-			dat.name = "";
-			dat.size = 1;
-			dat.type = 0;
-			dat.bytes_per_element = va.len;
-			dat.bytes_total = dat.size * dat.bytes_per_element;
-			dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
-			dat.offset_end = dat.offset_begin + dat.bytes_total;
-			q.push_back(dat);
-			va_conf_rec(q, args...);
-		}
-
-		template<typename... Args>
-		std::vector<va_data> va_conf(Args... args) {
-			std::vector<va_data> data;
-			va_conf_rec(data, args...);
-			return data;
-		}
-	}
-
-	struct vertex_attribute : public detail::resource<vertex_attribute_id>
-	{
-		vertex_attribute() {}
-		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
-			glVertexAttribPointer(id(), size, type, normalized, stride, pointer);
-		}
-		void enable() {
-			glEnableVertexAttribArray(id());
-		}
-	};
-
-	inline vertex_attribute program::get_attribute(const std::string& name) const
-	{
-		vertex_attribute va;
-		GLint a = glGetAttribLocation(id(), name.data());
-		if(a == -1) {
-			std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
-		}
-		else {
-			va.id_set(a);
-		}
-		return va;
-	}
-
-	struct array_buffer : public detail::resource<array_buffer_id>
-	{
-		void bind() const {
-			glBindBuffer(GL_ARRAY_BUFFER, id());
-		}
-		
-		void data(void* buf, std::size_t buf_num_bytes, GLuint usage) {
-			bind();
-			glBufferData(GL_ARRAY_BUFFER, buf_num_bytes, buf, usage);
-		}
-		
-		std::vector<detail::va_data> layout_;
-
-		template<typename... Args>
-		void set_layout(Args... args) {
-			layout_ = detail::va_conf(args...);
-		}
-		
-		static void unbind() {
-			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
-		}
-	};
-
-	struct vertex_array : public detail::resource<vertex_array_id>
-	{
-		struct mapping {
 			std::string shader_name;
 			array_buffer vb;
 			std::string vb_name;
+			mapping() {}
+			mapping(const std::string& nsn, const array_buffer& nvb)
+			: shader_name(nsn), vb(nvb), vb_name(nsn) {}
+			mapping(const std::string& nsn, const array_buffer& nvb, const std::string& nvbn)
+			: shader_name(nsn), vb(nvb), vb_name(nvbn) {}
 		};
+	}
+
+	struct vertex_array : public detail::resource<vertex_array_id>
+	{
+		std::vector<vertex_attribute> attributes_;
 
 		vertex_array() {}
 
-		vertex_array(const program& p, std::initializer_list<mapping> list) {
+		vertex_array(const program& p, std::initializer_list<detail::mapping> list) {
 			id_create();
 			bind();
-			for(const mapping& m : list) {
+			for(const detail::mapping& m : list) {
 				const std::string& shader_name = m.shader_name;
 				const array_buffer& vb = m.vb;
 				const std::string& vn_name = m.vb_name;
@@ -534,28 +602,14 @@ namespace pastry
 				vertex_attribute va = p.get_attribute(shader_name);
 				va.configure(it->size, it->type, GL_FALSE, vb.layout_.back().offset_end, (GLvoid*)it->offset_begin);
 				va.enable();
+				attributes_.push_back(va);
 			}
 		}
 
-		template<typename... Args>
-		vertex_array(const program& p, Args... args) {
-			id_create();
-			bind();
-			std::vector<detail::va_data> dat = detail::va_conf(args...);
-			for(auto x : dat) {
-				if(x.name.empty()) {
-					continue;
-				}
-				vertex_attribute va = p.get_attribute(x.name);
-				va.configure(x.size, x.type, GL_FALSE, dat.back().offset_end, (GLvoid*)x.offset_begin);
-				va.enable();
-				attributes.push_back(va);
-			}
-		}	
 		void bind() {
 			glBindVertexArray(id());
 		}
-		std::vector<vertex_attribute> attributes;
+
 	};
 
 	struct texture : public detail::resource<texture_id>

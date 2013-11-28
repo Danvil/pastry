@@ -13,29 +13,31 @@ public:
 		float x, y;
 		float cr, cg, cb;
 	};
+
 	struct vertex
 	{
 		float x, y;
 		float cr, cg, cb;
 	};
-private:
-	static constexpr char* vertexSource = 
-		"#version 150\n"
-		"in vec2 position;\n"
-		"in vec3 color;\n"
-		"out vec3 vcolor;\n"
-		"void main() {\n"
-		"	gl_Position = vec4(position, 0.0, 1.0);\n"
-		"	vcolor = color;\n"
-		"}\n";
 
-	static constexpr char* fragmentSource =
-		"#version 150\n"
-		"in vec3 vcolor;\n"
-		"out vec4 outColor;\n"
-		"void main() {\n"
-		"	outColor = vec4(vcolor, 1.0);\n"
-		"}\n";
+private:
+	static constexpr char* vertexSource = PASTRY_GLSL(
+		in vec2 position;
+		in vec3 color;
+		out vec3 vcolor;
+		void main() {
+			gl_Position = vec4(position, 0.0, 1.0);
+			vcolor = color;
+		}
+	);
+
+	static constexpr char* fragmentSource = PASTRY_GLSL(
+		in vec3 vcolor;
+		out vec4 outColor;
+		void main() {
+			outColor = vec4(vcolor, 1.0);
+		}
+	);
 
 	pastry::array_buffer vbo;
 	pastry::program sp;
@@ -55,13 +57,15 @@ public:
 		color_r_ = color_r;
 		color_g_ = color_g;
 		color_b_ = color_b;
-		vbo.id_create();
-		vbo.bind();
+		vbo = pastry::array_buffer({
+			{"position", GL_FLOAT, 2},
+			{"color", GL_FLOAT, 3}
+		});
 		sp = pastry::program(vertexSource, fragmentSource);
-		va = pastry::vertex_array(sp,
-			pastry::va<float,2>("position"),
-			pastry::va<float,3>("color")
-		);
+		va = pastry::vertex_array(sp, {
+			{"position", vbo},
+			{"color", vbo}
+		});
 	}
 
 	void update(float t, float dt) {
@@ -92,7 +96,7 @@ public:
 		}
 
 		vbo.bind();
-		vbo.data(vertices_.data(), vertices_.size()*sizeof(vertex), GL_DYNAMIC_DRAW);
+		vbo.data(vertices_, GL_DYNAMIC_DRAW);
 	}
 
 	void render() {
