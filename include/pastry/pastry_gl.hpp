@@ -484,12 +484,12 @@ namespace pastry
 		
 		template<typename T>
 		void data(const std::vector<T>& v, GLuint usage) {
-			data(reinterpret_cast<const void*>(v.data()), sizeof(T)*v.size(), usage);
+			data(v.data(), v.size(), usage);
 		}
 		
 		template<typename T>
-		void data(T buf[], GLuint usage) {
-			data(reinterpret_cast<const void*>(buf), sizeof(buf), usage);
+		void data(const T* buf, std::size_t num_elements, GLuint usage) {
+			data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements, usage);
 		}
 		
 		void data(const void* buf, std::size_t buf_num_bytes, GLuint usage) {

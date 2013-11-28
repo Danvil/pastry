@@ -17,7 +17,7 @@ int main(void)
 		pastry::layout_skip_bytes(4),
 		{"color", GL_FLOAT, 3}
 	};
-	float vertices[] = {
+	std::vector<float> vertices = {
 		-0.8f, +0.8f, -1.0f, +1.0f, 234.0f, 1.0f, 0.0f, 0.0f,
 		+0.8f, +0.8f, +1.0f, +1.0f, 234.0f, 1.0f, 1.0f, 0.0f,
 		+0.8f, -0.8f, +1.0f, -1.0f, 234.0f, 0.0f, 1.0f, 0.0f,

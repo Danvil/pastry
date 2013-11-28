@@ -17,7 +17,7 @@ int main(void)
 		{"pos", GL_FLOAT, 2},
 		{"uv", GL_FLOAT, 2}
 	};
-	float vertices[] = {
+	std::vector<float> vertices = {
 		-0.8f, +0.8f, -1.0f, +1.0f,
 		+0.8f, +0.8f, +1.0f, +1.0f,
 		+0.8f, -0.8f, +1.0f, -1.0f,

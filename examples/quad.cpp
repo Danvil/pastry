@@ -13,7 +13,7 @@ int main(void)
 	std::cout << "Generating array buffer" << std::endl;
 
 	pastry::array_buffer vbo{{"pos", GL_FLOAT, 2}};
-	float vertices[] = {
+	std::vector<float> vertices = {
 		-0.5f,  0.5f,
 		+0.5f,  0.5f,
 		 0.5f, -0.5f,
