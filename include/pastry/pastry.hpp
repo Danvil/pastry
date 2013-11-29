@@ -8,8 +8,6 @@
 #include <vector>
 #include <memory>
 
-typedef struct GLFWwindow GLFWwindow;
-
 namespace pastry {
 
 // ----- THE START -------------------------------------------------------------
@@ -109,6 +107,16 @@ inline functor_renderling_ptr add_renderling(
 	add_renderling(f);
 	return f;
 }
+
+// ----- INPUT HANDLING --------------------------------------------------------
+
+bool is_key_pressed(int key);
+
+bool is_left_mouse_button_pressed();
+
+bool is_right_mouse_button_pressed();
+
+bool is_middle_mouse_button_pressed();
 
 // ----- TEXTURE LOADING -------------------------------------------------------
 
