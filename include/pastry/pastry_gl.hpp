@@ -296,43 +296,42 @@ namespace pastry
 		}
 	};
 
-	// template<typename T, int N>
-	// struct va {
-	// 	typedef T type;
-	// 	static constexpr int num = N;
-	// 	std::string name;
-	// 	va() {}
-	// 	va(const std::string& n) : name(n) {}
-	// };
-
-	// template<int LEN>
-	// struct va_skip {
-	// 	static constexpr int len = LEN;
-	// };
+	/** Example: C++ Eigen::Vector3f[2] / GLSL vec3[2] */
+	template<typename K, int R, int C, unsigned int NUM>
+	struct uniform<Eigen::Matrix<K,R,C>,NUM>
+	: public detail::resource<uniform_id>
+	{
+		typedef Eigen::Matrix<K,R,C> mat_t;
+		void set(std::initializer_list<mat_t> values_list) {
+			if(values_list.size() != NUM) {
+				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
+				return;
+			}
+			// copy to continuous memory
+			K buff[R*C*NUM];
+			for(unsigned int i=0; i<NUM; i++) {
+				const K* p = values_list[i].data();
+				std::copy(p, p+R*C, &buff[i*R*C]);
+			}
+			// write to opengl
+			detail::uniform_impl<K,R,C,NUM>::set(id(), buff);
+		}
+		std::array<mat_t,NUM> get(id_t prog_id) {
+			// read from opengl
+			K buff[R*C*NUM];
+			detail::uniform_impl<K,R,C,NUM>::get(prog_id, id(), buff);
+			// create array
+			std::array<mat_t,NUM> a;
+			for(unsigned int i=0; i<NUM; i++) {
+				const K* p = &buff[i*R*C];
+				std::copy(p, p+R*C, a[i].data());
+			}
+			return a;
+		}
+	};
 
 	namespace detail
 	{
-		// #define PASTRY_VERTEXARRAY_TYPES(F) \
-		// 	F(int8_t, 1, GL_BYTE) \
-		// 	F(uint8_t, 1, GL_UNSIGNED_BYTE) \
-		// 	F(int16_t, 2, GL_SHORT) \
-		// 	F(uint16_t, 2, GL_UNSIGNED_SHORT) \
-		// 	F(int32_t, 4, GL_INT) \
-		// 	F(uint32_t, 4, GL_UNSIGNED_INT) \
-		// 	F(float, 4, GL_FLOAT) \
-		// 	F(double, 8, GL_DOUBLE)
-
-		// template<typename T>
-		// struct type_to_gl;
-
-		// #define PASTRY_VERTEXARRAY_TYPETOGL(TYPE,SIZE,GLENUM) \
-		// 	template<> struct type_to_gl<TYPE> { \
-		// 		static constexpr GLenum glenum = GLENUM; \
-		// 		static constexpr int size = SIZE; \
-		// 	};
-
-		// PASTRY_VERTEXARRAY_TYPES(PASTRY_VERTEXARRAY_TYPETOGL)
-
 		struct va_data
 		{
 			std::string name;
@@ -343,43 +342,6 @@ namespace pastry
 			std::size_t offset_begin;
 			std::size_t offset_end;
 		};
-
-		// void va_conf_rec(std::vector<va_data>&) {}
-
-		// template<typename T, int N, typename... Args>
-		// void va_conf_rec(std::vector<va_data>& q, const va<T,N>& va, Args... args) {
-		// 	va_data dat;
-		// 	dat.name = va.name;
-		// 	dat.type = type_to_gl<T>::glenum;
-		// 	dat.size = N;
-		// 	dat.bytes_per_element = type_to_gl<T>::size;
-		// 	dat.bytes_total = dat.size * dat.bytes_per_element;
-		// 	dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
-		// 	dat.offset_end = dat.offset_begin + dat.bytes_total;
-		// 	q.push_back(dat);
-		// 	va_conf_rec(q, args...);
-		// }
-
-		// template<int LEN, typename... Args>
-		// void va_conf_rec(std::vector<va_data>& q, const va_skip<LEN>& va, Args... args) {
-		// 	va_data dat;
-		// 	dat.name = "";
-		// 	dat.type = 0;
-		// 	dat.size = 1;
-		// 	dat.bytes_per_element = va.len;
-		// 	dat.bytes_total = dat.size * dat.bytes_per_element;
-		// 	dat.offset_begin = (q.empty() ? 0 : q.back().offset_end);
-		// 	dat.offset_end = dat.offset_begin + dat.bytes_total;
-		// 	q.push_back(dat);
-		// 	va_conf_rec(q, args...);
-		// }
-
-		// template<typename... Args>
-		// std::vector<va_data> va_conf(Args... args) {
-		// 	std::vector<va_data> data;
-		// 	va_conf_rec(data, args...);
-		// 	return data;
-		// }
 
 		struct layout_item {
 			std::string name;
