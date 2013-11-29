@@ -13,21 +13,6 @@ pastry::program spo;
 pastry::vertex_array vao;
 pastry::texture tex;
 
-Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f)
-{
-	Eigen::Matrix4f m;
-	m <<
-		+2.0f/(r-l), 0, 0, -(r+l)/(r-l),
-		0, +2.0f/(t-b), 0, -(t+b)/(t-b),
-		0, 0, -2.0f/(f-n), -(f+n)/(f-n),
-		0, 0, 0, 1;
-	return m;
-}
-
-Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f) {
-	return create_orthogonal_projection(0, w, 0, h, n, f);
-}
-
 void initialize_text()
 {
 	vbo = pastry::array_buffer{

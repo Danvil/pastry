@@ -83,6 +83,35 @@ bool is_middle_mouse_button_pressed()
 	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
 }
 
+Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f)
+{
+	Eigen::Matrix4f m;
+	m <<
+		+2.0f/(r-l), 0, 0, -(r+l)/(r-l),
+		0, +2.0f/(t-b), 0, -(t+b)/(t-b),
+		0, 0, -2.0f/(f-n), -(f+n)/(f-n),
+		0, 0, 0, 1;
+	return m;
+}
+
+Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f)
+{
+	return create_orthogonal_projection(0, w, 0, h, n, f);
+}
+
+Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta)
+{
+	float st = std::sin(theta);
+	float ct = std::cos(theta);
+	Eigen::Matrix4f m;
+	m <<
+		 ct, +st, 0, x,
+		-st,  ct, 0, y,
+		  0,   0, 1, 0,
+		  0,   0, 0, 1;
+	return m;
+}
+
 texture load_texture(const std::string& fn)
 {
 	texture tex;

@@ -108,6 +108,14 @@ inline functor_renderling_ptr add_renderling(
 	return f;
 }
 
+// ----- TOOLS -----------------------------------------------------------------
+
+Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f);
+
+Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f);
+
+Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta);
+
 // ----- INPUT HANDLING --------------------------------------------------------
 
 bool is_key_pressed(int key);
