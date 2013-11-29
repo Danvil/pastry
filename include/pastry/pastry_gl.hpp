@@ -184,23 +184,23 @@ namespace pastry
 
 	namespace detail
 	{
-		#define PASTRY_UNIFORM_TYPES_IMPL_VAL(F,N) \
-			F(float, N, glUniform##N##fv, glGetUniformfv) \
-			F(int, N, glUniform##N##iv, glGetUniformiv) \
-			F(unsigned int, N, glUniform##N##uiv, glGetUniformuiv)
-
-		#define PASTRY_UNIFORM_TYPES_IMPL_MATN(F,N) \
-			F(float, N, glUniformMatrix##N##fv, glGetUniformfv)
-
-		#define PASTRY_UNIFORM_TYPES_IMPL_MATRC(F,R,C) \
-			F(float, N, glUniformMatrix##R##x##C##fv, glGetUniformfv)
-
 		template<typename K, unsigned int ROWS, unsigned int COLS, unsigned int NUM>
-		struct uniform_impl;
+		struct uniform_impl {
+			// static_assert(false,
+			// 	"\n\n"
+			// 	"ERROR with pastry::uniform / glUniform / glUniformMatrix:\n"
+			// 	"\tInvalid row/column dimensions for OpenGL uniform.\n"
+			// 	"\tSupported are: 1x1, 2x1, 3x1, 4x1, 2x2, 3x3, 4x4, 2x3, 3x2, 2x4, 4x2, 3x4, 4x3.\n");
+		};
 
 		// K => glUniform1Kv
 		// K[N] => glUniformNKv
 		// Eigen::VectorNK => glUniformNKv
+
+		#define PASTRY_UNIFORM_TYPES_IMPL_VAL(F,N) \
+			F(float, N, glUniform##N##fv, glGetUniformfv) \
+			F(int, N, glUniform##N##iv, glGetUniformiv) \
+			F(unsigned int, N, glUniform##N##uiv, glGetUniformuiv)
 
 		#define PASTRY_UNIFORM_VAL_DEF(TYPE,N,SETVEC,GETVEC) \
 			template<unsigned int NUM> \
@@ -216,6 +216,9 @@ namespace pastry
 
 		// Eigen::MatrixNf => glUniformMatrixNfv
 
+		#define PASTRY_UNIFORM_TYPES_IMPL_MATN(F,N) \
+			F(float, N, glUniformMatrix##N##fv, glGetUniformfv)
+
 		#define PASTRY_UNIFORM_MATN_DEF(TYPE,N,SETVEC,GETVEC) \
 			template<unsigned int NUM> \
 			struct uniform_impl<TYPE,N,N,NUM> { \
@@ -226,6 +229,25 @@ namespace pastry
 		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,2)
 		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,3)
 		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,4)
+
+		// Eigen::MatrixNf => glUniformMatrixNfv
+
+		#define PASTRY_UNIFORM_TYPES_IMPL_MATRC(F,R,C) \
+			F(float, R,C, glUniformMatrix##R##x##C##fv, glGetUniformfv)
+
+		#define PASTRY_UNIFORM_MATRC_DEF(TYPE,R,C,SETVEC,GETVEC) \
+			template<unsigned int NUM> \
+			struct uniform_impl<TYPE,R,C,NUM> { \
+				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, GL_FALSE, v); } \
+				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
+			};
+
+		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,2,3)
+		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,3,2)
+		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,2,4)
+		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,4,2)
+		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,3,4)
+		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,4,3)
 
 	}
 
