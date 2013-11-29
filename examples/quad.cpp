@@ -64,7 +64,7 @@ int main(void)
 		},
 		[&sp](float t, float dt) {
 			float a = (1.0f + std::sin(t*4.0f))/2.0f;
-			sp.get_uniform<float,3>("color").set({a, 0.0f, 1.0f-a});
+			sp.get_uniform<Eigen::Vector3f>("color").set({a, 0.0f, 1.0f-a});
 		});
 
 	std::cout << "Running main loop" << std::endl;

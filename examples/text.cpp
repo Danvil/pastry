@@ -7,8 +7,8 @@ int main()
 	pastry::initialize();
 
 	pastry::add_renderling([]() {
-		pastry::render_text(-0.5f, 0.0f, "Hello world :)");
-		pastry::render_text(-0.5f, -0.5f, "CRAZY text by STB!");
+		pastry::render_text(80, 100, "Hello world :)");
+		pastry::render_text(80, 250, "CRAZY text by STB!");
 	});
 
 	pastry::run();

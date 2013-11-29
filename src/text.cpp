@@ -13,6 +13,21 @@ pastry::program spo;
 pastry::vertex_array vao;
 pastry::texture tex;
 
+Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f)
+{
+	Eigen::Matrix4f m;
+	m <<
+		+2.0f/(r-l), 0, 0, -(r+l)/(r-l),
+		0, +2.0f/(t-b), 0, -(t+b)/(t-b),
+		0, 0, -2.0f/(f-n), -(f+n)/(f-n),
+		0, 0, 0, 1;
+	return m;
+}
+
+Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f) {
+	return create_orthogonal_projection(0, w, 0, h, n, f);
+}
+
 void initialize_text()
 {
 	vbo = pastry::array_buffer{
@@ -25,8 +40,9 @@ void initialize_text()
 		in vec2 position;
 		in vec2 texcoord;
 		out vec2 Texcoord;
+		uniform mat4 proj;
 		void main() {
-			gl_Position = vec4(position, 0.0, 1.0);
+			gl_Position = proj * vec4(position, 0.0, 1.0);
 			Texcoord = texcoord;
 		}
 	);
@@ -61,19 +77,18 @@ void initialize_text()
 	tex.height_ = 512;
 	tex.channels_ = 1;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512,512, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
-
 }
 
 void render_text(float x, float y, const std::string& txt)
 {
+	Eigen::Matrix4f proj = create_orthogonal_projection(512.0f, 512.0f, -1.0f, +1.0f);
+	spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
+
 	spo.use();
 	pastry::texture::activate_unit(0);
 	tex.bind();
 	vao.bind();
 	const char* text = txt.data();
-	float scl = 0.003f;
-	x /= scl;
-	y /= scl;
 	struct vertex { float x, y, u, v; };
 	std::vector<vertex> data;
 	while(*text) {
@@ -88,12 +103,12 @@ void render_text(float x, float y, const std::string& txt)
 			// data.push_back({0.01f*q.x1,0.01f*q.y0,q.s1,q.t1});
 			// data.push_back({0.01f*q.x1,0.01f*q.y1,q.s1,q.t0});
 			// data.push_back({0.01f*q.x0,0.01f*q.y1,q.s0,q.t0});
-			data.push_back({scl*q.x0,-scl*q.y0,q.s0,q.t0});
-			data.push_back({scl*q.x1,-scl*q.y0,q.s1,q.t0});
-			data.push_back({scl*q.x1,-scl*q.y1,q.s1,q.t1});
-			data.push_back({scl*q.x0,-scl*q.y0,q.s0,q.t0});
-			data.push_back({scl*q.x1,-scl*q.y1,q.s1,q.t1});
-			data.push_back({scl*q.x0,-scl*q.y1,q.s0,q.t1});
+			data.push_back({q.x0,q.y0,q.s0,q.t0});
+			data.push_back({q.x1,q.y0,q.s1,q.t0});
+			data.push_back({q.x1,q.y1,q.s1,q.t1});
+			data.push_back({q.x0,q.y0,q.s0,q.t0});
+			data.push_back({q.x1,q.y1,q.s1,q.t1});
+			data.push_back({q.x0,q.y1,q.s0,q.t1});
 		}
 		++text;
 	}

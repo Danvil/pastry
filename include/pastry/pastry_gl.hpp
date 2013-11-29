@@ -1,6 +1,7 @@
 #ifndef INCLUDED_PASTRY_PASTRYGL_HPP
 #define INCLUDED_PASTRY_PASTRYGL_HPP
 
+#include <Eigen/Dense>
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <algorithm>
@@ -183,146 +184,115 @@ namespace pastry
 
 	namespace detail
 	{
-		#define PASTRY_UNIFORM_TYPES_FN(F,N) \
+		#define PASTRY_UNIFORM_TYPES_IMPL_VAL(F,N) \
 			F(float, N, glUniform##N##fv, glGetUniformfv) \
 			F(int, N, glUniform##N##iv, glGetUniformiv) \
 			F(unsigned int, N, glUniform##N##uiv, glGetUniformuiv)
 
-		#define PASTRY_UNIFORM_TYPES_F(F) \
-			PASTRY_UNIFORM_TYPES_FN(F,1) \
-			PASTRY_UNIFORM_TYPES_FN(F,2) \
-			PASTRY_UNIFORM_TYPES_FN(F,3) \
-			PASTRY_UNIFORM_TYPES_FN(F,4)
+		#define PASTRY_UNIFORM_TYPES_IMPL_MATN(F,N) \
+			F(float, N, glUniformMatrix##N##fv, glGetUniformfv)
 
-		template<typename TYPE, unsigned int LEN, unsigned int NUM>
+		#define PASTRY_UNIFORM_TYPES_IMPL_MATRC(F,R,C) \
+			F(float, N, glUniformMatrix##R##x##C##fv, glGetUniformfv)
+
+		template<typename K, unsigned int ROWS, unsigned int COLS, unsigned int NUM>
 		struct uniform_impl;
 
-		#define PASTRY_UNIFORM_DEF(TYPE,LEN,SETVEC,GETVEC) \
-			template<unsigned int NUM>\
-			struct uniform_impl<TYPE,LEN,NUM> {\
-				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, v); }\
-				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); }\
+		// K => glUniform1Kv
+		// K[N] => glUniformNKv
+		// Eigen::VectorNK => glUniformNKv
+
+		#define PASTRY_UNIFORM_VAL_DEF(TYPE,N,SETVEC,GETVEC) \
+			template<unsigned int NUM> \
+			struct uniform_impl<TYPE,N,1,NUM> { \
+				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, v); } \
+				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
 			};
 
-		PASTRY_UNIFORM_TYPES_F(PASTRY_UNIFORM_DEF)
+		PASTRY_UNIFORM_TYPES_IMPL_VAL(PASTRY_UNIFORM_VAL_DEF,1)
+		PASTRY_UNIFORM_TYPES_IMPL_VAL(PASTRY_UNIFORM_VAL_DEF,2)
+		PASTRY_UNIFORM_TYPES_IMPL_VAL(PASTRY_UNIFORM_VAL_DEF,3)
+		PASTRY_UNIFORM_TYPES_IMPL_VAL(PASTRY_UNIFORM_VAL_DEF,4)
+
+		// Eigen::MatrixNf => glUniformMatrixNfv
+
+		#define PASTRY_UNIFORM_MATN_DEF(TYPE,N,SETVEC,GETVEC) \
+			template<unsigned int NUM> \
+			struct uniform_impl<TYPE,N,N,NUM> { \
+				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, GL_FALSE, v); } \
+				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
+			};
+
+		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,2)
+		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,3)
+		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,4)
+
 	}
 
-	/**
+/*
+    |  - C++ -                      |  - GLSL -
+	| uniform<float>				| float v
+	| uniform<int,2>				| int v[2]
+	| uniform<Eigen::Vector3f,4>	| vec3 v[4]
+	| uniform<Eigen::Matrix4f,2>	| mat4 v[2]
+*/
+
+	/** Example: C++ int[2] / GLSL int[2]
 	 * T: uniform type, must be float (GLSL: float), int (GLSL: int) or unsigned int (GLSL: uint)
-	 * LEN: length of uniform type: 1 for integral, N for vecN
-	 * NUM: length of uniform array: 1 for single value, M for vecN[M] or T[M]
+	 * NUM>1: length of uniform array (for NUM=1 there is a specialization)
 	 */
-	template<typename T, unsigned int LEN, unsigned int NUM>
-	struct uniform : public detail::resource<uniform_id>
+	template<typename T, unsigned int NUM>
+	struct uniform
+	: public detail::resource<uniform_id>
 	{
-		uniform() {}
-		void set(std::initializer_list<std::initializer_list<T>> values_list) {
+		void set(std::initializer_list<T> values_list) {
 			if(values_list.size() != NUM) {
 				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
 				return;
 			}
-			// format into buffer
-			T buff[NUM*LEN];
-			for(int i=0; i<NUM; i++) {
-				if((values_list.begin() + i)->size() != LEN) {
-					std::cerr << "ERROR in uniform::set: Wrong number of arguments!" << std::endl;
-				}
-				for(int j=0; j<LEN; j++) {
-					buff[j + i*LEN] = *((values_list.begin() + i)->begin() + j);
-				}
-			}
-			// write data
-			set_ptr(buff);
-		}
-		std::array<std::array<T,LEN>,NUM> get(id_t prog_id) {
-			// get raw data
-			T buff[LEN*NUM];
-			get_ptr(prog_id, buff);
-			// format into list of arrays
-			std::array<std::array<T,LEN>,NUM> a;
-			for(int i=0; i<NUM; i++) {
-				for(int j=0; j<LEN; j++) {
-					a[i][j] = buff[j + i*LEN];
-				}
-			}
-			return a;
-		}
-		void set_ptr(const T* v) {
-			detail::uniform_impl<T,LEN,NUM>::set(id(), v);
-		}
-		void get_ptr(id_t prog_id, const T* v) {
-			detail::uniform_impl<T,LEN,NUM>::get(prog_id, id(), v);
-		}
-	};
-
-	template<typename T, unsigned int LEN>
-	struct uniform<T,LEN,1> : public detail::resource<uniform_id>
-	{
-		uniform() {}
-		void set(std::initializer_list<T> values) {
-			if(values.size() != LEN) {
-				std::cerr << "ERROR in uniform::set: Wrong number of arguments!" << std::endl;
-			}
-			else {
-				set_ptr(values.begin());
-			}
-		}
-		std::array<T,LEN> get(id_t prog_id) {
-			std::array<T,LEN> a;
-			get_ptr(prog_id, a.begin());
-			return a;
-		}
-		void set_ptr(const T* v) {
-			detail::uniform_impl<T,LEN,1>::set(id(), v);
-		}
-		void get_ptr(id_t prog_id, const T* v) {
-			detail::uniform_impl<T,LEN,1>::get(prog_id, id(), v);
-		}
-	};
-
-	template<typename T, unsigned int NUM>
-	struct uniform<T,1,NUM> : public detail::resource<uniform_id>
-	{
-		uniform() {}
-		void set(std::initializer_list<T> values) {
-			if(values.size() != NUM) {
-				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
-			}
-			else {
-				set_ptr(values.begin());
-			}
+			detail::uniform_impl<T,1,1,NUM>::set(id(), values_list.begin());
 		}
 		std::array<T,NUM> get(id_t prog_id) {
 			std::array<T,NUM> a;
-			get_ptr(prog_id, a.begin());
+			detail::uniform_impl<T,1,1,NUM>::get(prog_id, id(), a.begin());
 			return a;
 		}
 		void set_ptr(const T* v) {
-			detail::uniform_impl<T,1,NUM>::set(id(), v);
+			detail::uniform_impl<T,1,1,NUM>::set(id(), v);
 		}
 		void get_ptr(id_t prog_id, const T* v) {
-			detail::uniform_impl<T,1,NUM>::get(prog_id, id(), v);
+			detail::uniform_impl<T,1,1,NUM>::get(prog_id, id(), v);
 		}
 	};
 
+	/** Example: C++ int / GLSL int */
 	template<typename T>
-	struct uniform<T,1,1> : public detail::resource<uniform_id>
+	struct uniform<T,1>
+	: public detail::resource<uniform_id>
 	{
-		uniform() {}
-		void set(T value) {
-			set_ptr(&value);
+		void set(const T& v) {
+			detail::uniform_impl<T,1,1,1>::set(id(), &v);
 		}
 		T get(id_t prog_id) {
-			T a;
-			get_ptr(prog_id, &a);
-			return a;
+			T v;
+			detail::uniform_impl<T,1,1,1>::get(prog_id, id(), &v);
+			return v;
 		}
-	private:
-		void set_ptr(const T* v) {
-			detail::uniform_impl<T,1,1>::set(id(), v);
+	};
+
+	/** Example: C++ Eigen::Vector3f / GLSL vec3 */
+	template<typename K, int R, int C>
+	struct uniform<Eigen::Matrix<K,R,C>,1>
+	: public detail::resource<uniform_id>
+	{
+		typedef Eigen::Matrix<K,R,C> mat_t;
+		void set(const mat_t& v) {
+			detail::uniform_impl<K,R,C,1>::set(id(), v.data());
 		}
-		void get_ptr(id_t prog_id, const T* v) {
-			detail::uniform_impl<T,1,1>::get(prog_id, id(), v);
+		mat_t get(id_t prog_id) {
+			mat_t v;
+			detail::uniform_impl<K,R,C,1>::get(prog_id, id(), v.data());
+			return v;
 		}
 	};
 
@@ -592,9 +562,9 @@ namespace pastry
 			return va;
 		}
 
-		template<typename T, unsigned int LEN=1, unsigned int NUM=1>
-		uniform<T,LEN,NUM> get_uniform(const std::string& name) {
-			uniform<T,LEN,NUM> u;
+		template<typename T, unsigned int NUM=1>
+		uniform<T,NUM> get_uniform(const std::string& name) {
+			uniform<T,NUM> u;
 			GLint a = glGetUniformLocation(id(), name.data());
 			if(a == -1) {
 				std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
