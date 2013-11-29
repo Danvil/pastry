@@ -51,6 +51,7 @@ engine::engine()
 
 engine::~engine()
 {
+	glfwDestroyWindow(window_);
 	glfwTerminate();
 }
 
@@ -90,6 +91,7 @@ void engine::run()
 
 	float last_time = get_current_time();
 	unsigned int num_frames = 0;
+	float fps_delta_time = 0.0f;
 	float fps = -1;
 
 	// main loop (until window is closed by user)
@@ -112,9 +114,11 @@ void engine::run()
 
 		// fps
 		num_frames ++;
-		if(num_frames >= 100 && delta_time >= 1.0f) {
-			float current_fps = static_cast<float>(num_frames) / delta_time;
+		fps_delta_time += delta_time;
+		if(num_frames >= 100 && fps_delta_time >= 1.0f) {
+			float current_fps = static_cast<float>(num_frames) / fps_delta_time;
 			num_frames = 0;
+			fps_delta_time = 0.0f;
 			// update fps
 			// if(fps < 0) fps = current_fps;
 			// fps += 0.40f * (current_fps - fps);

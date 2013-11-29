@@ -22,11 +22,12 @@ public:
 	static constexpr float BALL_SPEED = 420.0f;
 	static constexpr float R = 15.0f;
 	static constexpr int NUM = 32;
-	static constexpr float BOX_SPEED = 310.0f;
 	static constexpr float BOX_W = 170.0f;
 	static constexpr float BOX_H = 35.0f;
 
 	float width, height;
+
+	float box_speed;
 
 	Dong() {
 		width = 512;
@@ -80,6 +81,7 @@ public:
 	}
 
 	void start_game() {
+		box_speed = 300.f;
 		is_gameover = false;
 		ball_pos = {0.5f*width,100};
 		std::uniform_real_distribution<float> uniform_dist(-1.0f, +1.0f);
@@ -92,18 +94,19 @@ public:
 
 	void update(float t, float dt)
 	{
-		if(t < 1.7f) {
+		if(t < 2.7f) {
 			return; // wait to load
 		}
 
+		box_speed += 10.0f*dt;
 		is_pong -= dt;
 		is_initialized = true;
 
 		if(pastry::is_key_pressed('A')) {
-			box_pos[0] -= dt*BOX_SPEED;
+			box_pos[0] -= dt*box_speed;
 		}
 		if(pastry::is_key_pressed('D')) {
-			box_pos[0] += dt*BOX_SPEED;
+			box_pos[0] += dt*box_speed;
 		}
 		ball_pos += ball_vel * dt * BALL_SPEED;
 
@@ -140,7 +143,7 @@ public:
 	void render()
 	{
 		if(!is_initialized) {
-			pastry::render_text(50, 200, "Creating OpenGL context...");
+			pastry::render_text(50, 200, "Press 'A' and 'D' to move");
 			return;
 		}
 
