@@ -88,6 +88,12 @@ PTR(render_group)
 /** Initialized pastry OpenGL engine. Call this before doing everything else. */
 void initialize();
 
+/** Checks wether the framebuffer size changed since the last call to this function */
+bool fb_has_changed();
+
+/** Gets the size of the framebuffer */
+void fb_get_dimensions(int& width, int& height);
+
 /** Run the main loop. Call this once your initial setup is finished. */
 void run();
 

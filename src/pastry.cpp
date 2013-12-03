@@ -46,6 +46,30 @@ void render_group::render()
 
 GLFWwindow* g_window = 0;
 render_group_ptr g_scene;
+int g_fb_width = 0;
+int g_fb_height = 0;
+bool g_fb_changed = true;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	g_fb_changed = true;
+	g_fb_width = width;
+	g_fb_height = height;
+	glViewport(0, 0, g_fb_width, g_fb_height); // TODO should we or the user do this?
+}
+
+bool fb_has_changed()
+{
+	bool a = g_fb_changed;
+	g_fb_changed = false;
+	return a;
+}
+
+void fb_get_dimensions(int& width, int& height)
+{
+	width = g_fb_width;
+	height = g_fb_height;
+}
 
 void initialize_sprites();
 void initialize_text();
@@ -53,6 +77,8 @@ void initialize_text();
 void initialize()
 {
 	g_window = 0;
+	g_fb_width = 512;
+	g_fb_height = 512;
 
 	// initialize glfw
 	if(!glfwInit()) {
@@ -63,7 +89,7 @@ void initialize()
 	glfwWindowHint(GLFW_DEPTH_BITS, 16);
 
 	// create window (windowed)
-	g_window = glfwCreateWindow(512, 512, "pastry", NULL, NULL);
+	g_window = glfwCreateWindow(g_fb_width, g_fb_height, "pastry", NULL, NULL);
 	if(!g_window) {
 		std::cerr << "ERROR: glfwCreateWindow failed!" << std::endl;
 		return;
@@ -87,6 +113,8 @@ void initialize()
 		return;
 	}
 //		std::cout << "Status: Using GLEW " << glewGetString(GLEW_VERSION) << std::endl;
+
+	glfwSetFramebufferSizeCallback(g_window, framebuffer_size_callback);
 
 	g_scene = std::make_shared<render_group>();
 
