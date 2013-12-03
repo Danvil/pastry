@@ -6,12 +6,12 @@ ADD_LIBRARY(pastry SHARED
 	sprites.cpp
 	text.cpp
 	# SOIL
-	SOIL2/etc1_utils.c
-	SOIL2/image_DXT.c
-	SOIL2/image_helper.c
-	SOIL2/SOIL2.c
-	SOIL2/stb_image.c
-	SOIL2/stb_image_write.c
+	dep/SOIL2/etc1_utils.c
+	dep/SOIL2/image_DXT.c
+	dep/SOIL2/image_helper.c
+	dep/SOIL2/SOIL2.c
+	dep/SOIL2/stb_image.c
+	dep/SOIL2/stb_image_write.c
 )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

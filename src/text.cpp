@@ -1,7 +1,7 @@
 #include <pastry/pastry.hpp>
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "stb_truetype.h"
+#include "dep/stb_truetype.h"
 
 namespace pastry
 {

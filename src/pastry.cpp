@@ -1,5 +1,5 @@
 #include <pastry/pastry.hpp>
-#include "SOIL2/SOIL2.h"
+#include "dep/SOIL2/SOIL2.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
