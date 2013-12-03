@@ -1,5 +1,4 @@
 #include <pastry/pastry.hpp>
-#include "engine.hpp"
 #include "SOIL2/SOIL2.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -8,6 +7,8 @@
 #include <ctime>
 
 namespace pastry {
+
+// ----- BASIC RENDERLINGS -----------------------------------------------------
 
 void render_group::add(const renderling_ptr& r, int o)
 {
@@ -41,30 +42,122 @@ void render_group::render()
 	}
 }
 
+// ----- GENERAL RENDER SETUP --------------------------------------------------
+
+GLFWwindow* g_window = 0;
+render_group_ptr g_scene;
+
 void initialize_sprites();
 void initialize_text();
 
 void initialize()
 {
-	engine::s_engine = std::make_shared<engine>();
+	g_window = 0;
+
+	// initialize glfw
+	if(!glfwInit()) {
+		std::cerr << "ERROR: glfwInit failed!" << std::endl;
+		return;
+	}
+
+	glfwWindowHint(GLFW_DEPTH_BITS, 16);
+
+	// create window (windowed)
+	g_window = glfwCreateWindow(512, 512, "pastry", NULL, NULL);
+	if(!g_window) {
+		std::cerr << "ERROR: glfwCreateWindow failed!" << std::endl;
+		return;
+	}
+
+	// make the windows context current
+	glfwMakeContextCurrent(g_window);
+
+	// set time taken by glfwSwapBuffers
+	glfwSwapInterval(1);
+
+	glfwSetTime(0);
+
+	// initializing GLEW
+	glewExperimental = GL_TRUE;
+	GLenum err = glewInit();
+	if(GLEW_OK != err) {
+		std::cerr << "ERROR: glewInit failed!" << std::endl;
+		std::cerr << glewGetErrorString(err) << std::endl;
+		g_window = 0;
+		return;
+	}
+//		std::cout << "Status: Using GLEW " << glewGetString(GLEW_VERSION) << std::endl;
+
+	g_scene = std::make_shared<render_group>();
+
 	initialize_sprites();
+
 	initialize_text();
 }
 
 void run()
 {
-	engine::s_engine->run();
+	if(g_window == 0) {
+		std::cerr << "ERROR: Did not call 'initialize' or error occurred!" << std::endl;
+		return;
+	}
+
+	float last_time = glfwGetTime();
+	unsigned int num_frames = 0;
+	float fps_delta_time = 0.0f;
+	float fps = -1;
+
+	// main loop (until window is closed by user)
+	while (!glfwWindowShouldClose(g_window))
+	{
+		// update stuff
+		float current_time = glfwGetTime();
+		float delta_time = current_time - last_time;
+		last_time = current_time;
+		g_scene->update(current_time, delta_time);
+		
+		// render stuff
+		glClear(GL_COLOR_BUFFER_BIT);
+		g_scene->render();
+		glFlush();
+
+		// housekeeping
+		glfwSwapBuffers(g_window);
+		glfwPollEvents();
+
+		// fps
+		num_frames ++;
+		fps_delta_time += delta_time;
+		if(num_frames >= 100 && fps_delta_time >= 1.0f) {
+			float current_fps = static_cast<float>(num_frames) / fps_delta_time;
+			num_frames = 0;
+			fps_delta_time = 0.0f;
+			// update fps
+			// if(fps < 0) fps = current_fps;
+			// fps += 0.40f * (current_fps - fps);
+			fps = current_fps;
+			// set window title
+			char buffer[512];
+			sprintf(buffer, "pastry - %.0f fps\0", fps);
+			glfwSetWindowTitle(g_window, buffer);
+		}
+	}
+
+	glfwDestroyWindow(g_window);
+	glfwTerminate();
 }
 
 void add_renderling(const renderling_ptr& r, int order)
 {
-	engine::s_engine->get_scene()->add(r, order);
+	g_scene->add(r, order);
 }
 
 void remove_renderling(const renderling_ptr& r)
 {
-	engine::s_engine->get_scene()->remove(r);
+	g_scene->remove(r);
 }
+
+// ----- TOOLS -----------------------------------------------------------------
 
 Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f)
 {
@@ -95,30 +188,43 @@ Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta)
 	return m;
 }
 
+// ----- INPUT HANDLING --------------------------------------------------------
+
 bool is_key_pressed(int key)
 {
-	return engine::s_engine->is_key_pressed(key);
+	int q = glfwGetKey(g_window, key);
+	return q == GLFW_PRESS;
+}
+
+bool is_mouse_button_pressed(int button)
+{
+	int q = glfwGetMouseButton(g_window, button);
+	return q == GLFW_PRESS;
 }
 
 bool is_left_mouse_button_pressed()
 {
-	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT);
+	return is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT);
 }
 
 bool is_right_mouse_button_pressed()
 {
-	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_RIGHT);
+	return is_mouse_button_pressed(GLFW_MOUSE_BUTTON_RIGHT);
 }
 
 bool is_middle_mouse_button_pressed()
 {
-	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
+	return is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
 }
 
 Eigen::Vector2f get_mouse_position()
 {
-	return engine::s_engine->get_cursor_pos();
+	double x, y;
+	glfwGetCursorPos(g_window, &x, &y);
+	return {x,y};
 }
+
+// ----- TEXTURE LOADING -------------------------------------------------------
 
 texture load_texture(const std::string& fn)
 {
@@ -150,5 +256,7 @@ void save_texture(const texture& tex, const std::string& fn)
 		img.data()
 	);
 }
+
+// ----- THE END ---------------------------------------------------------------
 
 }

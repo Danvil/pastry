@@ -3,7 +3,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 ADD_LIBRARY(pastry SHARED
 	# pastry
 	pastry.cpp
-	engine.cpp
 	sprites.cpp
 	text.cpp
 	# SOIL
