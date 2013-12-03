@@ -115,6 +115,11 @@ bool is_middle_mouse_button_pressed()
 	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
 }
 
+Eigen::Vector2f get_mouse_position()
+{
+	return engine::s_engine->get_cursor_pos();
+}
+
 texture load_texture(const std::string& fn)
 {
 	texture tex;

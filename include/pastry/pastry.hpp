@@ -146,6 +146,9 @@ bool is_right_mouse_button_pressed();
 /** Checks if middle mouse button is pressed right now */
 bool is_middle_mouse_button_pressed();
 
+/** Gets the position of the mouse cursor */
+Eigen::Vector2f get_mouse_position();
+
 // ----- TEXTURE LOADING -------------------------------------------------------
 
 /** Loads an image from file into a texture (only some image formats supported) */
