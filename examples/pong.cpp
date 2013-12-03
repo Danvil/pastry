@@ -75,7 +75,7 @@ public:
 		box_vertices.push_back({0,BOX_H});
 		box_vertices.push_back({0,0});
 
-		box_pos = {100, 450};
+		box_pos = {100, 50};
 
 		start_game();
 	}
@@ -83,7 +83,7 @@ public:
 	void start_game() {
 		box_speed = 300.f;
 		is_gameover = false;
-		ball_pos = {0.5f*width,100};
+		ball_pos = {0.5f*width,450};
 		std::uniform_real_distribution<float> uniform_dist(-1.0f, +1.0f);
 		ball_vel = Eigen::Vector2f{uniform_dist(s_rnd),uniform_dist(s_rnd)}.normalized();
 	}
@@ -124,10 +124,10 @@ public:
 		if(ball_pos[0] + R > width && ball_vel[0] > 0) {
 			ball_vel[0] *= -1.0f;
 		}
-		if(ball_pos[1] < R && ball_vel[1] < 0) {
+		if(ball_pos[1] + R > height && ball_vel[1] > 0) {
 			ball_vel[1] *= -1.0f;
 		}
-		if(ball_pos[1] + R > box_pos[1] && ball_vel[1] > 0) {
+		if(ball_pos[1] - R < box_pos[1] + BOX_H && ball_vel[1] < 0) {
 			// this is bottom
 			// check box position
 			if(box_pos[0] <= ball_pos[0] && ball_pos[0] <= box_pos[0] + BOX_W) {

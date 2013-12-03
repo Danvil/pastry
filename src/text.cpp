@@ -7,6 +7,9 @@ namespace pastry
 {
 
 stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
+constexpr unsigned int TTF_TEX_SIZE = 512;
+
+struct text_vertex { float x, y, u, v; };
 
 pastry::array_buffer vbo;
 pastry::program spo;
@@ -53,33 +56,38 @@ void initialize_text()
 
 	char ttf_buffer[1<<20];
 	fread(ttf_buffer, 1, 1<<20, fopen("assets/DejaVuSans.ttf", "rb"));
-	unsigned char temp_bitmap[512*512];
-	stbtt_BakeFontBitmap((unsigned char*)ttf_buffer,0, 32.0, temp_bitmap,512,512, 32,96, cdata); // no guarantee this fits!
+	unsigned char temp_bitmap[TTF_TEX_SIZE*TTF_TEX_SIZE];
+	stbtt_BakeFontBitmap((unsigned char*)ttf_buffer,0, 32.0, temp_bitmap,TTF_TEX_SIZE,TTF_TEX_SIZE, 32,96, cdata); // no guarantee this fits!
 
 	tex.create();
 	tex.bind();
-	tex.width_ = 512;
-	tex.height_ = 512;
+	tex.width_ = TTF_TEX_SIZE;
+	tex.height_ = TTF_TEX_SIZE;
 	tex.channels_ = 1;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512,512, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, TTF_TEX_SIZE,TTF_TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
 }
 
 void text_render(float x, float y, const std::string& txt)
 {
-	Eigen::Matrix4f proj = math_orthogonal_projection(512.0f, 512.0f, -1.0f, +1.0f);
+	// set projections matrix which has 0/0 top left
+	int w, h;
+	fb_get_dimensions(w,h);
+	Eigen::Matrix4f proj = pastry::math_orthogonal_projection(w, h, -1.0f, +1.0f, true);
 	spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
-
+	// flip y to provide 0/0 at bottom left for the user
+	y = static_cast<float>(h) - y;
+	// bind for rendering
 	spo.use();
 	pastry::texture::activate_unit(0);
 	tex.bind();
 	vao.bind();
+	// create one quad per letter/symbol
 	const char* text = txt.data();
-	struct vertex { float x, y, u, v; };
-	std::vector<vertex> data;
+	std::vector<text_vertex> data;
 	while(*text) {
 		if(*text >= 32 && *text < 128) {
 			stbtt_aligned_quad q;
-			stbtt_GetBakedQuad(cdata, 512,512, *text-32, &x,&y,&q,1);
+			stbtt_GetBakedQuad(cdata, TTF_TEX_SIZE,TTF_TEX_SIZE, *text-32, &x,&y,&q,1);
 			// std::cout << q.x0 << " " << q.y0 << " " << q.s0 << " " << q.t1 << std::endl;
 			// std::cout << q.x1 << " " << q.y0 << " " << q.s1 << " " << q.t1 << std::endl;
 			// std::cout << q.x1 << " " << q.y1 << " " << q.s1 << " " << q.t0 << std::endl;
@@ -97,6 +105,7 @@ void text_render(float x, float y, const std::string& txt)
 		}
 		++text;
 	}
+	// update vbo and render data
 	vbo.update_data(data);
 	glDrawArrays(GL_TRIANGLES, 0, data.size());
 }

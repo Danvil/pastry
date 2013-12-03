@@ -24,7 +24,7 @@ public:
 		gy = y;
 	}
 	void update(float t, float dt) {
-		std::uniform_real_distribution<float> uniform_dist(-1.0f, +1.0f);
+		std::uniform_real_distribution<float> uniform_dist(0, 512.0f);
  		float dx = s->x - gx;
 		float dy = s->y - gy;
 		float dist = std::sqrt(dx*dx + dy*dy);
@@ -50,12 +50,12 @@ public:
 			{
 				{"kitten", 0, 0, 1024, 786}
 			}
-		});
+		}, false);
 		// create data
 		for(int i=0; i<NUM; i++) {
 			std::shared_ptr<pastry::sprite> s = sprites_.add_sprite("kitten");
 			float phi = 2.0f * 3.1415f * (float)(i) / (float)(NUM);
-			kitten k{0.7f*std::cos(phi), 0.7f*std::sin(phi), s};
+			kitten k{256.0f+100.0f*std::cos(phi), 256.0f+100.0f*std::sin(phi), s};
 			kittens_.push_back(k);
 		}
 	}

@@ -53,10 +53,10 @@ int main()
 	for(int i=0; i<NUM; i++) {
 		pastry::sprite_ptr s = sprites->add_sprite("blah");
 		float phi = 2.0f * 3.1415f * (float)(i) / (float)(NUM);
-		s->x = 0.7f*std::cos(phi);
-		s->y = 0.7f*std::sin(phi);
-		s->sx = 0.1f;
-		s->sy = 0.1f;
+		s->x = 256.0f+100.0f*std::cos(phi);
+		s->y = 256.0f+100.0f*std::sin(phi);
+		s->sx = 1.f;
+		s->sy = 1.f;
 		s->t = static_cast<float>(i)*0.13f;
 	}
 

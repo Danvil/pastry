@@ -198,9 +198,12 @@ Eigen::Matrix4f math_orthogonal_projection(float l, float r, float t, float b, f
 	return m;
 }
 
-Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f)
+Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f, bool ydown)
 {
-	return math_orthogonal_projection(0, w, 0, h, n, f);
+	if(ydown)
+		return math_orthogonal_projection(0, w, 0, h, n, f);
+	else
+		return math_orthogonal_projection(0, w, h, 0, n, f);
 }
 
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta)

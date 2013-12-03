@@ -132,8 +132,10 @@ inline functor_renderling_ptr scene_add(
 /** Create an orthogonal projection matrix */
 Eigen::Matrix4f math_orthogonal_projection(float l, float r, float t, float b, float n, float f);
 
-/** Create an orthogonal projection matrix */
-Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f);
+/** Create an orthogonal projection matrix
+ * y=0 is on the bottome of the window unless ydown is set to true
+ */
+Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f, bool ydown=false);
 
 /** Create a 2D transformation matrix */
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta);
@@ -220,7 +222,7 @@ struct sprite
 PTR(sprite)
 
 /** Adds a sprite sheet */
-void sprites_add_sheet(const detail::def_sheet& sheet);
+void sprites_add_sheet(const detail::def_sheet& sheet, bool filter_nearest=true);
 
 /** Adds a sprite animation */
 void sprites_add_animation(const detail::def_anim& anim);

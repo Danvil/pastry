@@ -8,7 +8,7 @@ int main()
 
 	pastry::scene_add(
 		[]() {
-			pastry::text_render(100,100,"Press W!");
+			pastry::text_render(100,400,"Press W!");
 			if(pastry::key_is_pressed('W')) {
 				pastry::text_render(100,200,"You press W!");
 			}
