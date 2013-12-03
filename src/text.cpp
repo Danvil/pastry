@@ -64,9 +64,9 @@ void initialize_text()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512,512, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
 }
 
-void render_text(float x, float y, const std::string& txt)
+void text_render(float x, float y, const std::string& txt)
 {
-	Eigen::Matrix4f proj = create_orthogonal_projection(512.0f, 512.0f, -1.0f, +1.0f);
+	Eigen::Matrix4f proj = math_orthogonal_projection(512.0f, 512.0f, -1.0f, +1.0f);
 	spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
 
 	spo.use();

@@ -72,12 +72,12 @@ int main(void)
 	std::cout << "Texture" << std::endl;
 
 	pastry::texture::activate_unit(0);
-	pastry::texture tex = pastry::load_texture("assets/kitten.jpg");
+	pastry::texture tex = pastry::texture_load("assets/kitten.jpg");
 	tex.bind();
 
 	sp.get_uniform<int>("texKitten").set(0);
 
-	pastry::add_renderling(
+	pastry::scene_add(
 		[]() {
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		});

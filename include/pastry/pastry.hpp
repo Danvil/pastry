@@ -92,75 +92,75 @@ void initialize();
 void run();
 
 /** Adds a renderling to the scene */
-void add_renderling(const renderling_ptr& r, int order=0);
+void scene_add(const renderling_ptr& r, int order=0);
 
 // workaround for gcc 4.6
 template<typename T>
-void add_renderling(const std::shared_ptr<T>& r, int order=0) {
+void scene_add(const std::shared_ptr<T>& r, int order=0) {
 	renderling_ptr rr = r;
-	add_renderling(rr, order);
+	scene_add(rr, order);
 }
 
 /** Removes a renderling from the scene */
-void remove_renderling(const renderling_ptr& r);
+void scene_remove(const renderling_ptr& r);
 
 /** Adds a functor renderling (render only) to the scene and returns it */
-inline functor_renderling_ptr add_renderling(
+inline functor_renderling_ptr scene_add(
 		functor_renderling::func_render_t fr) {
 	functor_renderling_ptr f = create_functor_renderling(fr);
-	add_renderling(f);
+	scene_add(f);
 	return f;
 }
 
 /** Adds a functor renderling (render and update) to the scene and returns it */
-inline functor_renderling_ptr add_renderling(
+inline functor_renderling_ptr scene_add(
 		functor_renderling::func_render_t fr,
 		functor_renderling::func_update_t fu) {
 	functor_renderling_ptr f = create_functor_renderling(fr, fu);
-	add_renderling(f);
+	scene_add(f);
 	return f;
 }
 
 // ----- TOOLS -----------------------------------------------------------------
 
 /** Create an orthogonal projection matrix */
-Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f);
+Eigen::Matrix4f math_orthogonal_projection(float l, float r, float t, float b, float n, float f);
 
 /** Create an orthogonal projection matrix */
-Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f);
+Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f);
 
 /** Create a 2D transformation matrix */
-Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta);
+Eigen::Matrix4f math_transform_2d(float x, float y, float theta);
 
 // ----- INPUT HANDLING --------------------------------------------------------
 
 /** Checks if a key is pressed right now */
-bool is_key_pressed(int key);
+bool key_is_pressed(int key);
 
 /** Checks if left mouse button is pressed right now */
-bool is_left_mouse_button_pressed();
+bool mouse_is_left_button_pressed();
 
 /** Checks if right mouse button is pressed right now */
-bool is_right_mouse_button_pressed();
+bool mouse_is_right_button_pressed();
 
 /** Checks if middle mouse button is pressed right now */
-bool is_middle_mouse_button_pressed();
+bool mouse_is_middle_button_pressed();
 
 /** Gets the position of the mouse cursor */
-Eigen::Vector2f get_mouse_position();
+Eigen::Vector2f mouse_get_position();
 
 // ----- TEXTURE LOADING -------------------------------------------------------
 
 /** Loads an image from file into a texture (only some image formats supported) */
-texture load_texture(const std::string& fn);
+texture texture_load(const std::string& fn);
 
 /** Saves an RGB or single channel texture to a file */
-void save_texture(const texture& tex, const std::string& fn);
+void texture_save(const texture& tex, const std::string& fn);
 
 // ----- TEXT RENDERING --------------------------------------------------------
 
 /** Renders text at the specific location on the screen (in pixels) */
-void render_text(float x, float y, const std::string& txt);
+void text_render(float x, float y, const std::string& txt);
 
 // ----- SPRITES ---------------------------------------------------------------
 
@@ -214,10 +214,10 @@ struct sprite
 PTR(sprite)
 
 /** Adds a sprite sheet */
-void add_sprite_sheet(const detail::def_sheet& sheet);
+void sprites_add_sheet(const detail::def_sheet& sheet);
 
 /** Adds a sprite animation */
-void add_sprite_animation(const detail::def_anim& anim);
+void sprites_add_animation(const detail::def_anim& anim);
 
 /** A group of sprites */
 class sprite_group

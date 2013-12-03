@@ -58,7 +58,7 @@ int main(void)
 
 	std::cout << "Adding renderling" << std::endl;
 
-	pastry::add_renderling(
+	pastry::scene_add(
 		[&sp]() {
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		},

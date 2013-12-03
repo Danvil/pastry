@@ -110,11 +110,11 @@ int main()
 {
 	pastry::initialize();
 
-	pastry::add_renderling(std::make_shared<particle_effect>(
+	pastry::scene_add(std::make_shared<particle_effect>(
 		0.7f, 0.03f, 2.0f, 1.0f, 1.0f, 0.0f));
-	pastry::add_renderling(std::make_shared<particle_effect>(
+	pastry::scene_add(std::make_shared<particle_effect>(
 		0.5f, 0.02f, 3.0f, 1.0f, 0.0f, 0.0f));
-	pastry::add_renderling(std::make_shared<particle_effect>(
+	pastry::scene_add(std::make_shared<particle_effect>(
 		0.3f, 0.01f, 4.0f, 0.0f, 0.5f, 1.0f));
 
 	pastry::run();

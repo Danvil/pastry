@@ -44,9 +44,9 @@ class kitten_manager : public pastry::renderling
 public:
 	static constexpr int NUM = 100;
 	kitten_manager() {
-		pastry::add_sprite_sheet({
+		pastry::sprites_add_sheet({
 			"kitten",
-			pastry::load_texture("assets/kitten.jpg"),
+			pastry::texture_load("assets/kitten.jpg"),
 			{
 				{"kitten", 0, 0, 1024, 786}
 			}
@@ -74,7 +74,7 @@ int main()
 {
 	pastry::initialize();
 
-	pastry::add_renderling(std::make_shared<kitten_manager>());
+	pastry::scene_add(std::make_shared<kitten_manager>());
 
 	pastry::run();
 

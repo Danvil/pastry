@@ -147,19 +147,19 @@ void run()
 	glfwTerminate();
 }
 
-void add_renderling(const renderling_ptr& r, int order)
+void scene_add(const renderling_ptr& r, int order)
 {
 	g_scene->add(r, order);
 }
 
-void remove_renderling(const renderling_ptr& r)
+void scene_remove(const renderling_ptr& r)
 {
 	g_scene->remove(r);
 }
 
 // ----- TOOLS -----------------------------------------------------------------
 
-Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f)
+Eigen::Matrix4f math_orthogonal_projection(float l, float r, float t, float b, float n, float f)
 {
 	Eigen::Matrix4f m;
 	m <<
@@ -170,12 +170,12 @@ Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b,
 	return m;
 }
 
-Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f)
+Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f)
 {
-	return create_orthogonal_projection(0, w, 0, h, n, f);
+	return math_orthogonal_projection(0, w, 0, h, n, f);
 }
 
-Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta)
+Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 {
 	float st = std::sin(theta);
 	float ct = std::cos(theta);
@@ -190,7 +190,7 @@ Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta)
 
 // ----- INPUT HANDLING --------------------------------------------------------
 
-bool is_key_pressed(int key)
+bool key_is_pressed(int key)
 {
 	int q = glfwGetKey(g_window, key);
 	return q == GLFW_PRESS;
@@ -202,22 +202,22 @@ bool is_mouse_button_pressed(int button)
 	return q == GLFW_PRESS;
 }
 
-bool is_left_mouse_button_pressed()
+bool mouse_is_left_button_pressed()
 {
 	return is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT);
 }
 
-bool is_right_mouse_button_pressed()
+bool mouse_is_right_button_pressed()
 {
 	return is_mouse_button_pressed(GLFW_MOUSE_BUTTON_RIGHT);
 }
 
-bool is_middle_mouse_button_pressed()
+bool mouse_is_middle_button_pressed()
 {
 	return is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
 }
 
-Eigen::Vector2f get_mouse_position()
+Eigen::Vector2f mouse_get_position()
 {
 	double x, y;
 	glfwGetCursorPos(g_window, &x, &y);
@@ -226,7 +226,7 @@ Eigen::Vector2f get_mouse_position()
 
 // ----- TEXTURE LOADING -------------------------------------------------------
 
-texture load_texture(const std::string& fn)
+texture texture_load(const std::string& fn)
 {
 	texture tex;
 	GLuint q = SOIL_load_OGL_texture(
@@ -236,7 +236,7 @@ texture load_texture(const std::string& fn)
 		SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS
 	);
 	if(q == 0) {
-		std::cerr << "ERROR in load_texture: Failed to load image '" << fn << "'" << std::endl;
+		std::cerr << "ERROR in texture_load: Failed to load image '" << fn << "'" << std::endl;
 	}
 	tex.id_set(q);
 	tex.width_ = tex.get_width();
@@ -244,7 +244,7 @@ texture load_texture(const std::string& fn)
 	return tex;
 }
 
-void save_texture(const texture& tex, const std::string& fn)
+void texture_save(const texture& tex, const std::string& fn)
 {
 	std::vector<unsigned char> img;
 	if(tex.channels_ == 1) img = tex.get_image_red_ub();

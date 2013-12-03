@@ -92,7 +92,7 @@ int main(void)
 	tex1.bind();
 
 	pastry::texture::activate_unit(1);
-	pastry::texture tex2 = pastry::load_texture("assets/kitten.jpg");
+	pastry::texture tex2 = pastry::texture_load("assets/kitten.jpg");
 	tex2.bind();
 
 	sp.get_uniform<int>("texPattern").set(0);
@@ -100,7 +100,7 @@ int main(void)
 
 	std::cout << "Adding renderling" << std::endl;
 
-	pastry::add_renderling(
+	pastry::scene_add(
 		[]() {
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		});

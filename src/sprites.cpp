@@ -132,12 +132,12 @@ namespace pastry
 		s_sprite_manager = std::make_shared<sprite_manager>();
 	}
 
-	void add_sprite_sheet(const detail::def_sheet& sheet)
+	void sprites_add_sheet(const detail::def_sheet& sheet)
 	{
 		s_sprite_manager->add_sheet(sheet);
 	}
 
-	void add_sprite_animation(const detail::def_anim& anim)
+	void sprites_add_animation(const detail::def_anim& anim)
 	{
 		s_sprite_manager->add_anim(anim);
 	}

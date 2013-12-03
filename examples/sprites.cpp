@@ -11,9 +11,9 @@ int main()
 
 	std::cout << "Initialize sprites" << std::endl;
 
-	pastry::add_sprite_sheet({
+	pastry::sprites_add_sheet({
 		"player",
-		pastry::load_texture("assets/player.png"),
+		pastry::texture_load("assets/player.png"),
 		{
 			{"a00",  0*17, 0, 17, 17},
 			{"a01",  1*17, 0, 17, 17},
@@ -30,7 +30,7 @@ int main()
 		}
 	});
 
-	pastry::add_sprite_animation({"blah", {
+	pastry::sprites_add_animation({"blah", {
 		{"a00", 0.13f},
 		{"a01", 0.13f},
 		{"a02", 0.13f},
@@ -60,7 +60,7 @@ int main()
 		s->t = static_cast<float>(i)*0.13f;
 	}
 
-	pastry::add_renderling(sprites);
+	pastry::scene_add(sprites);
 
 	pastry::run();
 

@@ -6,9 +6,9 @@ int main()
 {
 	pastry::initialize();
 
-	pastry::add_renderling([]() {
-		pastry::render_text(80, 100, "Hello world :)");
-		pastry::render_text(80, 250, "CRAZY text by STB!");
+	pastry::scene_add([]() {
+		pastry::text_render(80, 100, "Hello world :)");
+		pastry::text_render(80, 250, "CRAZY text by STB!");
 	});
 
 	pastry::run();

@@ -54,7 +54,7 @@ public:
 		spo = pastry::program(vertexSource, fragmentSource);
 		spo.use();
 
-		Eigen::Matrix4f proj = pastry::create_orthogonal_projection(width, height, -1.0f, +1.0f);
+		Eigen::Matrix4f proj = pastry::math_orthogonal_projection(width, height, -1.0f, +1.0f);
 		spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
 
 		vao = pastry::vertex_array{spo, {
@@ -102,16 +102,16 @@ public:
 		is_pong -= dt;
 		is_initialized = true;
 
-		if(pastry::is_key_pressed('A')) {
+		if(pastry::key_is_pressed('A')) {
 			box_pos[0] -= dt*box_speed;
 		}
-		if(pastry::is_key_pressed('D')) {
+		if(pastry::key_is_pressed('D')) {
 			box_pos[0] += dt*box_speed;
 		}
 		ball_pos += ball_vel * dt * BALL_SPEED;
 
 		if(is_gameover) {
-			if(pastry::is_key_pressed('W')) {
+			if(pastry::key_is_pressed('W')) {
 				start_game();
 			}
 			return;
@@ -143,17 +143,17 @@ public:
 	void render()
 	{
 		if(!is_initialized) {
-			pastry::render_text(50, 200, "Press 'A' and 'D' to move");
+			pastry::text_render(50, 200, "Press 'A' and 'D' to move");
 			return;
 		}
 
 		if(is_pong > 0.0f) {
-			pastry::render_text(200, 220, "PONG");
+			pastry::text_render(200, 220, "PONG");
 		}
 
 		if(is_gameover) {
-			pastry::render_text(50, 200, "GAME OVER!");
-			pastry::render_text(50, 300, "Press 'W' to play again");
+			pastry::text_render(50, 200, "GAME OVER!");
+			pastry::text_render(50, 300, "Press 'W' to play again");
 		}
 
 		glLineWidth(3.0f);
@@ -161,14 +161,14 @@ public:
 		vao.bind();
 
 		spo.get_uniform<Eigen::Matrix4f>("model").set(
-			pastry::create_model_matrix_2d(ball_pos[0], ball_pos[1], 0.0f));
+			pastry::math_transform_2d(ball_pos[0], ball_pos[1], 0.0f));
 		spo.get_uniform<Eigen::Vector3f>("color").set(
 			{0.0f,0.4f,1.0f});
 		vbo.update_data(circle_vertices);
 		glDrawArrays(GL_LINE_STRIP, 0, circle_vertices.size());
 
 		spo.get_uniform<Eigen::Matrix4f>("model").set(
-			pastry::create_model_matrix_2d(box_pos[0], box_pos[1], 0.0f));
+			pastry::math_transform_2d(box_pos[0], box_pos[1], 0.0f));
 		spo.get_uniform<Eigen::Vector3f>("color").set(
 			{1.0f,0.4f,0.0f});
 		vbo.update_data(box_vertices);
@@ -181,7 +181,7 @@ int main()
 {
 	pastry::initialize();
 
-	pastry::add_renderling(std::make_shared<Dong>());
+	pastry::scene_add(std::make_shared<Dong>());
 
 	pastry::run();
 
