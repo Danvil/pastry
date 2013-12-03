@@ -142,15 +142,6 @@ namespace pastry
 		s_sprite_manager->add_anim(anim);
 	}
 
-	sprite_group::sprite_group()
-	{
-	}
-	
-	sprite_group::~sprite_group()
-	{
-
-	}
-
 	sprite_ptr sprite_group::add_sprite(const std::string& tag)
 	{
 		auto p = std::make_shared<sprite>();

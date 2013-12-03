@@ -6,14 +6,16 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 
 namespace pastry {
 
-// ----- THE START -------------------------------------------------------------
-
 // ----- BASIC RENDERLINGS -----------------------------------------------------
 
+#define PTR(A) typedef std::shared_ptr<A> A##_ptr;
+
+/** Base class for everything renderable */
 class renderling
 {
 public:
@@ -21,8 +23,9 @@ public:
 	virtual void render() {}
 };
 
-typedef std::shared_ptr<renderling> renderling_ptr;
+PTR(renderling)
 
+/** A stateless renderling */
 class functor_renderling
 : public renderling
 {
@@ -44,31 +47,41 @@ public:
 	}
 };
 
-typedef std::shared_ptr<functor_renderling> functor_renderling_ptr;
+PTR(functor_renderling)
 
+/** Create a stateless renderling (render only) */
 inline functor_renderling_ptr create_functor_renderling(
 		functor_renderling::func_render_t fr) {
 	return std::make_shared<functor_renderling>(fr);
 }
 
+/** Create a stateless renderling (render and update) */
 inline functor_renderling_ptr create_functor_renderling(
 	functor_renderling::func_render_t fr,
 	functor_renderling::func_update_t fu) {
 	return std::make_shared<functor_renderling>(fr, fu);
 }
 
+/** A group of renderlings
+ * Default render and update order is the order of insertion.
+ * You can specify an order explicitely when adding (default=0, smaller first)
+ */
 class render_group : public renderling
 {
 private:
-	std::vector<renderling_ptr> items_;
+	std::multimap<int,renderling_ptr> items_;
 public:
-	void add(const renderling_ptr& ri);
-	void remove(const renderling_ptr& ri);
+	/** Adds a renderling with specific render order */
+	void add(const renderling_ptr& r, int order=0);
+	/** Removes a renderling (all instances) */
+	void remove(const renderling_ptr& r);
+	/** Updates all renderlings */
 	void update(float t, float dt);
+	/** Renders all renderlings */
 	void render();
 };
 
-typedef std::shared_ptr<render_group> render_group_ptr;
+PTR(render_group)
 
 // ----- GENERAL RENDER SETUP --------------------------------------------------
 
@@ -79,19 +92,19 @@ void initialize();
 void run();
 
 /** Adds a renderling to the scene */
-void add_renderling(const renderling_ptr& r);
+void add_renderling(const renderling_ptr& r, int order=0);
 
 // workaround for gcc 4.6
 template<typename T>
-void add_renderling(const std::shared_ptr<T>& r) {
+void add_renderling(const std::shared_ptr<T>& r, int order=0) {
 	renderling_ptr rr = r;
-	add_renderling(rr);
+	add_renderling(rr, order);
 }
 
-/** Removes a renderling to the scene */
+/** Removes a renderling from the scene */
 void remove_renderling(const renderling_ptr& r);
 
-/** Adds a functor renderling to the scene and returns it */
+/** Adds a functor renderling (render only) to the scene and returns it */
 inline functor_renderling_ptr add_renderling(
 		functor_renderling::func_render_t fr) {
 	functor_renderling_ptr f = create_functor_renderling(fr);
@@ -99,7 +112,7 @@ inline functor_renderling_ptr add_renderling(
 	return f;
 }
 
-/** Adds a functor renderling to the scene and returns it */
+/** Adds a functor renderling (render and update) to the scene and returns it */
 inline functor_renderling_ptr add_renderling(
 		functor_renderling::func_render_t fr,
 		functor_renderling::func_update_t fu) {
@@ -110,30 +123,40 @@ inline functor_renderling_ptr add_renderling(
 
 // ----- TOOLS -----------------------------------------------------------------
 
+/** Create an orthogonal projection matrix */
 Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f);
 
+/** Create an orthogonal projection matrix */
 Eigen::Matrix4f create_orthogonal_projection(float w, float h, float n, float f);
 
+/** Create a 2D transformation matrix */
 Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta);
 
 // ----- INPUT HANDLING --------------------------------------------------------
 
+/** Checks if a key is pressed right now */
 bool is_key_pressed(int key);
 
+/** Checks if left mouse button is pressed right now */
 bool is_left_mouse_button_pressed();
 
+/** Checks if right mouse button is pressed right now */
 bool is_right_mouse_button_pressed();
 
+/** Checks if middle mouse button is pressed right now */
 bool is_middle_mouse_button_pressed();
 
 // ----- TEXTURE LOADING -------------------------------------------------------
 
+/** Loads an image from file into a texture (only some image formats supported) */
 texture load_texture(const std::string& fn);
 
+/** Saves an RGB or single channel texture to a file */
 void save_texture(const texture& tex, const std::string& fn);
 
 // ----- TEXT RENDERING --------------------------------------------------------
 
+/** Renders text at the specific location on the screen (in pixels) */
 void render_text(float x, float y, const std::string& txt);
 
 // ----- SPRITES ---------------------------------------------------------------
@@ -175,27 +198,36 @@ namespace detail
 
 struct sprite
 {
+	/** The tag under which the sprite definition is found */
 	std::string tag;
+	/** Sprite position */
 	float x, y;
+	/** Sprite scale factors */
 	float sx, sy;
+	/** internal */
 	float t;
 };
 
-typedef std::shared_ptr<sprite> sprite_ptr;
+PTR(sprite)
 
+/** Adds a sprite sheet */
 void add_sprite_sheet(const detail::def_sheet& sheet);
 
+/** Adds a sprite animation */
 void add_sprite_animation(const detail::def_anim& anim);
 
+/** A group of sprites */
 class sprite_group
 : public renderling
 {
 public:
-	sprite_group();
-	~sprite_group();
+	/** Creates a new sprite with given tag */
 	sprite_ptr add_sprite(const std::string& tag);
+	/** Removes the specified sprite */
 	void remove_sprite(const sprite_ptr& s);
+	/** Updates sprite animations preparse for rendering */
 	void update(float t, float dt);
+	/** Renders all sprites */
 	void render();
 private:
 	std::vector<sprite_ptr> sprites_;

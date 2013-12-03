@@ -9,32 +9,35 @@
 
 namespace pastry {
 
-void render_group::add(const renderling_ptr& ri)
+void render_group::add(const renderling_ptr& r, int o)
 {
-	items_.push_back(ri);
+	items_.insert({o,r});
 }
 
-void render_group::remove(const renderling_ptr& ri)
+void render_group::remove(const renderling_ptr& r)
 {
-	auto it = std::find(items_.begin(), items_.end(), ri);
-	if(it != items_.end()) {
-		items_.erase(it);
+	typedef std::multimap<int,renderling_ptr>::iterator it_t;
+	for(it_t it=items_.begin(); it!=items_.end(); ) {
+		it_t a = it++; // iterators are invalidated by erase
+		if(a->second == r) {
+			items_.erase(a);
+		}
 	}
 }
 
 void render_group::update(float t, float dt)
 {
 	// iterate over a copy to allow add/remove during update
-	std::vector<renderling_ptr> items_copy = items_;
+	std::multimap<int,renderling_ptr> items_copy = items_;
 	for(const auto& i : items_copy) {
-		i->update(t, dt);
+		i.second->update(t, dt);
 	}
 }
 
 void render_group::render()
 {
 	for(const auto& i : items_) {
-		i->render();
+		i.second->render();
 	}
 }
 
@@ -53,9 +56,9 @@ void run()
 	engine::s_engine->run();
 }
 
-void add_renderling(const renderling_ptr& r)
+void add_renderling(const renderling_ptr& r, int order)
 {
-	engine::s_engine->get_scene()->add(r);
+	engine::s_engine->get_scene()->add(r, order);
 }
 
 void remove_renderling(const renderling_ptr& r)
