@@ -63,26 +63,6 @@ void remove_renderling(const renderling_ptr& r)
 	engine::s_engine->get_scene()->remove(r);
 }
 
-bool is_key_pressed(int key)
-{
-	return engine::s_engine->is_key_pressed(key);
-}
-
-bool is_left_mouse_button_pressed()
-{
-	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT);
-}
-
-bool is_right_mouse_button_pressed()
-{
-	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_RIGHT);
-}
-
-bool is_middle_mouse_button_pressed()
-{
-	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
-}
-
 Eigen::Matrix4f create_orthogonal_projection(float l, float r, float t, float b, float n, float f)
 {
 	Eigen::Matrix4f m;
@@ -110,6 +90,26 @@ Eigen::Matrix4f create_model_matrix_2d(float x, float y, float theta)
 		  0,   0, 1, 0,
 		  0,   0, 0, 1;
 	return m;
+}
+
+bool is_key_pressed(int key)
+{
+	return engine::s_engine->is_key_pressed(key);
+}
+
+bool is_left_mouse_button_pressed()
+{
+	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT);
+}
+
+bool is_right_mouse_button_pressed()
+{
+	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_RIGHT);
+}
+
+bool is_middle_mouse_button_pressed()
+{
+	return engine::s_engine->is_mouse_button_pressed(GLFW_MOUSE_BUTTON_MIDDLE);
 }
 
 texture load_texture(const std::string& fn)
