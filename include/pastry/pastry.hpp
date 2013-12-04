@@ -167,8 +167,11 @@ void texture_save(const texture& tex, const std::string& fn);
 
 // ----- TEXT RENDERING --------------------------------------------------------
 
-/** Renders text at the specific location on the screen (in pixels) */
+/** Renders white text at the specific location on the screen (in pixels) */
 void text_render(float x, float y, const std::string& txt);
+
+/** Renders colored and transparent text */
+void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba);
 
 // ----- SPRITES ---------------------------------------------------------------
 

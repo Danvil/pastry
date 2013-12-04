@@ -38,9 +38,10 @@ void initialize_text()
 		in vec2 Texcoord;
 		out vec4 outColor;
 		uniform sampler2D tex;
+		uniform vec4 color;
 		void main() {
 			float r = texture(tex, Texcoord).r;
-			outColor = vec4(r,r,r,1.0f);
+			outColor = color * vec4(r,r,r,r);
 		}
 	);
 	spo = pastry::program{vertexSource, fragmentSource};
@@ -69,6 +70,11 @@ void initialize_text()
 
 void text_render(float x, float y, const std::string& txt)
 {
+	text_render(x, y, txt, {1,1,1,1});
+}
+
+void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba)
+{
 	// set projections matrix which has 0/0 top left
 	int w, h;
 	fb_get_dimensions(w,h);
@@ -76,11 +82,6 @@ void text_render(float x, float y, const std::string& txt)
 	spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
 	// flip y to provide 0/0 at bottom left for the user
 	y = static_cast<float>(h) - y;
-	// bind for rendering
-	spo.use();
-	pastry::texture::activate_unit(0);
-	tex.bind();
-	vao.bind();
 	// create one quad per letter/symbol
 	const char* text = txt.data();
 	std::vector<text_vertex> data;
@@ -106,8 +107,19 @@ void text_render(float x, float y, const std::string& txt)
 		++text;
 	}
 	// update vbo and render data
+	bool is_blend = (glIsEnabled(GL_BLEND) == GL_TRUE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	spo.use();
+	spo.get_uniform<Eigen::Vector4f>("color").set(rgba);
+	pastry::texture::activate_unit(0);
+	tex.bind();
+	vao.bind();
 	vbo.update_data(data);
 	glDrawArrays(GL_TRIANGLES, 0, data.size());
+	if(!is_blend) {
+		glDisable(GL_BLEND);
+	}
 }
 
 }
