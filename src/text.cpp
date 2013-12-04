@@ -106,19 +106,18 @@ void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f
 		}
 		++text;
 	}
-	// update vbo and render data
-	bool is_blend = (glIsEnabled(GL_BLEND) == GL_TRUE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	spo.use();
-	spo.get_uniform<Eigen::Vector4f>("color").set(rgba);
-	pastry::texture::activate_unit(0);
-	tex.bind();
-	vao.bind();
-	vbo.update_data(data);
-	glDrawArrays(GL_TRIANGLES, 0, data.size());
-	if(!is_blend) {
-		glDisable(GL_BLEND);
+	// enable transparency
+	{	auto state = capability{GL_BLEND,true};
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		// update vbo and render data
+		spo.use();
+		spo.get_uniform<Eigen::Vector4f>("color").set(rgba);
+		pastry::texture::activate_unit(0);
+		tex.bind();
+		vao.bind();
+		vbo.update_data(data);
+		glDrawArrays(GL_TRIANGLES, 0, data.size());
+		// disable transparency
 	}
 }
 

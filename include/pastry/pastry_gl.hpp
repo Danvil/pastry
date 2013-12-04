@@ -705,5 +705,42 @@ namespace pastry
 		}
 	};
 
+	/** Enables/disables an OpenGL capability like GL_BLEND and automatically restores the state
+	 * Usage example:
+	 *		{ capability(GL_BLEND,true);
+	 *			// ... code to execute with blending enabled
+	 * 		}
+	 */
+	struct capability
+	{
+		capability(GLenum cap, bool set_to) {
+			cap_ = cap;
+			was_enabled_ = glIsEnabled(cap_);
+			set_to_ = set_to;
+			if(was_enabled_ != set_to_) {
+				if(set_to_) {
+					glEnable(cap_);
+				}
+				else {
+					glDisable(cap_);
+				}
+			}
+		}
+		~capability() {
+			if(was_enabled_ != set_to_) {
+				if(was_enabled_) {
+					glEnable(cap_);
+				}
+				else {
+					glDisable(cap_);
+				}
+			}
+		}
+	private:
+		GLenum cap_;
+		bool was_enabled_;
+		bool set_to_;
+	};
+
 }
 #endif

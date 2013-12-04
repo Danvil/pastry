@@ -211,9 +211,13 @@ namespace pastry
 		fb_get_dimensions(w,h);
 		Eigen::Matrix4f proj = pastry::math_orthogonal_projection(w, h, -1.0f, +1.0f);
 		g_sprite_manager->spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
-		// render sprites
-		for(auto& q : vertices_) {
-			g_sprite_manager->groups_[q.first].render(q.second);
+		// transparency
+		{	auto state = capability{GL_BLEND,true};
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			// render sprites
+			for(auto& q : vertices_) {
+				g_sprite_manager->groups_[q.first].render(q.second);
+			}
 		}
 	}
 }
