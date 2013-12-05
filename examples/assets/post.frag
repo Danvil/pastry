@@ -7,5 +7,6 @@ in vec2 fuv;
 out vec4 outColor;
 
 void main() {
-	outColor = vec4(1,0,0,1) * texture(tex, fuv);
+	// outColor = vec4(1,0,0,1);
+	outColor = texture(tex, fuv);
 }

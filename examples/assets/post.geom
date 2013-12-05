@@ -8,19 +8,20 @@ in float vdummy;
 out vec2 fuv;
 
 void main() {
-	gl_Position = gl_in[0].gl_Position + vdummy*vec4(-1,-1,0,0);
+	float R = 0.8f;
+	gl_Position = gl_in[0].gl_Position + vec4(-R,-R,0,0);
 	fuv = vec2(0,0);
 	EmitVertex();
 	
-	gl_Position = gl_in[0].gl_Position + vec4(-1,+1,0,0);
+	gl_Position = gl_in[0].gl_Position + vec4(-R,+R,0,0);
 	fuv = vec2(0,1);
 	EmitVertex();
 	
-	gl_Position = gl_in[0].gl_Position + vec4(+1,-1,0,0);
+	gl_Position = gl_in[0].gl_Position + vec4(+R,-R,0,0);
 	fuv = vec2(1,0);
 	EmitVertex();
 
-	gl_Position = gl_in[0].gl_Position + vec4(+1,+1,0,0);
+	gl_Position = gl_in[0].gl_Position + vec4(+R,+R,0,0);
 	fuv = vec2(1,1);
 	EmitVertex();
 	

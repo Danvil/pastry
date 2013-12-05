@@ -81,15 +81,18 @@ private:
 	int width_, height_;
 public:
 	post_processor() {
+		vbo = pastry::array_buffer({
+			{"pos", GL_FLOAT, 2}
+		});
+//		vbo.init_data(std::vector<float>{1,1.0f}, GL_STATIC_DRAW);
+		vbo.init_data(std::vector<float>{0.0f,0.0f}, GL_STATIC_DRAW);
+
 		spo = pastry::load_program("assets/post");
 		spo.get_uniform<int>("tex").set(0);
 
-		vbo = pastry::array_buffer({
-			{"dummy", GL_FLOAT, 1}
-		});
-		vbo.init_data(std::vector<float>{1,1.0f}, GL_STATIC_DRAW);
 		vao = pastry::vertex_array(spo, {
-			{"dummy", vbo, "dummy"}
+			{"pos", vbo}//,
+			//{"dummy", vbo, "pos"}
 		});
 
 		pastry::fb_get_dimensions(width_, height_);

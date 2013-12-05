@@ -1,9 +1,10 @@
 #version 150
 
-in float dummy;
+in vec2 pos;
+//in float dummy;
 out float vdummy;
 
 void main() {
-	gl_Position = vec4(0, 0, 0, dummy);
-	vdummy = dummy;
+	gl_Position = vec4(pos, 0, 1);
+	vdummy = 1.0f;
 }
