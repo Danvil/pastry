@@ -6,6 +6,7 @@
 #include <GL/gl.h>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <memory>
 #include <tuple>
@@ -149,9 +150,24 @@ namespace pastry
 
 	namespace detail
 	{
-		inline void compile_shader(id_t q, const std::string& source_in) {
-			std::string source = source_in;
+		inline std::string load_text_file(const std::string& filename) {
+			// http://insanecoding.blogspot.de/2011/11/how-to-read-in-file-in-c.html
+			std::ifstream in(filename, std::ios::in | std::ios::binary);
+			if(in) {
+				std::string contents;
+				in.seekg(0, std::ios::end);
+				contents.resize(in.tellg());
+				in.seekg(0, std::ios::beg);
+				in.read(&contents[0], contents.size());
+				in.close();
+				return contents;
+			}
+			throw(errno);
+		}
+
+		inline void compile_shader(id_t q, std::string source) {
 			// prepare by replacing "; " with ";\n"
+			// this is to get better compiler error messages
 			size_t index = 0;
 			while(true) {
 				index = source.find("; ", index);
@@ -213,6 +229,11 @@ namespace pastry
 			detail::compile_shader(id(), source);
 		}
 	};
+
+	template<typename T>
+	T load_shader(const std::string& filename) {
+		return T{detail::load_text_file(filename)};
+	}
 
 	namespace detail
 	{
@@ -543,26 +564,18 @@ namespace pastry
 	struct program : public detail::resource<program_id>
 	{
 		program() {}
-		program(const std::string& vertex_source, const std::string& fragment_source) {
-			id_create();
-			create(
-				vertex_shader(vertex_source),
-				fragment_shader(fragment_source));
-		}
-		program(const std::string& vertex_source, const std::string& geometry_source, const std::string& fragment_source) {
-			id_create();
-			create(
-				vertex_shader(vertex_source),
-				geometry_shader(geometry_source),
-				fragment_shader(fragment_source));
-		}
 		program(const vertex_shader& vs, const fragment_shader& fs) {
 			id_create();
-			create(vs, fs);
+			attach(vs);
+			attach(fs);
+			link();
 		}
 		program(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
 			id_create();
-			create(vs, gs, fs);
+			attach(vs);
+			attach(gs);
+			attach(fs);
+			link();
 		}
 		void attach(const vertex_shader& s) {
 			glAttachShader(id(), s.id());
@@ -578,17 +591,6 @@ namespace pastry
 		}
 		void use() {
 			glUseProgram(id());
-		}
-		void create(const vertex_shader& vs, const fragment_shader& fs) {
-			attach(vs);
-			attach(fs);
-			link();
-		}
-		void create(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
-			attach(vs);
-			attach(gs);
-			attach(fs);
-			link();
 		}
 		vertex_attribute get_attribute(const std::string& name) const {
 			vertex_attribute va;
@@ -614,6 +616,29 @@ namespace pastry
 			return u;
 		}
 	};
+
+	inline program create_program(const std::string& src_vertex, const std::string& src_frag) {
+		return program{ {src_vertex}, {src_frag} };
+	}
+
+	inline program create_program(const std::string& src_vertex, const std::string& src_geom, const std::string& src_frag) {
+		return program{ {src_vertex}, {src_geom}, {src_frag} };
+	}
+
+	inline program load_program(const std::string& fn_vertex, const std::string& fn_frag) {
+		return program{
+			load_shader<vertex_shader>(fn_vertex),
+			load_shader<fragment_shader>(fn_frag)
+		};
+	}
+
+	inline program load_program(const std::string& fn_vertex, const std::string& fn_geom, const std::string& fn_frag) {
+		return program{
+			load_shader<vertex_shader>(fn_vertex),
+			load_shader<geometry_shader>(fn_geom),
+			load_shader<fragment_shader>(fn_frag)
+		};
+	}
 
 	namespace detail
 	{

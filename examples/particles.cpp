@@ -17,63 +17,6 @@ public:
 	};
 
 private:
-	static constexpr const char* vertexSource = PASTRY_GLSL(
-		uniform mat4 proj;
-		in vec2 position;
-		in float size;
-		in vec4 color;
-		out float vsize;
-		out vec4 vcolor;
-		void main() {
-			gl_Position = proj*vec4(position, 0.0, 1.0);
-			vsize = size;
-			vcolor = color;
-		}
-	);
-
-	static constexpr const char* geometrySource = PASTRY_GLSL(
-		layout(points) in;
-		layout(triangle_strip) out;
-//		layout(line_strip) out;
-		layout(max_vertices = 4) out;
-		in float vsize[];
-		in vec4 vcolor[];
-		out vec4 fcolor;
-		out vec2 fuv;
-		void main() {
-			float s = vsize[0];
-			fcolor = vcolor[0];
-
-			gl_Position = gl_in[0].gl_Position + vec4(-s,-s,0,0);
-			fuv = vec2(0,0);
-			EmitVertex();
-			
-			gl_Position = gl_in[0].gl_Position + vec4(-s,+s,0,0);
-			fuv = vec2(0,1);
-			EmitVertex();
-			
-			gl_Position = gl_in[0].gl_Position + vec4(+s,-s,0,0);
-			fuv = vec2(1,0);
-			EmitVertex();
-
-			gl_Position = gl_in[0].gl_Position + vec4(+s,+s,0,0);
-			fuv = vec2(1,1);
-			EmitVertex();
-			
-			EndPrimitive();
-		}
-	);
-
-	static constexpr const char* fragmentSource = PASTRY_GLSL(
-		in vec4 fcolor;
-		in vec2 fuv;
-		out vec4 outColor;
-		uniform sampler2D tex;
-		void main() {
-			outColor = fcolor * texture(tex, fuv);
-		}
-	);
-
 	pastry::array_buffer vbo;
 	pastry::program spo;
 	pastry::vertex_array va;
@@ -95,6 +38,61 @@ public:
 		color_g_ = color_g;
 		color_b_ = color_b;
 		color_a_ = color_a;
+		// shader source
+		std::string vertexSource = PASTRY_GLSL(
+			uniform mat4 proj;
+			in vec2 position;
+			in float size;
+			in vec4 color;
+			out float vsize;
+			out vec4 vcolor;
+			void main() {
+				gl_Position = proj*vec4(position, 0.0, 1.0);
+				vsize = size;
+				vcolor = color;
+			}
+		);
+		std::string geometrySource = PASTRY_GLSL(
+			layout(points) in;
+			layout(triangle_strip) out;
+		//		layout(line_strip) out;
+			layout(max_vertices = 4) out;
+			in float vsize[];
+			in vec4 vcolor[];
+			out vec4 fcolor;
+			out vec2 fuv;
+			void main() {
+				float s = vsize[0];
+				fcolor = vcolor[0];
+
+				gl_Position = gl_in[0].gl_Position + vec4(-s,-s,0,0);
+				fuv = vec2(0,0);
+				EmitVertex();
+				
+				gl_Position = gl_in[0].gl_Position + vec4(-s,+s,0,0);
+				fuv = vec2(0,1);
+				EmitVertex();
+				
+				gl_Position = gl_in[0].gl_Position + vec4(+s,-s,0,0);
+				fuv = vec2(1,0);
+				EmitVertex();
+
+				gl_Position = gl_in[0].gl_Position + vec4(+s,+s,0,0);
+				fuv = vec2(1,1);
+				EmitVertex();
+				
+				EndPrimitive();
+			}
+		);
+		std::string fragmentSource = PASTRY_GLSL(
+			in vec4 fcolor;
+			in vec2 fuv;
+			out vec4 outColor;
+			uniform sampler2D tex;
+			void main() {
+				outColor = fcolor * texture(tex, fuv);
+			}
+		);
 		// create render objects
 		vbo = pastry::array_buffer({
 			{"position", GL_FLOAT, 2},
