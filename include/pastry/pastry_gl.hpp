@@ -150,6 +150,11 @@ namespace pastry
 
 	namespace detail
 	{
+		inline bool can_read_file(const std::string& filename) {
+			std::ifstream in(filename, std::ios::in | std::ios::binary);
+			return in;
+		}
+
 		inline std::string load_text_file(const std::string& filename) {
 			// http://insanecoding.blogspot.de/2011/11/how-to-read-in-file-in-c.html
 			std::ifstream in(filename, std::ios::in | std::ios::binary);
@@ -162,7 +167,8 @@ namespace pastry
 				in.close();
 				return contents;
 			}
-			throw(errno);
+			std::cerr << "ERROR in load_text_file: Could not open file '" << filename << "'" << std::endl;
+			return "";
 		}
 
 		inline void compile_shader(id_t q, std::string source) {
@@ -638,6 +644,19 @@ namespace pastry
 			load_shader<geometry_shader>(fn_geom),
 			load_shader<fragment_shader>(fn_frag)
 		};
+	}
+
+	/** Tries to load a shader with files fn.vert, fn.geom, fn.frag */
+	inline program load_program(const std::string& fn) {
+		std::string fn_vert = fn + ".vert";
+		std::string fn_geom = fn + ".geom";
+		std::string fn_frag = fn + ".frag";
+		if(detail::can_read_file(fn_geom)) {
+			return load_program(fn_vert, fn_geom, fn_frag);
+		}
+		else {
+			return load_program(fn_vert, fn_frag);
+		}
 	}
 
 	namespace detail
