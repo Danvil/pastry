@@ -6,7 +6,7 @@ TARGET=~/cross/release
 WUALA=/home/david/WualaDrive/Danvil/Share/PragmaDanvil/pastry/
 
 cd $BUILD
-make -j
+make
 
 cd $TARGET
 rm libpastry.dll
