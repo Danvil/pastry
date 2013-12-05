@@ -31,6 +31,7 @@ void render_group::update(float t, float dt)
 	// iterate over a copy to allow add/remove during update
 	std::multimap<int,renderling_ptr> items_copy = items_;
 	for(const auto& i : items_copy) {
+		//std::cout << "update " << i.first << ": " << i.second << std::endl;
 		i.second->update(t, dt);
 	}
 }
@@ -38,6 +39,7 @@ void render_group::update(float t, float dt)
 void render_group::render()
 {
 	for(const auto& i : items_) {
+		//std::cout << "render " << i.first << ": " << i.second << std::endl;
 		i.second->render();
 	}
 }
@@ -60,9 +62,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 bool fb_has_changed()
 {
-	bool a = g_fb_changed;
-	g_fb_changed = false;
-	return a;
+	return g_fb_changed;
 }
 
 void fb_get_dimensions(int& width, int& height)
@@ -73,6 +73,7 @@ void fb_get_dimensions(int& width, int& height)
 
 void initialize_sprites();
 void initialize_text();
+void postfx_init();
 
 void initialize()
 {
@@ -121,6 +122,8 @@ void initialize()
 	initialize_sprites();
 
 	initialize_text();
+
+	postfx_init();
 }
 
 void run()
@@ -148,6 +151,8 @@ void run()
 		glClear(GL_COLOR_BUFFER_BIT);
 		g_scene->render();
 		glFlush();
+
+		g_fb_changed = false;
 
 		// housekeeping
 		glfwSwapBuffers(g_window);

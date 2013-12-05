@@ -5,6 +5,7 @@ ADD_LIBRARY(pastry SHARED
 	pastry.cpp
 	sprites.cpp
 	text.cpp
+	postfx.cpp
 	# SOIL
 	dep/SOIL2/etc1_utils.c
 	dep/SOIL2/image_DXT.c

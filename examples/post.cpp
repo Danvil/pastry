@@ -69,79 +69,43 @@ public:
 	}
 };
 
-class post_processor : public pastry::renderling
-{
-private:
-	pastry::program spo;
-	pastry::array_buffer vbo;
-	pastry::vertex_array vao;
-	pastry::texture tex;
-	pastry::renderbuffer rbo;
-	pastry::framebuffer fbo;
-	int width_, height_;
-public:
-	post_processor() {
-		vbo = pastry::array_buffer({
-			{"pos", GL_FLOAT, 2}
-		});
-//		vbo.init_data(std::vector<float>{1,1.0f}, GL_STATIC_DRAW);
-		vbo.init_data(std::vector<float>{0.0f,0.0f}, GL_STATIC_DRAW);
-
-		spo = pastry::load_program("assets/post");
-		spo.get_uniform<int>("tex").set(0);
-
-		vao = pastry::vertex_array(spo, {{"pos", vbo}});
-
-		pastry::fb_get_dimensions(width_, height_);
-
-		tex.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		tex.image_2d_rgba_ub(width_, height_, 0);
-
-		rbo.id_create();
-		rbo.bind();
-		rbo.storage(GL_DEPTH_COMPONENT16, width_, height_);
-
-		fbo.id_create();
-		fbo.bind();
-		fbo.attach(GL_COLOR_ATTACHMENT0, tex);
-		fbo.attach(GL_DEPTH_ATTACHMENT, rbo);
-		fbo.unbind();
-	}
-	void update(float t, float dt) {
-		if(pastry::fb_has_changed()) {
-			pastry::fb_get_dimensions(width_, height_);
-			tex.bind();
-			tex.image_2d_rgba_ub(width_, height_, 0);
-			rbo.bind();
-			rbo.storage(GL_DEPTH_COMPONENT16, width_, height_);
-		}
-		// bind framebuffer for rendering
-		fbo.bind();
-	}
-	void render() {
-		// now render to screen
-		fbo.unbind();
-		// clear old stuff
-		glClearColor(0.0, 0.0, 0.0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		// render quad with framebuffer texture
-		spo.use();
-		spo.get_uniform<int>("tex").set(0);
-		pastry::texture::activate_unit(0);
-		tex.bind();
-		vbo.bind();
-		vao.bind();
-		glDrawArrays(GL_POINTS, 0, 1);
-	}
-};
-
 int main()
 {
 	pastry::initialize();
 
 	pastry::scene_add(std::make_shared<kitten_manager>());
 
-	pastry::scene_add(std::make_shared<post_processor>());
+	std::string sfx_wobble =
+		"uniform float offset;"
+		"vec4 sfx(vec2 uv) {"
+		"	uv.x += 10*sin((uv.y/100 + offset)*2*3.14159);"
+		"	return sfx_read_fb(uv);"
+		"}";
+	pastry::postfx_add(sfx_wobble,
+		[](float t, float dt, const pastry::program& spo) {
+			spo.get_uniform<float>("offset").set(t * .75);
+		});
+
+	std::string sfx_redify =
+		"uniform float a;"
+		"vec4 sfx(vec2 uv) {"
+		"	return vec4(1,a,a,1) * sfx_read_fb(uv);"
+		"}";
+	pastry::postfx_add(sfx_redify,
+		[](float t, float dt, const pastry::program& spo) {
+			float q = std::fmod(t, 2.0f) - 1.0f;
+			spo.get_uniform<float>("a").set(1.0f - q*q);
+		});
+
+	std::string sfx_edgy =
+		"vec4 sfx(vec2 uv) {"
+		"	return   sfx_read_fb(uv+vec2(+1,0))"
+		"	       + sfx_read_fb(uv+vec2(-1,0))"
+		"	       + sfx_read_fb(uv+vec2(0,+1))"
+		"	       + sfx_read_fb(uv+vec2(0,-1))"
+		"	       - 4*sfx_read_fb(uv);"
+		"}";
+	pastry::postfx_add(sfx_edgy);
 
 	pastry::run();
 

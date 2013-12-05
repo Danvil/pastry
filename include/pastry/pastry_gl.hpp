@@ -336,7 +336,7 @@ namespace pastry
 		}
 		inline vertex_attribute get_attribute(const std::string& name) const;
 		template<typename T, unsigned int NUM=1>
-		uniform<T,NUM> get_uniform(const std::string& name);
+		uniform<T,NUM> get_uniform(const std::string& name) const;
 	};
 
 	inline program create_program(const std::string& src_vertex, const std::string& src_frag) {
@@ -573,7 +573,7 @@ namespace pastry
 	};
 
 	template<typename T, unsigned int NUM>
-	uniform<T,NUM> program::get_uniform(const std::string& name)
+	uniform<T,NUM> program::get_uniform(const std::string& name) const
 	{
 		uniform<T,NUM> u;
 		u.spo = *this;

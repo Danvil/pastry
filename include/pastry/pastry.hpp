@@ -248,6 +248,14 @@ private:
 	std::map<std::string, std::vector<detail::sprite_vertex>> vertices_;
 };
 
+// ----- POST PROCESSING EFFECTS -----------------------------------------------
+
+typedef std::function<void(float,float,const pastry::program& spo)> func_postfx_update;
+
+void postfx_add(const std::string& source);
+
+void postfx_add(const std::string& source, func_postfx_update f);
+
 // ----- THE END ---------------------------------------------------------------
 
 }
