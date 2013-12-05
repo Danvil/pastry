@@ -19,6 +19,7 @@ namespace pastry
 
 	struct array_buffer_id {};
 	struct vertex_shader_id {};
+	struct geometry_shader_id {};
 	struct fragment_shader_id {};
 	struct program_id {};
 	struct vertex_attribute_id {};
@@ -40,6 +41,12 @@ namespace pastry
 		template<> struct handler<vertex_shader_id>
 		{
 			static id_t gl_create() { return glCreateShader(GL_VERTEX_SHADER); }
+			static void gl_delete(id_t id) { glDeleteShader(id); }
+		};
+
+		template<> struct handler<geometry_shader_id>
+		{
+			static id_t gl_create() { return glCreateShader(GL_GEOMETRY_SHADER); }
 			static void gl_delete(id_t id) { glDeleteShader(id); }
 		};
 
@@ -142,17 +149,30 @@ namespace pastry
 
 	namespace detail
 	{
-		inline void compile_shader(id_t q, const std::string& source) {
+		inline void compile_shader(id_t q, const std::string& source_in) {
+			std::string source = source_in;
+			// prepare by replacing "; " with ";\n"
+			size_t index = 0;
+			while(true) {
+				index = source.find("; ", index);
+				if(index == std::string::npos) break;
+				source.replace(index, 2, ";\n");
+				index += 2;
+			}			
+			// compile
 			GLint len = source.size();
 			const GLchar* str = source.data();
 			glShaderSource(q, 1, &str, &len);
 			glCompileShader(q);
-
+			// check
 			GLint status;
 			glGetShaderiv(q, GL_COMPILE_STATUS, &status);
 			if(status != GL_TRUE) {
 				char buffer[1024];
 				glGetShaderInfoLog(q, 1024, NULL, buffer);
+				std::cerr << "ERROR: compile_shader" << std::endl;
+				std::cerr << "Shader code:" << std::endl;
+				std::cerr << source << std::endl;
 				std::cerr << "ERROR: " << buffer << std::endl;
 			}
 		}
@@ -162,6 +182,18 @@ namespace pastry
 	{
 		vertex_shader() {}
 		vertex_shader(const std::string& source) {
+			id_create();
+			compile(source);
+		}
+		void compile(const std::string& source) {
+			detail::compile_shader(id(), source);
+		}
+	};
+
+	struct geometry_shader : public detail::resource<geometry_shader_id>
+	{
+		geometry_shader() {}
+		geometry_shader(const std::string& source) {
 			id_create();
 			compile(source);
 		}
@@ -407,6 +439,11 @@ namespace pastry
 		return {"", 0, a};
 	}
 
+	template<typename K, unsigned int N>
+	inline detail::layout_item layout_skip() {
+		return layout_skip_bytes(sizeof(K)*N);
+	}
+
 	struct vertex_attribute : public detail::resource<vertex_attribute_id>
 	{
 		vertex_attribute() {}
@@ -512,11 +549,25 @@ namespace pastry
 				vertex_shader(vertex_source),
 				fragment_shader(fragment_source));
 		}
+		program(const std::string& vertex_source, const std::string& geometry_source, const std::string& fragment_source) {
+			id_create();
+			create(
+				vertex_shader(vertex_source),
+				geometry_shader(geometry_source),
+				fragment_shader(fragment_source));
+		}
 		program(const vertex_shader& vs, const fragment_shader& fs) {
 			id_create();
 			create(vs, fs);
 		}
+		program(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
+			id_create();
+			create(vs, gs, fs);
+		}
 		void attach(const vertex_shader& s) {
+			glAttachShader(id(), s.id());
+		}
+		void attach(const geometry_shader& s) {
 			glAttachShader(id(), s.id());
 		}
 		void attach(const fragment_shader& s) {
@@ -533,7 +584,12 @@ namespace pastry
 			attach(fs);
 			link();
 		}
-
+		void create(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
+			attach(vs);
+			attach(gs);
+			attach(fs);
+			link();
+		}
 		vertex_attribute get_attribute(const std::string& name) const {
 			vertex_attribute va;
 			GLint a = glGetAttribLocation(id(), name.data());
@@ -545,7 +601,6 @@ namespace pastry
 			}
 			return va;
 		}
-
 		template<typename T, unsigned int NUM=1>
 		uniform<T,NUM> get_uniform(const std::string& name) {
 			uniform<T,NUM> u;
