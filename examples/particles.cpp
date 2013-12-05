@@ -18,13 +18,14 @@ public:
 
 private:
 	static constexpr const char* vertexSource = PASTRY_GLSL(
+		uniform mat4 proj;
 		in vec2 position;
 		in float size;
 		in vec4 color;
 		out float vsize;
 		out vec4 vcolor;
 		void main() {
-			gl_Position = vec4(position, 0.0, 1.0);
+			gl_Position = proj*vec4(position, 0.0, 1.0);
 			vsize = size;
 			vcolor = color;
 		}
@@ -83,7 +84,7 @@ private:
 	float radius_, size_, spring_;
 	float color_r_, color_g_, color_b_, color_a_;
 
-	static constexpr int NUM = 100;
+	static constexpr int NUM = 1000;
 
 public:
 	particle_effect(float radius, float size, float spring, float color_r, float color_g, float color_b, float color_a) {
@@ -113,7 +114,7 @@ public:
 		particles_.clear();
 		for(int i=0; i<NUM; i++) {
 			float q = static_cast<float>(i) / static_cast<float>(NUM);
-			float phi = 2.0f * 3.1415f * q;
+			float phi = 2.0f * 3.14159265359f * q;
 			particle p;
 			float dev = 1.0f + q;
 			p.x = dev*radius_*std::cos(phi);
@@ -142,8 +143,20 @@ public:
 	}
 
 	void render() {
+		// update projection matrix
+		int w, h;
+		pastry::fb_get_dimensions(w,h);
+		constexpr float S = 2.0f;
+		float aspect = static_cast<float>(h)/static_cast<float>(w);
+		Eigen::Matrix4f proj = pastry::math_orthogonal_projection(
+			-S, +S,
+			-S*aspect, +S*aspect,
+			-1.0f, +1.0f);
+		spo.get_uniform<Eigen::Matrix4f>("proj").set(proj);
+		// additive blending
 		auto state = pastry::capability(GL_BLEND,true);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive blending
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		// render
 		pastry::texture::activate_unit(0);
 		tex.bind();
 		spo.use();
@@ -157,11 +170,11 @@ int main()
 	pastry::initialize();
 
 	pastry::scene_add(std::make_shared<particle_effect>(
-		0.7f, 0.15f, 1.0f, 1.0f, 1.0f, 0.0f, 0.1f));
+		0.7f, 0.15f, 1.0f, 1.0f, 0.0f, 0.0f, 0.1f));
 	pastry::scene_add(std::make_shared<particle_effect>(
-		0.5f, 0.07f, 1.0f, 1.0f, 0.0f, 0.0f, 0.4f));
+		0.5f, 0.07f, 1.0f, 0.0f, 1.0f, 0.0f, 0.2f));
 	pastry::scene_add(std::make_shared<particle_effect>(
-		0.3f, 0.03f, 1.0f, 0.0f, 0.5f, 1.0f, 0.7f));
+		0.3f, 0.03f, 1.0f, 0.0f, 0.0f, 1.0f, 0.3f));
 
 	pastry::run();
 
