@@ -27,6 +27,8 @@ namespace pastry
 	struct vertex_array_id {};
 	struct uniform_id {};
 	struct texture_id {};
+	struct renderbuffer_id {};
+	struct framebuffer_id {};
 
 	namespace detail
 	{
@@ -85,6 +87,18 @@ namespace pastry
 		{
 			static id_t gl_create() { id_t id; glGenTextures(1, &id); return id; }
 			static void gl_delete(id_t id) { glDeleteTextures(1, &id); }
+		};
+
+		template<> struct handler<renderbuffer_id>
+		{
+			static id_t gl_create() { id_t id; glGenRenderbuffers(1, &id); return id; }
+			static void gl_delete(id_t id) { glDeleteRenderbuffers(1, &id); }
+		};
+
+		template<> struct handler<framebuffer_id>
+		{
+			static id_t gl_create() { id_t id; glGenFramebuffers(1, &id); return id; }
+			static void gl_delete(id_t id) { glDeleteFramebuffers(1, &id); }
 		};
 
 		constexpr id_t INVALID_ID = 0;
@@ -171,16 +185,35 @@ namespace pastry
 			return "";
 		}
 
+		inline char int_to_char(unsigned i) {
+			if(i == 0 || i > 9) return '0';
+			return '1' + i - 1;
+		}
+
+		inline std::string int_to_string(unsigned i) {
+			std::string r = "";
+			while(i > 0) {
+				r = int_to_char(i % 10) + r;
+				i /= 10;
+			}
+			if(r.length() < 3) {
+				r.insert(0, 3 - r.length(), '0');
+			}
+			return r;
+		}
+
 		inline void compile_shader(id_t q, std::string source) {
 			// prepare by replacing "; " with ";\n"
 			// this is to get better compiler error messages
-			size_t index = 0;
-			while(true) {
-				index = source.find("; ", index);
-				if(index == std::string::npos) break;
-				source.replace(index, 2, ";\n");
-				index += 2;
-			}			
+			{
+				size_t index = 0;
+				while(true) {
+					index = source.find("; ", index);
+					if(index == std::string::npos) break;
+					source.replace(index, 2, ";\n");
+					index += 2;
+				}
+			}
 			// compile
 			GLint len = source.size();
 			const GLchar* str = source.data();
@@ -190,10 +223,23 @@ namespace pastry
 			GLint status;
 			glGetShaderiv(q, GL_COMPILE_STATUS, &status);
 			if(status != GL_TRUE) {
+				// annotate code with line numbers
+				{
+					int i = 2; // first line ist done manually
+					source = "001: " + source;
+					size_t index = 0;
+					while(true) {
+						index = source.find("\n", index);
+						if(index == std::string::npos) break;
+						source.replace(index, 1, "\n" + int_to_string(i++) + ": ");
+						index += 6;
+					}
+				}
+				// get error message
 				char buffer[1024];
 				glGetShaderInfoLog(q, 1024, NULL, buffer);
+				// print everything
 				std::cerr << "ERROR: compile_shader" << std::endl;
-				std::cerr << "Shader code:" << std::endl;
 				std::cerr << source << std::endl;
 				std::cerr << "ERROR: " << buffer << std::endl;
 			}
@@ -561,7 +607,6 @@ namespace pastry
 				glBufferSubData(GL_ARRAY_BUFFER, 0, num_bytes, buf);
 			}
 		}
-
 		static void unbind() {
 			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
 		}
@@ -725,11 +770,14 @@ namespace pastry
 			create();
 			image_2d_rgb_ub(w, h, data_rgb_ub);
 		}
-		void create() {
+		void create(GLenum filter, GLenum wrap) {
 			id_create();
 			bind();
-			set_wrap(GL_REPEAT);
-			set_filter(GL_LINEAR);
+			set_filter(filter);
+			set_wrap(wrap);
+		}
+		void create() {
+			create(GL_LINEAR, GL_REPEAT);
 		}
 		int width() const { return width_; }
 		int height() const { return height_; }
@@ -775,6 +823,12 @@ namespace pastry
 			channels_ = 3;
 			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data_rgb_ub);
 		}
+		void image_2d_rgba_ub(int w, int h, unsigned char* data_rgb_ub) {
+			width_ = w;
+			height_ = h;
+			channels_ = 3;
+			glTexImage2D(target, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_rgb_ub);
+		}
 		std::vector<unsigned char> get_image_rgb_ub() const {
 			bind();
 			std::vector<unsigned char> buff(width_*height_*3);
@@ -799,8 +853,37 @@ namespace pastry
 		int get_height() const {
 			return get_param_i(GL_TEXTURE_HEIGHT);
 		}
+		static void unbind() {
+			glBindTexture(target, detail::INVALID_ID);
+		}
 		static void activate_unit(unsigned int num) {
 			glActiveTexture(GL_TEXTURE0 + num);
+		}
+	};
+
+	struct renderbuffer : public detail::resource<renderbuffer_id>
+	{		
+		void bind() {
+			glBindRenderbuffer(GL_RENDERBUFFER, id());
+		}
+		void storage(GLenum internalformat, unsigned width, unsigned height) {
+			glRenderbufferStorage(GL_RENDERBUFFER, internalformat, width, height);
+		}
+	};
+
+	struct framebuffer : public detail::resource<framebuffer_id>
+	{
+		void bind() {
+			glBindFramebuffer(GL_FRAMEBUFFER, id());
+		}
+		void attach(GLenum attachment, const texture& tex) {
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex.id(), 0);
+		}
+		void attach(GLenum attachment, const renderbuffer& rbo) {
+			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rbo.id());
+		}
+		static void unbind() {
+			glBindFramebuffer(GL_FRAMEBUFFER, detail::INVALID_ID);
 		}
 	};
 

@@ -13,11 +13,11 @@ namespace pastry
 		int w, h;
 
 		void render(const std::vector<detail::sprite_vertex>& v) {
-			vbo.bind();
-			vbo.update_data(v);
+			spo.use();
 			texture::activate_unit(0);
 			tex.bind();
-			spo.use();
+			vbo.bind();
+			vbo.update_data(v);
 			vao.bind();
 			glDrawArrays(GL_TRIANGLES, 0, v.size());
 		}
