@@ -90,10 +90,7 @@ public:
 		spo = pastry::load_program("assets/post");
 		spo.get_uniform<int>("tex").set(0);
 
-		vao = pastry::vertex_array(spo, {
-			{"pos", vbo}//,
-			//{"dummy", vbo, "pos"}
-		});
+		vao = pastry::vertex_array(spo, {{"pos", vbo}});
 
 		pastry::fb_get_dimensions(width_, height_);
 
@@ -108,7 +105,7 @@ public:
 		fbo.bind();
 		fbo.attach(GL_COLOR_ATTACHMENT0, tex);
 		fbo.attach(GL_DEPTH_ATTACHMENT, rbo);
-
+		fbo.unbind();
 	}
 	void update(float t, float dt) {
 		if(pastry::fb_has_changed()) {
@@ -118,15 +115,23 @@ public:
 			rbo.bind();
 			rbo.storage(GL_DEPTH_COMPONENT16, width_, height_);
 		}
+		// bind framebuffer for rendering
 		fbo.bind();
-		fbo.unbind();
 	}
 	void render() {
+		// now render to screen
 		fbo.unbind();
+		// clear old stuff
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		// render quad with framebuffer texture
 		spo.use();
+		spo.get_uniform<int>("tex").set(0);
+		pastry::texture::activate_unit(0);
 		tex.bind();
+		vbo.bind();
+		vao.bind();
 		glDrawArrays(GL_POINTS, 0, 1);
-		fbo.bind();
 	}
 };
 
@@ -134,7 +139,7 @@ int main()
 {
 	pastry::initialize();
 
-//	pastry::scene_add(std::make_shared<kitten_manager>());
+	pastry::scene_add(std::make_shared<kitten_manager>());
 
 	pastry::scene_add(std::make_shared<post_processor>());
 

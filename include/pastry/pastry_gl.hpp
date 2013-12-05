@@ -287,6 +287,117 @@ namespace pastry
 		return T{detail::load_text_file(filename)};
 	}
 
+	struct vertex_attribute;
+	template<typename T, unsigned int NUM> struct uniform;
+
+	struct program : public detail::resource<program_id>
+	{
+		program() {}
+		program(const vertex_shader& vs, const fragment_shader& fs) {
+			id_create();
+			attach(vs);
+			attach(fs);
+			link();
+		}
+		program(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
+			id_create();
+			attach(vs);
+			attach(gs);
+			attach(fs);
+			link();
+		}
+		void attach(const vertex_shader& s) {
+			glAttachShader(id(), s.id());
+		}
+		void attach(const geometry_shader& s) {
+			glAttachShader(id(), s.id());
+		}
+		void attach(const fragment_shader& s) {
+			glAttachShader(id(), s.id());
+		}
+		void link() {
+			glLinkProgram(id());
+			// check if link was successful
+			GLint status;
+			glGetProgramiv(id(), GL_LINK_STATUS, &status);
+			if(status != GL_TRUE) {
+				// print error message
+				char buffer[1024];
+				glGetProgramInfoLog(id(), 1024, NULL, buffer);
+				std::cerr << "ERROR with glLinkProgram:" << std::endl;
+				std::cerr << "ERROR: " << buffer << std::endl;
+			}
+		}
+		void use() {
+			glUseProgram(id());
+		}
+		static void unuse() {
+			glUseProgram(detail::INVALID_ID);
+		}
+		inline vertex_attribute get_attribute(const std::string& name) const;
+		template<typename T, unsigned int NUM=1>
+		uniform<T,NUM> get_uniform(const std::string& name);
+	};
+
+	inline program create_program(const std::string& src_vertex, const std::string& src_frag) {
+		return program{ {src_vertex}, {src_frag} };
+	}
+
+	inline program create_program(const std::string& src_vertex, const std::string& src_geom, const std::string& src_frag) {
+		return program{ {src_vertex}, {src_geom}, {src_frag} };
+	}
+
+	inline program load_program(const std::string& fn_vertex, const std::string& fn_frag) {
+		return program{
+			load_shader<vertex_shader>(fn_vertex),
+			load_shader<fragment_shader>(fn_frag)
+		};
+	}
+
+	inline program load_program(const std::string& fn_vertex, const std::string& fn_geom, const std::string& fn_frag) {
+		return program{
+			load_shader<vertex_shader>(fn_vertex),
+			load_shader<geometry_shader>(fn_geom),
+			load_shader<fragment_shader>(fn_frag)
+		};
+	}
+
+	/** Tries to load a shader with files fn.vert, fn.geom, fn.frag */
+	inline program load_program(const std::string& fn) {
+		std::string fn_vert = fn + ".vert";
+		std::string fn_geom = fn + ".geom";
+		std::string fn_frag = fn + ".frag";
+		if(detail::can_read_file(fn_geom)) {
+			return load_program(fn_vert, fn_geom, fn_frag);
+		}
+		else {
+			return load_program(fn_vert, fn_frag);
+		}
+	}
+
+	struct vertex_attribute : public detail::resource<vertex_attribute_id>
+	{
+		vertex_attribute() {}
+		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
+			glVertexAttribPointer(id(), size, type, normalized, stride, pointer);
+		}
+		void enable() {
+			glEnableVertexAttribArray(id());
+		}
+	};
+
+	vertex_attribute program::get_attribute(const std::string& name) const {
+		vertex_attribute va;
+		GLint a = glGetAttribLocation(id(), name.data());
+		if(a == -1) {
+			std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
+		}
+		else {
+			va.id_set(a);
+		}
+		return va;
+	}
+
 	namespace detail
 	{
 		template<typename K, unsigned int ROWS, unsigned int COLS, unsigned int NUM>
@@ -364,44 +475,46 @@ namespace pastry
 	| uniform<Eigen::Matrix4f,2>	| mat4 v[2]
 */
 
+	struct uniform_base : public detail::resource<uniform_id>
+	{
+		program spo;
+		void use_program() { spo.use(); }
+	};
+
 	/** Example: C++ int[2] / GLSL int[2]
 	 * T: uniform type, must be float (GLSL: float), int (GLSL: int) or unsigned int (GLSL: uint)
 	 * NUM>1: length of uniform array (for NUM=1 there is a specialization)
 	 */
 	template<typename T, unsigned int NUM>
-	struct uniform
-	: public detail::resource<uniform_id>
+	struct uniform : public uniform_base
 	{
 		void set(std::initializer_list<T> values_list) {
 			if(values_list.size() != NUM) {
 				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
 				return;
 			}
+			use_program();
 			detail::uniform_impl<T,1,1,NUM>::set(id(), values_list.begin());
 		}
 		std::array<T,NUM> get(id_t prog_id) {
 			std::array<T,NUM> a;
+			use_program();
 			detail::uniform_impl<T,1,1,NUM>::get(prog_id, id(), a.begin());
 			return a;
-		}
-		void set_ptr(const T* v) {
-			detail::uniform_impl<T,1,1,NUM>::set(id(), v);
-		}
-		void get_ptr(id_t prog_id, const T* v) {
-			detail::uniform_impl<T,1,1,NUM>::get(prog_id, id(), v);
 		}
 	};
 
 	/** Example: C++ int / GLSL int */
 	template<typename T>
-	struct uniform<T,1>
-	: public detail::resource<uniform_id>
+	struct uniform<T,1> : public uniform_base
 	{
 		void set(const T& v) {
+			use_program();
 			detail::uniform_impl<T,1,1,1>::set(id(), &v);
 		}
 		T get(id_t prog_id) {
 			T v;
+			use_program();
 			detail::uniform_impl<T,1,1,1>::get(prog_id, id(), &v);
 			return v;
 		}
@@ -409,15 +522,16 @@ namespace pastry
 
 	/** Example: C++ Eigen::Vector3f / GLSL vec3 */
 	template<typename K, int R, int C>
-	struct uniform<Eigen::Matrix<K,R,C>,1>
-	: public detail::resource<uniform_id>
+	struct uniform<Eigen::Matrix<K,R,C>,1> : public uniform_base
 	{
 		typedef Eigen::Matrix<K,R,C> mat_t;
 		void set(const mat_t& v) {
+			use_program();
 			detail::uniform_impl<K,R,C,1>::set(id(), v.data());
 		}
 		mat_t get(id_t prog_id) {
 			mat_t v;
+			use_program();
 			detail::uniform_impl<K,R,C,1>::get(prog_id, id(), v.data());
 			return v;
 		}
@@ -425,8 +539,7 @@ namespace pastry
 
 	/** Example: C++ Eigen::Vector3f[2] / GLSL vec3[2] */
 	template<typename K, int R, int C, unsigned int NUM>
-	struct uniform<Eigen::Matrix<K,R,C>,NUM>
-	: public detail::resource<uniform_id>
+	struct uniform<Eigen::Matrix<K,R,C>,NUM> : public uniform_base
 	{
 		typedef Eigen::Matrix<K,R,C> mat_t;
 		void set(std::initializer_list<mat_t> values_list) {
@@ -441,11 +554,13 @@ namespace pastry
 				std::copy(p, p+R*C, &buff[i*R*C]);
 			}
 			// write to opengl
+			use_program();
 			detail::uniform_impl<K,R,C,NUM>::set(id(), buff);
 		}
 		std::array<mat_t,NUM> get(id_t prog_id) {
 			// read from opengl
 			K buff[R*C*NUM];
+			use_program();
 			detail::uniform_impl<K,R,C,NUM>::get(prog_id, id(), buff);
 			// create array
 			std::array<mat_t,NUM> a;
@@ -456,6 +571,21 @@ namespace pastry
 			return a;
 		}
 	};
+
+	template<typename T, unsigned int NUM>
+	uniform<T,NUM> program::get_uniform(const std::string& name)
+	{
+		uniform<T,NUM> u;
+		u.spo = *this;
+		GLint a = glGetUniformLocation(id(), name.data());
+		if(a == -1) {
+			std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
+		}
+		else {
+			u.id_set(a);
+		}
+		return u;
+	}
 
 	namespace detail
 	{
@@ -516,17 +646,6 @@ namespace pastry
 	inline detail::layout_item layout_skip() {
 		return layout_skip_bytes(sizeof(K)*N);
 	}
-
-	struct vertex_attribute : public detail::resource<vertex_attribute_id>
-	{
-		vertex_attribute() {}
-		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
-			glVertexAttribPointer(id(), size, type, normalized, stride, pointer);
-		}
-		void enable() {
-			glEnableVertexAttribArray(id());
-		}
-	};
 
 	struct array_buffer : public detail::resource<array_buffer_id>
 	{
@@ -611,98 +730,6 @@ namespace pastry
 			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
 		}
 	};
-
-	struct program : public detail::resource<program_id>
-	{
-		program() {}
-		program(const vertex_shader& vs, const fragment_shader& fs) {
-			id_create();
-			attach(vs);
-			attach(fs);
-			link();
-		}
-		program(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
-			id_create();
-			attach(vs);
-			attach(gs);
-			attach(fs);
-			link();
-		}
-		void attach(const vertex_shader& s) {
-			glAttachShader(id(), s.id());
-		}
-		void attach(const geometry_shader& s) {
-			glAttachShader(id(), s.id());
-		}
-		void attach(const fragment_shader& s) {
-			glAttachShader(id(), s.id());
-		}
-		void link() {
-			glLinkProgram(id());
-		}
-		void use() {
-			glUseProgram(id());
-		}
-		vertex_attribute get_attribute(const std::string& name) const {
-			vertex_attribute va;
-			GLint a = glGetAttribLocation(id(), name.data());
-			if(a == -1) {
-				std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
-			}
-			else {
-				va.id_set(a);
-			}
-			return va;
-		}
-		template<typename T, unsigned int NUM=1>
-		uniform<T,NUM> get_uniform(const std::string& name) {
-			uniform<T,NUM> u;
-			GLint a = glGetUniformLocation(id(), name.data());
-			if(a == -1) {
-				std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
-			}
-			else {
-				u.id_set(a);
-			}
-			return u;
-		}
-	};
-
-	inline program create_program(const std::string& src_vertex, const std::string& src_frag) {
-		return program{ {src_vertex}, {src_frag} };
-	}
-
-	inline program create_program(const std::string& src_vertex, const std::string& src_geom, const std::string& src_frag) {
-		return program{ {src_vertex}, {src_geom}, {src_frag} };
-	}
-
-	inline program load_program(const std::string& fn_vertex, const std::string& fn_frag) {
-		return program{
-			load_shader<vertex_shader>(fn_vertex),
-			load_shader<fragment_shader>(fn_frag)
-		};
-	}
-
-	inline program load_program(const std::string& fn_vertex, const std::string& fn_geom, const std::string& fn_frag) {
-		return program{
-			load_shader<vertex_shader>(fn_vertex),
-			load_shader<geometry_shader>(fn_geom),
-			load_shader<fragment_shader>(fn_frag)
-		};
-	}
-
-	/** Tries to load a shader with files fn.vert, fn.geom, fn.frag */
-	inline program load_program(const std::string& fn) {
-		std::string fn_vert = fn + ".vert";
-		std::string fn_geom = fn + ".geom";
-		std::string fn_frag = fn + ".frag";
-		if(detail::can_read_file(fn_geom)) {
-			return load_program(fn_vert, fn_geom, fn_frag);
-		}
-		else {
-			return load_program(fn_vert, fn_frag);
-		}
-	}
 
 	namespace detail
 	{
