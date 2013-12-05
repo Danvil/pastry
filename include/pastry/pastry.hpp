@@ -13,7 +13,7 @@ namespace pastry {
 
 // ----- BASIC RENDERLINGS -----------------------------------------------------
 
-#define PTR(A) typedef std::shared_ptr<A> A##_ptr;
+#define PASTRY_DEFINE_PTR(A) typedef std::shared_ptr<A> A##_ptr;
 
 /** Base class for everything renderable */
 class renderling
@@ -23,7 +23,7 @@ public:
 	virtual void render() {}
 };
 
-PTR(renderling)
+PASTRY_DEFINE_PTR(renderling)
 
 /** A stateless renderling */
 class functor_renderling
@@ -47,7 +47,7 @@ public:
 	}
 };
 
-PTR(functor_renderling)
+PASTRY_DEFINE_PTR(functor_renderling)
 
 /** Create a stateless renderling (render only) */
 inline functor_renderling_ptr create_functor_renderling(
@@ -81,7 +81,7 @@ public:
 	void render();
 };
 
-PTR(render_group)
+PASTRY_DEFINE_PTR(render_group)
 
 // ----- GENERAL RENDER SETUP --------------------------------------------------
 
@@ -222,7 +222,7 @@ struct sprite
 	float t;
 };
 
-PTR(sprite)
+PASTRY_DEFINE_PTR(sprite)
 
 /** Adds a sprite sheet */
 void sprites_add_sheet(const detail::def_sheet& sheet, bool filter_nearest=true);
