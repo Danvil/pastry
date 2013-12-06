@@ -370,6 +370,9 @@ namespace pastry
 		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
 			glVertexAttribPointer(loc, size, type, normalized, stride, pointer);
 		}
+		void set_divisor(unsigned divisor) {
+			glVertexAttribDivisor(loc, divisor);
+		}
 		void enable() {
 			glEnableVertexAttribArray(loc);
 		}
@@ -727,11 +730,14 @@ namespace pastry
 			std::string shader_name;
 			array_buffer vb;
 			std::string vb_name;
+			unsigned divisor;
 			mapping() {}
 			mapping(const std::string& nsn, const array_buffer& nvb)
-			: shader_name(nsn), vb(nvb), vb_name(nsn) {}
+			: shader_name(nsn), vb(nvb), vb_name(nsn), divisor(0) {}
 			mapping(const std::string& nsn, const array_buffer& nvb, const std::string& nvbn)
-			: shader_name(nsn), vb(nvb), vb_name(nvbn) {}
+			: shader_name(nsn), vb(nvb), vb_name(nvbn), divisor(0) {}
+			mapping(const std::string& nsn, const array_buffer& nvb, const std::string& nvbn, unsigned nd)
+			: shader_name(nsn), vb(nvb), vb_name(nvbn), divisor(nd) {}
 		};
 	}
 
@@ -759,8 +765,17 @@ namespace pastry
 				vb.bind();
 				// create vertex attribute
 				vertex_attribute va = p.get_attribute(shader_name);
+				// std::cout << "shader_name = " << shader_name << std::endl;
+				// std::cout << "vb = " << vb << std::endl;
+				// std::cout << "vn_name = " << vn_name << std::endl;
+				// std::cout << "size = " << it->size << std::endl;
+				// std::cout << "type = " << it->type << std::endl;
+				// std::cout << "stride = " << vb.layout_.back().offset_end << std::endl;
+				// std::cout << "offset = " << it->offset_begin << std::endl;
+				// std::cout << "divisor = " << m.divisor << std::endl;
 				va.configure(it->size, it->type, GL_FALSE, vb.layout_.back().offset_end, (GLvoid*)it->offset_begin);
 				va.enable();
+				va.set_divisor(m.divisor); // for instancing
 				attributes_.push_back(va);
 			}
 		}

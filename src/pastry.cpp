@@ -211,6 +211,21 @@ Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f, b
 		return math_orthogonal_projection(0, w, h, 0, n, f);
 }
 
+Eigen::Matrix4f math_orthogonal_projection(float n, float f, bool ydown)
+{
+	return math_orthogonal_projection(g_fb_width, g_fb_height, n, f, ydown);
+}
+
+Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown)
+{
+	float aspect = static_cast<float>(g_fb_height)/static_cast<float>(g_fb_width);
+	aspect *= (ydown ? 1.0f : -1.0f);
+	return pastry::math_orthogonal_projection(
+		-s, +s,
+		-s*aspect, +s*aspect,
+		n, f);
+}
+
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 {
 	float st = std::sin(theta);

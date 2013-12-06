@@ -137,6 +137,11 @@ Eigen::Matrix4f math_orthogonal_projection(float l, float r, float t, float b, f
  */
 Eigen::Matrix4f math_orthogonal_projection(float w, float h, float n, float f, bool ydown=false);
 
+/** Create an orthogonal projection matrix for the current resolution */
+Eigen::Matrix4f math_orthogonal_projection(float n, float f, bool ydown=false);
+
+Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown=false);
+
 /** Create a 2D transformation matrix */
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta);
 
