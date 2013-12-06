@@ -52,12 +52,12 @@ struct effect
 
 	uniform<Eigen::Vector2f> u_dim;
 
-	func_postfx_update on_update;
+	post_effect_ptr sfx_;
 
 	effect() {}
 
-	effect(const std::string& effect_source, func_postfx_update f=[](float,float,const pastry::program&){}) {
-		on_update = f;
+	effect(const post_effect_ptr& sfx) {
+		sfx_ = sfx;
 
 		vbo = pastry::array_buffer({
 			{"pos", GL_FLOAT, 2}
@@ -105,7 +105,7 @@ struct effect
 				postfx_outColor = sfx(postfx_fuv);
 			}
 		);
-		src_frag += "\n" + effect_source;
+		src_frag += "\n" + sfx_->source();
 
 		//spo = pastry::load_program("assets/post"); // FIXME
 		spo = pastry::program(src_vert, src_geom, src_frag);
@@ -116,9 +116,7 @@ struct effect
 	}
 
 	void update(float t, float dt) {
-		if(on_update) {
-			on_update(t, dt, spo);
-		}
+		sfx_->update(t, dt, spo);
 	}
 
 	void render(const texture& tex, unsigned w, unsigned h) {
@@ -138,6 +136,21 @@ class manager : public pastry::renderling
 {
 	buffer buff_a_, buff_b_;
 	std::vector<effect> effects_;
+	std::vector<post_effect_ptr> remove_sheduled_;
+
+private:
+	void remove_impl(const post_effect_ptr& p) {
+		auto it = effects_.begin();
+		while(it != effects_.end()) {
+			it = std::find_if(it, effects_.end(),
+				[&p](const effect& e) {
+					return e.sfx_ == p;
+				});
+			if(it != effects_.end()) {
+				effects_.erase(it);
+			}
+		}
+	}
 
 public:
 	manager() {
@@ -149,7 +162,16 @@ public:
 		effects_.push_back(e);
 	}
 
+	void remove(const post_effect_ptr& p) {
+		remove_sheduled_.push_back(p);
+	}
+
 	void update(float t, float dt) {
+		// remove sheduled
+		for(const auto& p : remove_sheduled_) {
+			remove_impl(p);
+		}
+		remove_sheduled_.clear();
 		// skip if no effects
 		if(effects_.empty()) {
 			return;
@@ -204,14 +226,47 @@ void postfx_init()
 	scene_add(g_postfx_manager, std::numeric_limits<int>::max());
 }
 
-void postfx_add(const std::string& source)
+class post_effect_stateless : public post_effect
 {
-	g_postfx_manager->add(postfx::effect{source});
+public:
+	std::string source_;
+	func_postfx_update on_update_;
+public:
+	std::string source() const {
+		return source_;
+	}
+	void update(float t, float dt, const program& spo) {
+		if(on_update_)
+			on_update_(t, dt, spo);
+	}
+};
+
+
+post_effect_ptr postfx_add(const std::string& source)
+{
+	auto p = std::make_shared<post_effect_stateless>();
+	p->source_ = source;
+	postfx_add(p);
+	return p;
 }
 
-void postfx_add(const std::string& source, func_postfx_update f)
+post_effect_ptr postfx_add(const std::string& source, func_postfx_update f)
 {
-	g_postfx_manager->add(postfx::effect{source, f});
+	auto p = std::make_shared<post_effect_stateless>();
+	p->source_ = source;
+	p->on_update_ = f;
+	postfx_add(p);
+	return p;
+}
+
+void postfx_add(const post_effect_ptr& p)
+{
+	g_postfx_manager->add(postfx::effect{p});
+}
+
+void postfx_remove(const post_effect_ptr& p)
+{
+	g_postfx_manager->remove(p);
 }
 
 }

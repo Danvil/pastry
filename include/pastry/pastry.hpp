@@ -250,11 +250,24 @@ private:
 
 // ----- POST PROCESSING EFFECTS -----------------------------------------------
 
+class post_effect
+{
+public:
+	virtual std::string source() const {}
+	virtual void update(float t, float dt, const program& spo) {}
+};
+
+PASTRY_DEFINE_PTR(post_effect)
+
+post_effect_ptr postfx_add(const std::string& source);
+
 typedef std::function<void(float,float,const pastry::program& spo)> func_postfx_update;
 
-void postfx_add(const std::string& source);
+post_effect_ptr postfx_add(const std::string& source, func_postfx_update f);
 
-void postfx_add(const std::string& source, func_postfx_update f);
+void postfx_add(const post_effect_ptr& p);
+
+void postfx_remove(const post_effect_ptr& p);
 
 // ----- THE END ---------------------------------------------------------------
 
