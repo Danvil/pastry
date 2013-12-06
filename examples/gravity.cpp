@@ -19,7 +19,7 @@ constexpr float SUNS[NUM_SUNS][2] = {
 };
 constexpr float RAD_SUN = 20.0f;
 
-constexpr float RAD_MIN = 4.0f;
+constexpr float RAD_MIN = 2.0f;
 constexpr float RAD_MAX = 10.0f;
 
 constexpr float PASSIVE_RAD_MIN = 1.0f;
@@ -221,7 +221,7 @@ public:
 			uniform sampler2D tex;
 			out vec4 outColor;
 			void main() {
-				outColor = texture(tex, vuv);
+				outColor = vec4(1,0.92,0.76,1) * texture(tex, vuv);
 			}
 		);
 		spo = pastry::program(vert_src, frag_src);
