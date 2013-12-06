@@ -1,10 +1,13 @@
 #include <pastry/pastry.hpp>
+#include <cstdio>
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "dep/stb_truetype.h"
 
 namespace pastry
 {
+
+const std::string g_font_name = "assets/DejaVuSans.ttf";
 
 stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
 constexpr unsigned int TTF_TEX_SIZE = 512;
@@ -55,10 +58,22 @@ void initialize_text()
 
 	spo.get_uniform<int>("tex").set(0);
 
-	char ttf_buffer[1<<20];
-	fread(ttf_buffer, 1, 1<<20, fopen("assets/DejaVuSans.ttf", "rb"));
 	unsigned char temp_bitmap[TTF_TEX_SIZE*TTF_TEX_SIZE];
-	stbtt_BakeFontBitmap((unsigned char*)ttf_buffer,0, 32.0, temp_bitmap,TTF_TEX_SIZE,TTF_TEX_SIZE, 32,96, cdata); // no guarantee this fits!
+	FILE* fh = std::fopen(g_font_name.data(), "rb");
+	if(fh == NULL) {
+		std::cerr << "Error loading font '" << g_font_name << "'" << std::endl;
+	}
+	else {
+		char ttf_buffer[1<<20];
+		std::fread(ttf_buffer, 1, 1<<20, fh);
+		stbtt_BakeFontBitmap(
+			(unsigned char*)ttf_buffer,0,
+			32.0,
+			temp_bitmap,TTF_TEX_SIZE,TTF_TEX_SIZE,
+			32,96,
+			cdata); // no guarantee this fits!
+		std::fclose(fh);
+	}
 
 	tex.create();
 	tex.bind();
