@@ -77,20 +77,22 @@ public:
 
 		box_pos = {100, 50};
 
+		is_initialized = false;
 		start_game();
 	}
 
 	void start_game() {
 		box_speed = 300.f;
 		is_gameover = false;
+		is_pong = false;
 		ball_pos = {0.5f*width,450};
 		std::uniform_real_distribution<float> uniform_dist(-1.0f, +1.0f);
 		ball_vel = Eigen::Vector2f{uniform_dist(s_rnd),uniform_dist(s_rnd)}.normalized();
 	}
 
-	bool is_initialized = false;
-	bool is_gameover = false;
-	float is_pong = false;
+	bool is_initialized;
+	bool is_gameover;
+	float is_pong;
 
 	void update(float t, float dt)
 	{
