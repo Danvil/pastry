@@ -13,11 +13,11 @@ pastry is aimed at 2D and 2.5D applications - it is not a complete 3D engine.
 
 List of features:
 
-* Light-weight C++ OpenGL wrappers for e.g. shader programs, vertex buffers, textures and textures
+* Light-weight C++ OpenGL wrappers for e.g. shader programs, vertex buffers and textures
 * Various OpenGL helpers
-* 3D math (thanks to Eigen)
-* Texture loading (thanks to stb_image and SOIL2)
-* Text rendering (thanks to stb_truetype)
+* 3D math (thanks to [Eigen](http://eigen.tuxfamily.org))
+* Texture loading (thanks to [stb_image](http://nothings.org/) and [SOIL2](https://bitbucket.org/SpartanJ/soil2))
+* Text rendering (thanks to [stb_truetype](http://nothings.org/))
 * Sprites (static/animated)
 * Particle effects
 * Post effects
