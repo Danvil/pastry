@@ -34,8 +34,8 @@ constexpr float G = 5.0f;
 constexpr float DENSITY = 1.0f;
 constexpr float A_MIN = 0.1f;
 
-constexpr unsigned GRID_DIM = 256;
-constexpr float GRID_W = 5.0f;
+constexpr unsigned GRID_DIM = 128;
+constexpr float GRID_W = 10.f;
 constexpr float GRID_MID = 0.5f * GRID_W * GRID_DIM;
 
 struct grid;
@@ -43,7 +43,7 @@ struct grid;
 struct star
 {
 	float px, py;
-	float vx, vy;
+	float pox, poy;
 	float ax, ay;
 	float r;
 	float m;
@@ -57,11 +57,10 @@ struct star
 	void reset() {
 		// position / vel / accel
 		std::uniform_real_distribution<float> r_pos(-WORLD_SIZE, +WORLD_SIZE);
-		std::uniform_real_distribution<float> r_vel(-1.0f, +1.0f);
 		px = r_pos(s_rnd);
 		py = r_pos(s_rnd);
-		vx = VEL_INIT_SCL*r_vel(s_rnd);
-		vy = VEL_INIT_SCL*r_vel(s_rnd);
+		pox = px;
+		poy = py;
 		ax = 0.0f;
 		ay = 0.0f;
 		// radius / mass
@@ -196,7 +195,7 @@ public:
 
 		vbo_inst = pastry::array_buffer({
 			{"pos", GL_FLOAT, 2},
-			{"vel", GL_FLOAT, 2},
+			{"pos_old", GL_FLOAT, 2},
 			{"acc", GL_FLOAT, 2},
 			{"rad", GL_FLOAT, 1},
 			{"mass", GL_FLOAT, 1},
@@ -242,6 +241,8 @@ public:
 			star s{1};
 			s.px = SUNS[i][0];
 			s.py = SUNS[i][1];
+			s.pox = s.px;
+			s.poy = s.py;
 			s.set_radius(RAD_SUN);
 			stars_.push_back(s);
 		}
@@ -268,11 +269,14 @@ public:
 			stars_[k].update(t, dt, k, stars_, g);
 		}
 		dt = 1.0f / 60.0f;
+		float dt2 = dt*dt;
 		for(star& p : stars_) {
-			p.vx += dt*p.ax;
-			p.vy += dt*p.ay;
-			p.px += dt*p.vx;
-			p.py += dt*p.vy;
+			float dx = p.px - p.pox;
+			float dy = p.py - p.poy;
+			p.pox = p.px;
+			p.poy = p.py;
+			p.px += dx + p.ax*dt2;
+			p.py += dy + p.ay*dt2;
 			p.ax = 0.0f;
 			p.ay = 0.0f;
 		}
