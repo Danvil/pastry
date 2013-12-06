@@ -23,9 +23,7 @@ namespace pastry
 	struct geometry_shader_id {};
 	struct fragment_shader_id {};
 	struct program_id {};
-	struct vertex_attribute_id {};
 	struct vertex_array_id {};
-	struct uniform_id {};
 	struct texture_id {};
 	struct renderbuffer_id {};
 	struct framebuffer_id {};
@@ -65,22 +63,10 @@ namespace pastry
 			static void gl_delete(id_t id) { glDeleteProgram(id); }
 		};
 
-		template<> struct handler<vertex_attribute_id>
-		{
-			static id_t gl_create() { return 0; }
-			static void gl_delete(id_t) { }
-		};
-
 		template<> struct handler<vertex_array_id>
 		{
 			static id_t gl_create() { id_t id; glGenVertexArrays(1, &id); return id; }
 			static void gl_delete(id_t id) { glDeleteVertexArrays(1, &id); }
-		};
-
-		template<> struct handler<uniform_id>
-		{
-			static id_t gl_create() { return 0; }
-			static void gl_delete(id_t) { }
 		};
 
 		template<> struct handler<texture_id>
@@ -375,25 +361,25 @@ namespace pastry
 		}
 	}
 
-	struct vertex_attribute : public detail::resource<vertex_attribute_id>
+	struct vertex_attribute
 	{
-		vertex_attribute() {}
+		GLint loc;
+		bool is_valid() const {
+			return loc >= 0;
+		}
 		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
-			glVertexAttribPointer(id(), size, type, normalized, stride, pointer);
+			glVertexAttribPointer(loc, size, type, normalized, stride, pointer);
 		}
 		void enable() {
-			glEnableVertexAttribArray(id());
+			glEnableVertexAttribArray(loc);
 		}
 	};
 
 	vertex_attribute program::get_attribute(const std::string& name) const {
 		vertex_attribute va;
-		GLint a = glGetAttribLocation(id(), name.data());
-		if(a == -1) {
+		va.loc = glGetAttribLocation(id(), name.data());
+		if(va.loc == -1) {
 			std::cerr << "ERROR: Inactive or invalid vertex attribute '" << name << "'" << std::endl;
-		}
-		else {
-			va.id_set(a);
 		}
 		return va;
 	}
@@ -475,17 +461,23 @@ namespace pastry
 	| uniform<Eigen::Matrix4f,2>	| mat4 v[2]
 */
 
-	struct uniform_base : public detail::resource<uniform_id>
+	struct uniform_base
 	{
+		GLint loc;
 		program spo;
-		void use_program() { spo.use(); }
+		void use_program() {
+			spo.use();
+		}
+		bool is_valid() const {
+			return loc >= 0;
+		}
 	};
 
 	/** Example: C++ int[2] / GLSL int[2]
 	 * T: uniform type, must be float (GLSL: float), int (GLSL: int) or unsigned int (GLSL: uint)
 	 * NUM>1: length of uniform array (for NUM=1 there is a specialization)
 	 */
-	template<typename T, unsigned int NUM>
+	template<typename T, unsigned int NUM=1>
 	struct uniform : public uniform_base
 	{
 		void set(std::initializer_list<T> values_list) {
@@ -494,12 +486,12 @@ namespace pastry
 				return;
 			}
 			use_program();
-			detail::uniform_impl<T,1,1,NUM>::set(id(), values_list.begin());
+			detail::uniform_impl<T,1,1,NUM>::set(loc, values_list.begin());
 		}
 		std::array<T,NUM> get(id_t prog_id) {
 			std::array<T,NUM> a;
 			use_program();
-			detail::uniform_impl<T,1,1,NUM>::get(prog_id, id(), a.begin());
+			detail::uniform_impl<T,1,1,NUM>::get(prog_id, loc, a.begin());
 			return a;
 		}
 	};
@@ -510,12 +502,12 @@ namespace pastry
 	{
 		void set(const T& v) {
 			use_program();
-			detail::uniform_impl<T,1,1,1>::set(id(), &v);
+			detail::uniform_impl<T,1,1,1>::set(loc, &v);
 		}
 		T get(id_t prog_id) {
 			T v;
 			use_program();
-			detail::uniform_impl<T,1,1,1>::get(prog_id, id(), &v);
+			detail::uniform_impl<T,1,1,1>::get(prog_id, loc, &v);
 			return v;
 		}
 	};
@@ -527,12 +519,12 @@ namespace pastry
 		typedef Eigen::Matrix<K,R,C> mat_t;
 		void set(const mat_t& v) {
 			use_program();
-			detail::uniform_impl<K,R,C,1>::set(id(), v.data());
+			detail::uniform_impl<K,R,C,1>::set(loc, v.data());
 		}
 		mat_t get(id_t prog_id) {
 			mat_t v;
 			use_program();
-			detail::uniform_impl<K,R,C,1>::get(prog_id, id(), v.data());
+			detail::uniform_impl<K,R,C,1>::get(prog_id, loc, v.data());
 			return v;
 		}
 	};
@@ -555,13 +547,13 @@ namespace pastry
 			}
 			// write to opengl
 			use_program();
-			detail::uniform_impl<K,R,C,NUM>::set(id(), buff);
+			detail::uniform_impl<K,R,C,NUM>::set(loc, buff);
 		}
 		std::array<mat_t,NUM> get(id_t prog_id) {
 			// read from opengl
 			K buff[R*C*NUM];
 			use_program();
-			detail::uniform_impl<K,R,C,NUM>::get(prog_id, id(), buff);
+			detail::uniform_impl<K,R,C,NUM>::get(prog_id, loc, buff);
 			// create array
 			std::array<mat_t,NUM> a;
 			for(unsigned int i=0; i<NUM; i++) {
@@ -577,12 +569,9 @@ namespace pastry
 	{
 		uniform<T,NUM> u;
 		u.spo = *this;
-		GLint a = glGetUniformLocation(id(), name.data());
-		if(a == -1) {
+		u.loc = glGetUniformLocation(id(), name.data());
+		if(u.loc == -1) {
 			std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
-		}
-		else {
-			u.id_set(a);
 		}
 		return u;
 	}

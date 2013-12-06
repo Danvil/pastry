@@ -75,37 +75,37 @@ int main()
 
 	pastry::scene_add(std::make_shared<kitten_manager>());
 
-	std::string sfx_wobble =
+	pastry::postfx_add(
 		"uniform float offset;"
 		"vec4 sfx(vec2 uv) {"
-		"	uv.x += 10*sin((uv.y/100 + offset)*2*3.14159);"
+		"	uv.x += sin((4*uv.y + offset)*2*3.14159)/80;"
 		"	return sfx_read_fb(uv);"
-		"}";
-	pastry::postfx_add(sfx_wobble,
+		"}",
 		[](float t, float dt, const pastry::program& spo) {
 			spo.get_uniform<float>("offset").set(t * .75);
-		});
+		}
+	);
 
-	std::string sfx_redify =
+	pastry::postfx_add(
 		"uniform float a;"
 		"vec4 sfx(vec2 uv) {"
 		"	return vec4(1,a,a,1) * sfx_read_fb(uv);"
-		"}";
-	pastry::postfx_add(sfx_redify,
+		"}",
 		[](float t, float dt, const pastry::program& spo) {
 			float q = std::fmod(t, 2.0f) - 1.0f;
 			spo.get_uniform<float>("a").set(1.0f - q*q);
-		});
+		}
+	);
 
-	std::string sfx_edgy =
+	pastry::postfx_add(
 		"vec4 sfx(vec2 uv) {"
-		"	return   sfx_read_fb(uv+vec2(+1,0))"
-		"	       + sfx_read_fb(uv+vec2(-1,0))"
-		"	       + sfx_read_fb(uv+vec2(0,+1))"
-		"	       + sfx_read_fb(uv+vec2(0,-1))"
+		"	return   sfx_read_fb(uv+vec2(+1,0)/postfx_dim)"
+		"	       + sfx_read_fb(uv+vec2(-1,0)/postfx_dim)"
+		"	       + sfx_read_fb(uv+vec2(0,+1)/postfx_dim)"
+		"	       + sfx_read_fb(uv+vec2(0,-1)/postfx_dim)"
 		"	       - 4*sfx_read_fb(uv);"
-		"}";
-	pastry::postfx_add(sfx_edgy);
+		"}"
+	);
 
 	pastry::run();
 

@@ -50,6 +50,8 @@ struct effect
 	pastry::array_buffer vbo;
 	pastry::vertex_array vao;
 
+	uniform<Eigen::Vector2f> u_dim;
+
 	func_postfx_update on_update;
 
 	effect() {}
@@ -96,11 +98,11 @@ struct effect
 			in vec2 postfx_fuv;
 			out vec4 postfx_outColor;
 			vec4 sfx_read_fb(vec2 uv) {
-				return texture(postfx_tex, uv/postfx_dim);
+				return texture(postfx_tex, uv);
 			}
 			vec4 sfx(vec2 uv);
 			void main() {
-				postfx_outColor = sfx(postfx_fuv*postfx_dim);
+				postfx_outColor = sfx(postfx_fuv);
 			}
 		);
 		src_frag += "\n" + effect_source;
@@ -108,6 +110,7 @@ struct effect
 		//spo = pastry::load_program("assets/post"); // FIXME
 		spo = pastry::program(src_vert, src_geom, src_frag);
 		spo.get_uniform<int>("postfx_tex").set(0);
+		u_dim = spo.get_uniform<Eigen::Vector2f>("postfx_dim");
 
 		vao = pastry::vertex_array(spo, {{"pos", vbo}});
 	}
@@ -121,7 +124,8 @@ struct effect
 	void render(const texture& tex, unsigned w, unsigned h) {
 		// render quad with texture
 		spo.use();
-		spo.get_uniform<Eigen::Vector2f>("postfx_dim").set({w,h});
+		if(u_dim.is_valid())
+			u_dim.set({w,h});
 		pastry::texture::activate_unit(0);
 		tex.bind();
 		vbo.bind();
