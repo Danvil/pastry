@@ -18,7 +18,7 @@ namespace pastry
 {
 	typedef GLuint id_t;
 
-	struct array_buffer_id {};
+	struct buffer_id {};
 	struct vertex_shader_id {};
 	struct geometry_shader_id {};
 	struct fragment_shader_id {};
@@ -33,7 +33,7 @@ namespace pastry
 		template<typename ID>
 		struct handler;
 
-		template<> struct handler<array_buffer_id>
+		template<> struct handler<buffer_id>
 		{
 			static id_t gl_create() { id_t id; glGenBuffers(1, &id); return id; }
 			static void gl_delete(id_t id) { glDeleteBuffers(1, &id); }
@@ -639,7 +639,8 @@ namespace pastry
 		return layout_skip_bytes(sizeof(K)*N);
 	}
 
-	struct array_buffer : public detail::resource<array_buffer_id>
+	template<int TARGET>
+	struct buffer : public detail::resource<buffer_id>
 	{
 	private:
 		std::size_t num_bytes_;
@@ -648,17 +649,17 @@ namespace pastry
 	public:
 		std::vector<detail::va_data> layout_;
 
-		array_buffer()
+		buffer()
 		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {}
 
-		array_buffer(std::initializer_list<detail::layout_item> list)
+		buffer(std::initializer_list<detail::layout_item> list)
 		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
 			id_create();
 			bind();
 			set_layout(list);
 		}
 
-		array_buffer(std::initializer_list<detail::layout_item> list, std::size_t num_bytes, GLuint usage)
+		buffer(std::initializer_list<detail::layout_item> list, std::size_t num_bytes, GLuint usage)
 		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
 			id_create();
 			bind();
@@ -671,7 +672,7 @@ namespace pastry
 		}
 		
 		void bind() const {
-			glBindBuffer(GL_ARRAY_BUFFER, id());
+			glBindBuffer(TARGET, id());
 		}
 		
 		template<typename T>
@@ -688,7 +689,7 @@ namespace pastry
 			usage_ = usage;
 			num_bytes_ = num_bytes;
 			bind();
-			glBufferData(GL_ARRAY_BUFFER, num_bytes_, buf, usage);
+			glBufferData(TARGET, num_bytes_, buf, usage);
 		}
 
 		void init_data(std::size_t num_bytes, GLuint usage) {
@@ -715,13 +716,17 @@ namespace pastry
 			}
 			else {
 				bind();
-				glBufferSubData(GL_ARRAY_BUFFER, 0, num_bytes, buf);
+				glBufferSubData(TARGET, 0, num_bytes, buf);
 			}
 		}
 		static void unbind() {
-			glBindBuffer(GL_ARRAY_BUFFER, detail::INVALID_ID);
+			glBindBuffer(TARGET, detail::INVALID_ID);
 		}
 	};
+
+	typedef buffer<GL_ARRAY_BUFFER> array_buffer;
+
+	typedef buffer<GL_ELEMENT_ARRAY_BUFFER> element_array_buffer;
 
 	namespace detail
 	{
@@ -785,6 +790,92 @@ namespace pastry
 		}
 
 	};
+
+	namespace detail
+	{
+		template<int MODE> struct mesh_type_traits;
+		#define MESH_TYPE_DEF(M,NB,NE) \
+			template<> struct mesh_type_traits<M> { \
+				static constexpr unsigned num_base = NB; \
+				static constexpr unsigned num_per_element = NE; \
+			};
+		MESH_TYPE_DEF(GL_POINTS,0,1)
+		MESH_TYPE_DEF(GL_LINE_STRIP,1,1)
+		MESH_TYPE_DEF(GL_LINES,0,2)
+		MESH_TYPE_DEF(GL_TRIANGLE_STRIP,2,1)
+		MESH_TYPE_DEF(GL_TRIANGLE_FAN,2,1)
+		MESH_TYPE_DEF(GL_TRIANGLES,0,3)
+
+		template<int IT> struct mesh_index_types_traits;
+		#define INDEX_TYPE_DEF(IT,K) \
+			template<> struct mesh_index_types_traits<IT> { \
+				typedef K result; \
+			};
+		INDEX_TYPE_DEF(GL_UNSIGNED_BYTE,uint8_t)
+		INDEX_TYPE_DEF(GL_UNSIGNED_SHORT,uint16_t)
+		INDEX_TYPE_DEF(GL_UNSIGNED_INT,uint32_t)
+
+		template<typename I, int N> struct index { typedef std::array<I,N> result; };
+		template<typename I> struct index<I,1> { typedef I result; };
+	}
+
+	/** Class to hold mesh data
+	 * Example usage:
+	 *   // mesh data for a quad
+	 *   struct my_vertex { float x,y,z; };
+	 *   pastry::triangle_mesh<my_vertex> mesh;
+	 *   mesh.vertices = { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0} };
+	 *   mesh.indices= { {0,1,2}, {0,2,3} };
+	 */
+	template<typename V, int MODE, int INDEX_TYPE=GL_UNSIGNED_INT>
+	struct mesh
+	{
+		typedef detail::mesh_type_traits<MODE> m_traits;
+		typedef detail::mesh_index_types_traits<INDEX_TYPE> i_traits;
+		typedef typename detail::index<
+			typename i_traits::result,
+			m_traits::num_per_element>::result I;
+		
+		std::vector<V> vertices;
+		std::vector<I> indices;
+
+		void draw_arrays() const {
+			glDrawArrays(MODE, 0, vertices.size());
+		}
+
+		void draw_arrays_instanced(std::size_t primcount) const {
+			glDrawArraysInstanced(MODE, 0, vertices.size(), primcount);
+		}
+
+		void draw_elements() const {
+			std::size_t count = m_traits::num_per_element*indices.size();
+			glDrawElements(MODE, count, INDEX_TYPE, 0);
+		}
+
+		void draw_elements_instanced(std::size_t primcount) const {
+			std::size_t count = m_traits::num_per_element*indices.size();
+			glDrawElementsInstanced(MODE, count, INDEX_TYPE, 0, primcount);
+		}
+
+	};
+
+	template<typename V>
+	using point_mesh = mesh<V, GL_POINTS>;
+
+	template<typename V>
+	using line_strip_mesh = mesh<V, GL_LINE_STRIP>;
+
+	template<typename V>
+	using line_mesh = mesh<V, GL_LINES>;
+
+	template<typename V>
+	using triangle_strip_mesh = mesh<V, GL_TRIANGLE_STRIP>;
+
+	template<typename V>
+	using triangle_fan_mesh = mesh<V, GL_TRIANGLE_FAN>;
+
+	template<typename V>
+	using triangle_mesh = mesh<V, GL_TRIANGLES>;
 
 	struct texture : public detail::resource<texture_id>
 	{
