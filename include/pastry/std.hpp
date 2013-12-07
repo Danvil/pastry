@@ -1,7 +1,7 @@
 #ifndef INCLUDED_PASTRY_DEF_HPP
 #define INCLUDED_PASTRY_DEF_HPP
 
-#include "pastry_gl.hpp"
+#include "gl.hpp"
 
 namespace pastry {
 

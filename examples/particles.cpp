@@ -1,6 +1,6 @@
 
 #include <pastry/pastry.hpp>
-#include <pastry/pastry_gl.hpp>
+#include <pastry/gl.hpp>
 #include <iostream>
 #include <cmath>
 
