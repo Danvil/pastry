@@ -172,6 +172,9 @@ void texture_save(const texture& tex, const std::string& fn);
 
 // ----- TEXT RENDERING --------------------------------------------------------
 
+/** Loads a font (first to load is the default) */
+void text_load_font(const std::string& name, const std::string& filename);
+
 /** Renders white text at the specific location on the screen (in pixels) */
 void text_render(float x, float y, const std::string& txt);
 

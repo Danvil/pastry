@@ -183,6 +183,8 @@ int main()
 {
 	pastry::initialize();
 
+	pastry::text_load_font("dejavu", "assets/DejaVuSans.ttf");
+
 	pastry::scene_add(std::make_shared<Dong>());
 
 	pastry::run();

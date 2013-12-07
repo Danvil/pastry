@@ -6,6 +6,8 @@ int main()
 {
 	pastry::initialize();
 
+	pastry::text_load_font("dejavu", "assets/DejaVuSans.ttf");
+
 	pastry::scene_add([]() {
 		pastry::text_render(80, 400, "Hello world :)");
 		pastry::text_render(80, 250, "CRAZY text by STB!");
