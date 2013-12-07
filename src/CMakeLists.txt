@@ -24,11 +24,11 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-TARGET_LINK_LIBRARIES(pastry
-	opengl32
-	glu32
-	gdi32
-	glfw3dll
-	glew32
-)
+	TARGET_LINK_LIBRARIES(pastry
+		opengl32
+		glu32
+		gdi32
+		glfw3dll
+		glew32
+	)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
