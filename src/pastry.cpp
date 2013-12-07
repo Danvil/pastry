@@ -194,6 +194,7 @@ void scene_remove(const renderling_ptr& r)
 
 Eigen::Matrix4f math_orthogonal_projection(float l, float r, float t, float b, float n, float f)
 {
+	// see http://www.songho.ca/opengl/gl_projectionmatrix.html
 	Eigen::Matrix4f m;
 	m <<
 		+2.0f/(r-l), 0, 0, -(r+l)/(r-l),
@@ -237,6 +238,37 @@ Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 		  0,   0, 1, 0,
 		  0,   0, 0, 1;
 	return m;
+}
+
+void math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,
+	Eigen::Vector3f& ray_a, Eigen::Vector3f& ray_u)
+{
+	float z_near = -1.0f;
+	// mouse in clipping coordinates
+	Eigen::Vector2f mouse_screen = mouse_get_position();
+	float mx = 2.0f*mouse_screen[0]/static_cast<float>(g_fb_width) - 1.0f;
+	float my = -(2.0f*mouse_screen[1]/static_cast<float>(g_fb_height) - 1.0f);
+	// un-project: get two points which are projected onto the mouse position
+	//             by setting the clipped z value to -1 (close) and +1 (far)
+	Eigen::Vector4f pa = proj.inverse() * Eigen::Vector4f{mx,my,-1,1};
+	pa /= pa[3]; // normalize
+	Eigen::Vector4f pb = proj.inverse() * Eigen::Vector4f{mx,my,+1,1}; 
+	pb /= pb[3]; // normalize
+	// transform from camera to world coordinates
+	Eigen::Matrix4f view_inv = view.inverse();
+	Eigen::Vector4f cpa = view_inv * pa;
+	Eigen::Vector4f cpb = view_inv * pb;
+	ray_a = cpa.block<3,1>(0,0);
+	ray_u = (cpb.block<3,1>(0,0) - cpa.block<3,1>(0,0)).normalized();
+}
+
+Eigen::Vector3f math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view, float z)
+{
+	Eigen::Vector3f a, u;
+	math_backproject(proj, view, a, u);
+	// solve (a + s*u)_z == z
+	float s = (z - a[2]) / u[2];
+	return a + s * u;
 }
 
 // ----- INPUT HANDLING --------------------------------------------------------

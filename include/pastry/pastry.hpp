@@ -145,6 +145,10 @@ Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown
 /** Create a 2D transformation matrix */
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta);
 
+void math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view, Eigen::Vector3f& a, Eigen::Vector3f& u);
+
+Eigen::Vector3f math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view, float z);
+
 // ----- INPUT HANDLING --------------------------------------------------------
 
 /** Checks if a key is pressed right now */
