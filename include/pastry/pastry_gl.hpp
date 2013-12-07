@@ -107,6 +107,10 @@ namespace pastry
 			id_t id() const { return id_; }
 		};
 
+		namespace create {
+			enum type { yes, no};
+		}
+
 		template<typename T>
 		struct resource
 		{
@@ -114,7 +118,11 @@ namespace pastry
 			std::shared_ptr<resource_base<T>> ptr_;
 		public:
 			typedef T id_type;
-			resource() { }
+			resource(create::type c=create::no) {
+				if(c==create::yes) {
+					id_create();
+				}
+			}
 			resource(id_t id) {
 				id_set(id);
 			}
@@ -145,7 +153,20 @@ namespace pastry
 				return INVALID_ID;
 			}
 		};
+	}
 
+	static constexpr detail::create::type create_no = detail::create::no;
+	static constexpr detail::create::type create_yes = detail::create::yes;
+
+	#define RESOURCE_DEFAULT_CONSTRUCTOR(Name) \
+		Name(detail::create::type c=detail::create::no) \
+		: detail::resource<Name##_id>(c) {}
+
+	template<typename T>
+	T create_resource() {
+		T t;
+		t.id_create();
+		return t;
 	}
 
 	namespace detail
@@ -234,7 +255,7 @@ namespace pastry
 
 	struct vertex_shader : public detail::resource<vertex_shader_id>
 	{
-		vertex_shader() {}
+		RESOURCE_DEFAULT_CONSTRUCTOR(vertex_shader)
 		vertex_shader(const std::string& source) {
 			id_create();
 			compile(source);
@@ -246,7 +267,7 @@ namespace pastry
 
 	struct geometry_shader : public detail::resource<geometry_shader_id>
 	{
-		geometry_shader() {}
+		RESOURCE_DEFAULT_CONSTRUCTOR(geometry_shader)
 		geometry_shader(const std::string& source) {
 			id_create();
 			compile(source);
@@ -258,7 +279,7 @@ namespace pastry
 
 	struct fragment_shader : public detail::resource<fragment_shader_id>
 	{
-		fragment_shader() {}
+		RESOURCE_DEFAULT_CONSTRUCTOR(fragment_shader)
 		fragment_shader(const std::string& source) {
 			id_create();
 			compile(source);
@@ -278,7 +299,7 @@ namespace pastry
 
 	struct program : public detail::resource<program_id>
 	{
-		program() {}
+		RESOURCE_DEFAULT_CONSTRUCTOR(program)
 		program(const vertex_shader& vs, const fragment_shader& fs) {
 			id_create();
 			attach(vs);
@@ -649,8 +670,8 @@ namespace pastry
 	public:
 		std::vector<detail::va_data> layout_;
 
-		buffer()
-		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {}
+		buffer(detail::create::type c=create_no)
+		: detail::resource<buffer_id>(c), num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {}
 
 		buffer(std::initializer_list<detail::layout_item> list)
 		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
@@ -750,12 +771,18 @@ namespace pastry
 	{
 		std::vector<vertex_attribute> attributes_;
 
-		vertex_array() {}
+		RESOURCE_DEFAULT_CONSTRUCTOR(vertex_array)
 
 		vertex_array(const program& p, std::initializer_list<detail::mapping> list) {
 			id_create();
+			set_layout(p, list.begin(), list.end());
+		}
+
+		template<typename It>
+		void set_layout(const program& p, It kt1, It kt2) {
 			bind();
-			for(const detail::mapping& m : list) {
+			for(auto kt=kt1; kt!=kt2; ++kt) {
+				const detail::mapping& m = *kt;
 				const std::string& shader_name = m.shader_name;
 				const array_buffer& vb = m.vb;
 				const std::string& vn_name = m.vb_name;
@@ -883,7 +910,7 @@ namespace pastry
 		int width_;
 		int height_;
 		int channels_;
-		texture() {}
+		RESOURCE_DEFAULT_CONSTRUCTOR(texture)
 		texture(int w, int h, float* data_rgb_f) {
 			create();
 			image_2d_rgb_f(w, h, data_rgb_f);
@@ -985,6 +1012,7 @@ namespace pastry
 
 	struct renderbuffer : public detail::resource<renderbuffer_id>
 	{		
+		RESOURCE_DEFAULT_CONSTRUCTOR(renderbuffer)
 		void bind() {
 			glBindRenderbuffer(GL_RENDERBUFFER, id());
 		}
@@ -995,6 +1023,7 @@ namespace pastry
 
 	struct framebuffer : public detail::resource<framebuffer_id>
 	{
+		RESOURCE_DEFAULT_CONSTRUCTOR(framebuffer)
 		void bind() {
 			glBindFramebuffer(GL_FRAMEBUFFER, id());
 		}
