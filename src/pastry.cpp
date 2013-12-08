@@ -243,7 +243,6 @@ Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 void math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,
 	Eigen::Vector3f& ray_a, Eigen::Vector3f& ray_u)
 {
-	float z_near = -1.0f;
 	// mouse in clipping coordinates
 	Eigen::Vector2f mouse_screen = mouse_get_position();
 	float mx = 2.0f*mouse_screen[0]/static_cast<float>(g_fb_width) - 1.0f;

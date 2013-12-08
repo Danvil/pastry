@@ -4,10 +4,8 @@ set(EIGEN3_INCLUDE_DIR "/usr/include/eigen3" CACHE STRING "Eigen3 include direct
 
 INCLUDE_DIRECTORIES(include)
 
-ADD_DEFINITIONS(-std=c++0x)
-
-# cross-compile
-ADD_DEFINITIONS(-m64)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -std=c++0x")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -std=c99")
 
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(src)

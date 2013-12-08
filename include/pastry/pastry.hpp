@@ -265,7 +265,7 @@ private:
 class post_effect
 {
 public:
-	virtual std::string source() const {}
+	virtual std::string source() const { return "vec4 sfx(vec2 uv) { return sfx_read_fb(uv); }"; }
 	virtual void update(float t, float dt, const program& spo) {}
 };
 

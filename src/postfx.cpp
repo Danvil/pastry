@@ -198,7 +198,7 @@ public:
 		}
 		// render from A to B to A ... to screen
 		bool source_is_a = true;
-		for(int i=0; i<effects_.size()-1; ++i) {
+		for(std::size_t i=0; i<effects_.size()-1; ++i) {
 			if(source_is_a) {
 				buff_b_.bind();
 			}

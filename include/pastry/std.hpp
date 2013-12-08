@@ -41,8 +41,8 @@ namespace pastry {
 		  ebo_mesh_(create_yes),
 		  vbo_inst_(layout_instance),
 		  vao_(create_yes),
-		  is_instances_changed_(false),
-		  is_mesh_changed_(false)
+		  is_mesh_changed_(false),
+		  is_instances_changed_(false)
 		{
 			std::vector<detail::mapping> vao_m;
 			for(const auto& x : mapping_vertex) {
