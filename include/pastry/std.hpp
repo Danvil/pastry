@@ -5,6 +5,14 @@
 
 namespace pastry {
 
+	struct instance_group_mapping
+	{
+		std::vector<detail::layout_item> layout_vertex;
+		std::vector<std::array<std::string,2>> mapping_vertex;
+		std::vector<detail::layout_item> layout_instance;
+		std::vector<std::array<std::string,2>> mapping_instance;
+	};
+
 	/** A group of instances sharing the same mesh data
 	 */
 	template<
@@ -31,24 +39,23 @@ namespace pastry {
 
 		instance_group(
 			const program& spo,
-			std::initializer_list<detail::layout_item> layout_vertex,
-			std::initializer_list<std::array<std::string,2>> mapping_vertex,
-			std::initializer_list<detail::layout_item> layout_instance,
-			std::initializer_list<std::array<std::string,2>> mapping_instance
+			const instance_group_mapping& igm
 		)
 		: spo_(spo),
-		  vbo_mesh_(layout_vertex),
+		  vbo_mesh_(create_yes),
 		  ebo_mesh_(create_yes),
-		  vbo_inst_(layout_instance),
+		  vbo_inst_(create_yes),
 		  vao_(create_yes),
 		  is_mesh_changed_(false),
 		  is_instances_changed_(false)
 		{
+			vbo_mesh_.set_layout(igm.layout_vertex);
+			vbo_inst_.set_layout(igm.layout_instance);
 			std::vector<detail::mapping> vao_m;
-			for(const auto& x : mapping_vertex) {
+			for(const auto& x : igm.mapping_vertex) {
 				vao_m.push_back({ x[0], vbo_mesh_, x[1]});
 			}
-			for(const auto& x : mapping_instance) {
+			for(const auto& x : igm.mapping_instance) {
 				vao_m.push_back({ x[0], vbo_inst_, x[1], 1});
 			}
 			vao_.set_layout(spo, vao_m.begin(), vao_m.end());
@@ -67,20 +74,77 @@ namespace pastry {
 		}
 
 		void render() {
+			spo_.use();
+			vao_.bind();
 			if(is_instances_changed_) {
 				vbo_inst_.update_data(instances_);
+				is_instances_changed_ = false;
 			}
 			if(is_mesh_changed_) {
 				vbo_mesh_.update_data(mesh_.vertices);
 				ebo_mesh_.update_data(mesh_.indices);
+				is_mesh_changed_ = false;
 			}
 			else {
 				ebo_mesh_.bind();
 			}
-			spo_.use();
-			vao_.bind();
 			mesh_.draw_elements_instanced(instances_.size());
 		} 
+	};
+
+	template<
+		typename mesh_t,
+		typename instance_t,
+		typename group_id_t=std::string
+	>
+	class multi_instance_group
+	{
+	private:
+		typedef instance_group<mesh_t,instance_t> group_t;
+		typedef std::shared_ptr<group_t> p_group_t;
+		typedef std::size_t instance_id_t;
+		typedef std::pair<group_id_t,instance_t> instance_group_id_pair_t;
+		typedef const group_id_t& cr_gid_t;
+		std::map<group_id_t, p_group_t> groups_;
+		program spo_;
+		instance_group_mapping igm_;
+
+	public:
+		multi_instance_group(
+			const program& spo,
+			const instance_group_mapping& igm
+		)
+		: spo_(spo), igm_(igm)
+		{}
+
+		const program& get_program() const { return spo_; }
+
+		void set_group(cr_gid_t gid, const mesh_t& mesh) {
+			p_group_t g = std::shared_ptr<group_t>(new group_t(spo_, igm_));
+			g->set_mesh(mesh);
+			groups_[gid] = g;
+		}
+
+		void set_instances(const std::vector<instance_group_id_pair_t>& v) {
+			std::map<group_id_t, std::vector<instance_t>> map;
+			for(const auto& q : v) {
+				map[q.first].push_back(q.second);
+			}
+			for(const auto& q : map) {
+				const p_group_t& pg = groups_[q.first];
+				if(!pg) {
+					std::cerr << "ERROR multi_instance_group::set_instances: Unknown group id!" << std::endl;
+					continue;
+				}
+				pg->set_instances(q.second);
+			}
+		}
+
+		void render() {
+			for(const auto& q : groups_) {
+				q.second->render();
+			}
+		}
 	};
 
 	/** A 2D spatial data structure for fast access to neighbours

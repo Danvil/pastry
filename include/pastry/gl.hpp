@@ -633,7 +633,7 @@ namespace pastry
 			}
 		}
 
-		inline std::vector<va_data> va_conf(std::initializer_list<layout_item> list) {
+		inline std::vector<va_data> va_conf(const std::vector<layout_item>& list) {
 			std::vector<va_data> q;
 			q.reserve(list.size());
 			for(const layout_item& i : list) {
@@ -688,7 +688,7 @@ namespace pastry
 			init_data(num_bytes, usage);
 		}
 
-		void set_layout(std::initializer_list<detail::layout_item> list) {
+		void set_layout(const std::vector<detail::layout_item>& list) {
 			layout_ = detail::va_conf(list);
 		}
 		
