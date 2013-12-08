@@ -1,5 +1,6 @@
 
 #include <pastry/pastry.hpp>
+#include <pastry/std.hpp>
 #include <random>
 #include <memory>
 #include <string>
@@ -35,10 +36,10 @@ constexpr float DENSITY = 1.0f;
 constexpr float A_MIN = 0.1f;
 
 constexpr unsigned GRID_DIM = 128;
-constexpr float GRID_W = 10.f;
-constexpr float GRID_MID = 0.5f * GRID_W * GRID_DIM;
+constexpr float GRID_1 = -640.0f;
+constexpr float GRID_2 = +640.0f;
 
-struct grid;
+typedef pastry::spatial_grid_2d<std::size_t,GRID_DIM> grid;
 
 struct star
 {
@@ -83,48 +84,7 @@ struct star
 		m = DENSITY*r*r;
 	}
 
-	void update(float t, float dt, std::size_t me, std::vector<star>& other, grid* g);
-};
-
-struct grid
-{
-	std::vector<std::size_t> grid[GRID_DIM*GRID_DIM];
-
-	static std::size_t p2i(float x) {
-		int i = static_cast<int>((GRID_MID + x) / GRID_W);
-		if(i < 0) return 0;
-		if(i >= GRID_DIM) return GRID_DIM-1;
-		return i;
-	}
-
-	static std::size_t p2i(float x, float y) {
-		return p2i(x) + GRID_DIM*p2i(y);
-	}
-
-	void build_grid(const std::vector<star>& vp) {
-		for(std::size_t k=0; k<vp.size(); k++) {
-			std::size_t i = p2i(vp[k].px, vp[k].py);
-			grid[i].push_back(k);
-		}
-	}
-
-	template<typename F>
-	void traverse(float px, float py, float r, F f) {
-		std::size_t ix = p2i(px);
-		std::size_t iy = p2i(py);
-		std::size_t ir = std::ceil(r / GRID_W);
-		std::size_t x1 = (ix < ir ? 0 : ix - ir);
-		std::size_t x2 = std::min<std::size_t>(GRID_DIM-1, ix + ir);
-		std::size_t y1 = (iy < ir ? 0 : iy - ir);
-		std::size_t y2 = std::min<std::size_t>(GRID_DIM-1, iy + ir);
-		for(std::size_t y=y1; y<=y2; y++) {
-			for(std::size_t x=x1; x<=x2; x++) {
-				for(std::size_t idx : grid[x+GRID_DIM*y]) {
-					f(idx);
-				}
-			}
-		}
-	}
+	void update(float t, float dt, std::size_t me, std::vector<star>& other, const grid& g);
 };
 
 void gravity(const star& p, const star& q, float& df0x, float& df0y) {
@@ -139,11 +99,11 @@ void gravity(const star& p, const star& q, float& df0x, float& df0y) {
 	df0y = f0*dy;
 }
 
-void star::update(float t, float dt, std::size_t me, std::vector<star>& other, grid* g)
+void star::update(float t, float dt, std::size_t me, std::vector<star>& other, const grid& g)
 {
 	const float R_SEARCH = std::sqrt(G * m / A_MIN);
 	if(is_active) {
-		g->traverse(px, py, R_SEARCH,
+		g.traverse(px, py, R_SEARCH,
 			[this,me,&other](std::size_t k) {
 				if(k != me) {
 					star& q = other[k];
@@ -237,7 +197,7 @@ public:
 
 		// create data
 		// suns
-		for(int i=0; i<NUM_SUNS; i++) {
+		for(unsigned i=0; i<NUM_SUNS; i++) {
 			star s{1};
 			s.px = SUNS[i][0];
 			s.py = SUNS[i][1];
@@ -248,7 +208,7 @@ public:
 		}
 		// normal
 		std::uniform_real_distribution<float> r_vel(-1.0f, +1.0f);
-		for(int i=NUM_SUNS; i<NUM_STARS; i++) {
+		for(unsigned i=NUM_SUNS; i<NUM_STARS; i++) {
 			star s{1};
 			// float phi = 2.0f * 3.1415f * (float)(i) / (float)(NUM_STARS);
 			// s.px = POS_INIT_RAD*std::cos(phi) + POS_INIT_THICK*r_vel(s_rnd);
@@ -256,15 +216,17 @@ public:
 			stars_.push_back(s);
 		}
 		// passive
-		for(int i=0; i<NUM_STARS_PASSIVE; i++) {
+		for(unsigned i=0; i<NUM_STARS_PASSIVE; i++) {
 			star s{0};
 			stars_.push_back(s);
 		}
 	}
 	
 	void update(float t, float dt) {
-		grid* g = new grid();
-		g->build_grid(stars_);
+		grid g(GRID_1, GRID_1, GRID_2, GRID_2);
+		for(std::size_t k=0; k<stars_.size(); k++) {
+			g.add(stars_[k].px, stars_[k].py, k);
+		}
 		for(std::size_t k=0; k<stars_.size(); k++) {
 			stars_[k].update(t, dt, k, stars_, g);
 		}
@@ -281,7 +243,6 @@ public:
 			p.ay = 0.0f;
 		}
 		vbo_inst.update_data(stars_);
-		delete g;
 	}
 	
 	void render() {

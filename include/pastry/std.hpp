@@ -83,6 +83,80 @@ namespace pastry {
 		} 
 	};
 
+	/** A 2D spatial data structure for fast access to neighbours
+	 */
+	template<typename T, unsigned NUM_BUCKETS>
+	struct spatial_grid_2d
+	{
+	private:
+		float x1_, y1_, x2_, y2_;
+		float dx_inv_, dy_inv_;
+
+		std::vector<T>* buckets_;
+
+	public:
+		static std::size_t v2i(float v, float v1, float dv_inv) {
+			const int i = static_cast<int>((v-v1)*dv_inv);
+			if(i < 0)
+				return 0;
+			else if(i >= NUM_BUCKETS)
+				return NUM_BUCKETS-1;
+			else 
+				return i;
+		}
+
+		std::size_t x2i(float x) const {
+			return v2i(x, x1_, dx_inv_);
+		}
+
+		std::size_t y2i(float y) const {
+			return v2i(y, y1_, dy_inv_);
+		}
+
+		std::size_t p2i(float x, float y) const {
+			return x2i(x) + NUM_BUCKETS*y2i(y);
+		}
+
+		spatial_grid_2d(float x1, float y1, float x2, float y2)
+		: x1_(x1), y1_(y1), x2_(x2), y2_(y2) {
+			dx_inv_ = 1.0f / ((x2_ - x1_) / static_cast<float>(NUM_BUCKETS));
+			dy_inv_ = 1.0f / ((y2_ - y1_) / static_cast<float>(NUM_BUCKETS));
+			buckets_ = new std::vector<T>[NUM_BUCKETS*NUM_BUCKETS];
+		}
+
+		~spatial_grid_2d() {
+			delete[] buckets_;
+		}
+
+		void clear() {
+			delete[] buckets_;
+			buckets_ = new std::vector<T>(NUM_BUCKETS*NUM_BUCKETS);
+		}
+
+		void add(float x, float y, const T& v) {
+			buckets_[p2i(x, y)].push_back(v);
+		}
+
+		template<typename F>
+		void traverse(float px, float py, float r, F f) const {
+			std::size_t ix = x2i(px);
+			std::size_t iy = y2i(py);
+			std::size_t irx = std::ceil(r * dx_inv_);
+			std::size_t iry = std::ceil(r * dy_inv_);
+			std::size_t x1 = (ix < irx ? 0 : ix - irx);
+			std::size_t x2 = std::min<std::size_t>(NUM_BUCKETS-1, ix + irx);
+			std::size_t y1 = (iy < iry ? 0 : iy - iry);
+			std::size_t y2 = std::min<std::size_t>(NUM_BUCKETS-1, iy + iry);
+			for(std::size_t y=y1; y<=y2; y++) {
+				for(std::size_t x=x1; x<=x2; x++) {
+					for(const T& v : buckets_[x+NUM_BUCKETS*y]) {
+						f(v);
+					}
+				}
+			}
+		}
+	};
+
 }
 
 #endif
