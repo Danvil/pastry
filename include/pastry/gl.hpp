@@ -30,6 +30,23 @@ namespace pastry
 
 	namespace detail
 	{
+		template<typename T> struct resource_name;
+		#define PASTRY_RESOURCE_NAME_IMPL(T) template<> struct resource_name<T> { \
+			static const char* get() { return #T; } \
+		};
+		PASTRY_RESOURCE_NAME_IMPL(buffer_id)
+		PASTRY_RESOURCE_NAME_IMPL(vertex_shader_id)
+		PASTRY_RESOURCE_NAME_IMPL(geometry_shader_id)
+		PASTRY_RESOURCE_NAME_IMPL(fragment_shader_id)
+		PASTRY_RESOURCE_NAME_IMPL(program_id)
+		PASTRY_RESOURCE_NAME_IMPL(vertex_array_id)
+		PASTRY_RESOURCE_NAME_IMPL(texture_id)
+		PASTRY_RESOURCE_NAME_IMPL(renderbuffer_id)
+		PASTRY_RESOURCE_NAME_IMPL(framebuffer_id)
+	}
+
+	namespace detail
+	{
 		template<typename ID>
 		struct handler;
 
@@ -149,7 +166,14 @@ namespace pastry
 				if(ptr_) {
 					return ptr_->id();
 				}
-				std::cerr << "ERROR: Invalid resource ID!" << std::endl;
+				std::cerr << "ERROR: Invalid resource ID! id=";
+				if(ptr_) {
+					std::cerr << ptr_->id();
+				}
+				else {
+					std::cerr << "(null)";
+				}
+				std::cerr << ", type=" << resource_name<T>::get() << std::endl;
 				return INVALID_ID;
 			}
 		};
@@ -335,7 +359,7 @@ namespace pastry
 				std::cerr << "ERROR: " << buffer << std::endl;
 			}
 		}
-		void use() {
+		void use() const {
 			glUseProgram(id());
 		}
 		static void unuse() {
@@ -883,7 +907,6 @@ namespace pastry
 			std::size_t count = m_traits::num_per_element*indices.size();
 			glDrawElementsInstanced(MODE, count, INDEX_TYPE, 0, primcount);
 		}
-
 	};
 
 	template<typename V>
@@ -903,6 +926,115 @@ namespace pastry
 
 	template<typename V>
 	using triangle_mesh = mesh<V, GL_TRIANGLES>;
+
+	struct multi_mesh
+	{
+	private:
+		GLenum mode_;
+		GLenum index_type_;
+		
+		array_buffer vertex_bo_;
+		element_array_buffer index_bo_;
+		array_buffer instance_bo_;
+
+		std::size_t num_vertices_;
+		std::size_t num_indices_;
+		std::size_t num_instances_;
+
+	public:
+		const array_buffer& get_vertex_bo() const { return vertex_bo_; }
+		const element_array_buffer& get_index_bo() const { return index_bo_; }
+		const array_buffer& get_instance_bo() const { return instance_bo_; }
+		array_buffer& get_vertex_bo() { return vertex_bo_; }
+		element_array_buffer& get_index_bo() { return index_bo_; }
+		array_buffer& get_instance_bo() { return instance_bo_; }
+		void set_vertex_bo(const array_buffer& o) { vertex_bo_ = o; }
+		void set_index_bo(const element_array_buffer& o) { index_bo_ = o; }
+		void set_instance_bo(const array_buffer& o) { instance_bo_ = o; }
+
+	public:
+		multi_mesh() {
+			clear();
+		}
+		
+		multi_mesh(GLenum mode) {
+			set_mode(mode);
+			clear();
+			vertex_bo_ = array_buffer(create_yes);
+			index_bo_ = element_array_buffer(create_yes);
+			instance_bo_ = array_buffer(create_yes);
+		}
+
+		void clear() {
+			num_vertices_ = 0;
+			num_indices_ = 0;			
+			num_instances_ = 0;
+		}
+
+		void set_mode(GLenum mode) {
+			mode_ = mode;
+		}
+
+		template<typename V>
+		void set_vertices(const std::vector<V>& vertices) {
+			num_vertices_ = vertices.size();
+			vertex_bo_.update_data(vertices);
+		}
+
+		void set_indices(const std::vector<uint8_t>& indices) {
+			index_type_ = GL_UNSIGNED_BYTE;
+			num_indices_ = indices.size();
+			index_bo_.update_data(indices);
+		}
+
+		void set_indices(const std::vector<uint16_t>& indices) {
+			index_type_ = GL_UNSIGNED_SHORT;
+			num_indices_ = indices.size();
+			index_bo_.update_data(indices);
+		}
+
+		void set_indices(const std::vector<uint32_t>& indices) {
+			index_type_ = GL_UNSIGNED_INT;
+			num_indices_ = indices.size();
+			index_bo_.update_data(indices);
+		}
+
+		template<typename A>
+		void set_instances(const std::vector<A>& instances) {
+			num_instances_ = instances.size();
+			instance_bo_.update_data(instances);
+		}
+
+		void set_instances_raw(std::size_t num, const std::vector<unsigned char>& instances_data) {
+			num_instances_ = num;
+			instance_bo_.update_data(instances_data);
+		}
+
+		void render() {
+			if(num_vertices_ == 0) {
+				return;
+			}
+			if(num_indices_ == 0) {
+				// use glDrawArrays
+				if(num_instances_ == 0) {
+					glDrawArrays(mode_, 0, num_vertices_);
+				}
+				else {
+					glDrawArraysInstanced(mode_, 0, num_vertices_, num_instances_);
+				}
+			}
+			else {
+				// use glDrawElements
+				index_bo_.bind(); // bind the index buffer object!
+				if(num_instances_ == 0) {
+					glDrawElements(mode_, num_indices_, index_type_, 0);
+				}
+				else {
+					glDrawElementsInstanced(mode_, num_indices_, index_type_, 0, num_instances_);
+				}
+			}
+		}
+	};
 
 	struct texture : public detail::resource<texture_id>
 	{

@@ -13,136 +13,113 @@ namespace pastry {
 		std::vector<std::array<std::string,2>> mapping_instance;
 	};
 
-	/** A group of instances sharing the same mesh data
-	 */
-	template<
-		typename Mesh,
-		typename InstanceData
-	>
-	class instance_group
+	class instance_manager
 	{
 	private:
-		program spo_;
-		array_buffer vbo_mesh_;
-		element_array_buffer ebo_mesh_;
-		array_buffer vbo_inst_;
-		vertex_array vao_;
+		typedef uint64_t id_t;
 
-		Mesh mesh_;
-		bool is_mesh_changed_;
+		struct family { // same type, different mesh
+			pastry::program spo;
+			instance_group_mapping mapping;
+			std::size_t instance_size;
+		};
 
-		std::vector<InstanceData> instances_;
-		bool is_instances_changed_;
-		
-	public:
-		instance_group() {}
-
-		instance_group(
-			const program& spo,
-			const instance_group_mapping& igm
-		)
-		: spo_(spo),
-		  vbo_mesh_(create_yes),
-		  ebo_mesh_(create_yes),
-		  vbo_inst_(create_yes),
-		  vao_(create_yes),
-		  is_mesh_changed_(false),
-		  is_instances_changed_(false)
+		// same type, same mesh
+		struct species
 		{
-			vbo_mesh_.set_layout(igm.layout_vertex);
-			vbo_inst_.set_layout(igm.layout_instance);
-			std::vector<detail::mapping> vao_m;
-			for(const auto& x : igm.mapping_vertex) {
-				vao_m.push_back({ x[0], vbo_mesh_, x[1]});
-			}
-			for(const auto& x : igm.mapping_instance) {
-				vao_m.push_back({ x[0], vbo_inst_, x[1], 1});
-			}
-			vao_.set_layout(spo, vao_m.begin(), vao_m.end());
-		}
+			std::string family;
+			pastry::vertex_array vao;
+			multi_mesh mesh;
+			std::vector<unsigned char> data;
+			std::size_t num_instances;
+			bool dirty;
+		};
 
-		const program& get_program() const { return spo_; }
+		struct instance {
+			std::string species;
+			id_t spos;
+		};
 
-		void set_instances(const std::vector<InstanceData>& v) {
-			instances_ = v;
-			is_instances_changed_ = true;
-		}
+		std::map<std::string,family> families_;
+		std::map<std::string,species> species_;
+		std::map<id_t,instance> instances_;
+		id_t next_id_;
 
-		void set_mesh(const Mesh& m) {
-			mesh_ = m;
-			is_mesh_changed_ = true;
-		}
-
-		void render() {
-			spo_.use();
-			vao_.bind();
-			if(is_instances_changed_) {
-				vbo_inst_.update_data(instances_);
-				is_instances_changed_ = false;
-			}
-			if(is_mesh_changed_) {
-				vbo_mesh_.update_data(mesh_.vertices);
-				ebo_mesh_.update_data(mesh_.indices);
-				is_mesh_changed_ = false;
-			}
-			else {
-				ebo_mesh_.bind();
-			}
-			mesh_.draw_elements_instanced(instances_.size());
-		} 
-	};
-
-	template<
-		typename mesh_t,
-		typename instance_t,
-		typename group_id_t=std::string
-	>
-	class multi_instance_group
-	{
 	private:
-		typedef instance_group<mesh_t,instance_t> group_t;
-		typedef std::shared_ptr<group_t> p_group_t;
-		typedef std::size_t instance_id_t;
-		typedef std::pair<group_id_t,instance_t> instance_group_id_pair_t;
-		typedef const group_id_t& cr_gid_t;
-		std::map<group_id_t, p_group_t> groups_;
-		program spo_;
-		instance_group_mapping igm_;
+		void set_instance_data_impl(id_t id, const std::vector<unsigned char>& v) {
+			const instance& x = instances_[id];
+			species& s = species_[x.species];
+			const family& f = families_[s.family];
+			s.data.insert(s.data.begin() + f.instance_size*x.spos,
+				v.begin(), v.end());
+			s.dirty = true;
+		}
 
 	public:
-		multi_instance_group(
-			const program& spo,
-			const instance_group_mapping& igm
-		)
-		: spo_(spo), igm_(igm)
-		{}
-
-		const program& get_program() const { return spo_; }
-
-		void set_group(cr_gid_t gid, const mesh_t& mesh) {
-			p_group_t g = std::shared_ptr<group_t>(new group_t(spo_, igm_));
-			g->set_mesh(mesh);
-			groups_[gid] = g;
+		template<typename A>
+		void add_family(const std::string& fname, const program& spo, const instance_group_mapping& mapping) {
+			family f;
+			f.spo = spo;
+			f.mapping = mapping;
+			f.instance_size = sizeof(A);
+			families_[fname] = f;
 		}
 
-		void set_instances(const std::vector<instance_group_id_pair_t>& v) {
-			std::map<group_id_t, std::vector<instance_t>> map;
-			for(const auto& q : v) {
-				map[q.first].push_back(q.second);
+		family& get_family(const std::string& fname) {
+			return families_[fname];
+		}
+
+		void add_species(const std::string& sname, const std::string& fname, const multi_mesh& m) {
+			const family& f = families_[fname];
+			species s;
+			s.family = fname;
+			s.mesh = m;
+			s.mesh.get_vertex_bo().set_layout(f.mapping.layout_vertex);
+			s.mesh.get_instance_bo().set_layout(f.mapping.layout_instance);
+			std::vector<detail::mapping> vao_m;
+			for(const auto& x : f.mapping.mapping_vertex) {
+				vao_m.push_back({ x[0], s.mesh.get_vertex_bo(), x[1]});
 			}
-			for(const auto& q : map) {
-				const p_group_t& pg = groups_[q.first];
-				if(!pg) {
-					std::cerr << "ERROR multi_instance_group::set_instances: Unknown group id!" << std::endl;
-					continue;
-				}
-				pg->set_instances(q.second);
+			for(const auto& x : f.mapping.mapping_instance) {
+				vao_m.push_back({ x[0], s.mesh.get_instance_bo(), x[1], 1});
 			}
+			s.vao = vertex_array(create_yes);
+			s.vao.set_layout(f.spo, vao_m.begin(), vao_m.end());
+			s.num_instances = 0;
+			s.dirty = true;
+			species_[sname] = s;
+		}
+
+		std::size_t add_instance(const std::string& sname) {
+			species& s = species_[sname];
+			const family& f = families_[s.family];
+			instance x;
+			x.species = sname;
+			x.spos = s.num_instances++;
+			s.data.insert(s.data.end(), f.instance_size, 0);
+			id_t id = next_id_++;
+			instances_[id] = x;
+			return id;
+		}
+
+		template<typename Inst> // Inst must be POD
+		void set_instance_data(id_t id, const Inst& data) {
+			const unsigned char* p = reinterpret_cast<const unsigned char*>(&data);
+			set_instance_data_impl(id, 
+				std::vector<unsigned char>{p, p + sizeof(Inst)});
 		}
 
 		void render() {
-			for(const auto& q : groups_) {
-				q.second->render();
+			// update buffers
+			for(auto& q : species_) {
+				species& s = q.second;
+				const family& f = families_[s.family];
+				f.spo.use();
+				s.vao.bind();
+				if(s.dirty) {
+					s.mesh.set_instances_raw(s.num_instances, s.data);
+				}
+				s.mesh.render();
 			}
 		}
 	};
