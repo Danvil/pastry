@@ -673,6 +673,14 @@ namespace pastry
 			}
 			return q;
 		}
+
+		inline std::size_t va_bytes_total(const std::vector<layout_item>& list) {
+			std::size_t n = 0;
+			for(const layout_item& i : list) {
+				n += i.size * bytes_per_element(i.type);
+			}
+			return n;
+		}
 	}
 
 	inline detail::layout_item layout_skip_bytes(int a) {

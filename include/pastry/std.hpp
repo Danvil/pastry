@@ -59,12 +59,11 @@ namespace pastry {
 		}
 
 	public:
-		template<typename A>
 		void add_family(const std::string& fname, const program& spo, const instance_group_mapping& mapping) {
 			family f;
 			f.spo = spo;
 			f.mapping = mapping;
-			f.instance_size = sizeof(A);
+			f.instance_size = detail::va_bytes_total(mapping.layout_instance);
 			families_[fname] = f;
 		}
 
@@ -107,6 +106,13 @@ namespace pastry {
 
 		template<typename Inst> // Inst must be POD
 		void set_instance_data(id_t id, const Inst& data) {
+			std::size_t n = sizeof(data);
+			std::size_t n_check = families_[species_[instances_[id].species].family].instance_size;
+			if(n != n_check) {
+				std::cerr << "ERROR instance_manager::set_instance_data: Instance size does not match. ";
+				std::cerr << "now=" << n << " - family=" << n_check << std::endl;
+				return;
+			}
 			const unsigned char* p = reinterpret_cast<const unsigned char*>(&data);
 			set_instance_data_impl(id, 
 				std::vector<unsigned char>{p, p + sizeof(Inst)});
