@@ -18,13 +18,15 @@ namespace pastry {
 	private:
 		typedef uint64_t id_t;
 
-		struct family { // same type, different mesh
+		/** Family defines type (shader, attributes) */
+		struct family
+		{
 			pastry::program spo;
 			instance_group_mapping mapping;
 			std::size_t instance_size;
 		};
 
-		// same type, same mesh
+		/** Species defines mesh */
 		struct species
 		{
 			std::string family;
@@ -35,6 +37,7 @@ namespace pastry {
 			bool dirty;
 		};
 
+		/** Instances defines instance data */
 		struct instance {
 			std::string species;
 			id_t spos;
