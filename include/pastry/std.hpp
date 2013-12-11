@@ -92,6 +92,11 @@ namespace pastry {
 			species_[sname] = s;
 		}
 
+		void change_species_mesh(const std::string& sname, const multi_mesh& m) {
+			// TODO is this ok?
+			add_species(sname, species_[sname].family, m);
+		}
+
 		std::size_t add_instance(const std::string& sname) {
 			species& s = species_[sname];
 			const family& f = families_[s.family];
@@ -204,6 +209,106 @@ namespace pastry {
 					}
 				}
 			}
+		}
+	};
+
+	/** A 2D chunk voxel grid */
+	template<typename T>
+	class voxel_grid_2d
+	{
+	private:
+		static constexpr uint32_t SHIFT = 4;
+		static constexpr uint64_t SIZE = 1<<SHIFT;
+		static constexpr uint64_t MAG = 4294967296ull;
+
+		std::map<uint64_t, std::vector<T>> chunks_;
+
+		T default_;
+
+	public:
+		void set_default(const T& t) {
+			default_ = t;
+		}
+
+		const T& operator()(int x, int y) const {
+			uint64_t gid, lid;
+			pos_to_index(x, y, gid, lid);
+			auto it = chunks_.find(gid);
+			if(it == chunks_.end()) {
+				auto q = chunks_.insert({gid, std::vector<T>(SIZE*SIZE, default_)});
+				it = q.first;
+			}
+			return it->second[lid];
+		}
+
+		T& operator()(int x, int y) {
+			uint64_t gid, lid;
+			pos_to_index(x, y, gid, lid);
+			auto it = chunks_.find(gid);
+			if(it == chunks_.end()) {
+				auto q = chunks_.insert({gid, std::vector<T>(SIZE*SIZE, default_)});
+				it = q.first;
+			}
+			return it->second[lid];
+		}
+
+		bool exists(int x, int y) const {
+			uint64_t gid, lid;
+			pos_to_index(x, y, gid, lid);
+			return chunks_.find(gid) != chunks_.end();
+		}
+
+		template<typename F>
+		void foreach(F f) {
+			for(auto& q : chunks_) {
+				uint64_t gid = q.first;
+				for(std::size_t lid=0; lid<SIZE*SIZE; lid++) {
+					int32_t x, y;
+					index_to_pos(gid, lid, x, y);
+					f(x, y, q.second[lid]);
+				}
+			}
+		}
+
+	private:
+		static void pos_to_index(int32_t x, int32_t y, uint64_t& gid, uint64_t& lid) {
+			int32_t gx = (x >> SHIFT);
+			int32_t gy = (y >> SHIFT);
+			uint64_t ix = (gx < 0 ? (MAG + static_cast<int64_t>(gx)) : gx);
+			uint64_t iy = (gy < 0 ? (MAG + static_cast<int64_t>(gy)) : gy);
+			gid = ix + iy*MAG;
+			uint64_t lx = x & (SIZE-1);
+			uint64_t ly = y & (SIZE-1);
+			lid = lx + ly*SIZE;
+		}
+
+		static void index_to_pos(uint64_t gid, uint64_t lid, int32_t& x, int32_t& y) {
+			int32_t gx, gy;
+			uint64_t ix = gid & (MAG - 1);
+			uint64_t iy = gid / MAG;
+			if(ix >= MAG/2) {
+				int64_t gxl = ix - MAG;
+				gx = -gxl;
+			}
+			if(iy >= MAG/2) {
+				int64_t gyl = iy - MAG;
+				gy = -gyl;
+			}
+			int32_t lx, ly;
+			lx = lid & (SIZE - 1);
+			ly = lid / SIZE;
+			x = lx + SIZE * gx;
+			y = ly + SIZE * gy;
+			// std::cout << "gid=" << " " << gid << std::endl;
+			// std::cout << "lid=" << " " << lid << std::endl;
+			// std::cout << "ix=" << " " << ix << std::endl;
+			// std::cout << "iy=" << " " << iy << std::endl;
+			// std::cout << "gx=" << " " << gx << std::endl;
+			// std::cout << "gy=" << " " << gy << std::endl;
+			// std::cout << "lx=" << " " << lx << std::endl;
+			// std::cout << "ly=" << " " << ly << std::endl;
+			// std::cout << "x=" << " " << x << std::endl;
+			// std::cout << "y=" << " " << y << std::endl;
 		}
 	};
 
