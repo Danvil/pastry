@@ -218,8 +218,8 @@ namespace pastry {
 	{
 	private:
 		static constexpr uint32_t SHIFT = 4;
-		static constexpr uint64_t SIZE = 1<<SHIFT;
-		static constexpr uint64_t MAG = 4294967296ull;
+		static constexpr uint64_t SIZE = (1 << SHIFT);
+		static constexpr uint64_t MAG = (1ull << 32);
 
 		std::map<uint64_t, std::vector<T>> chunks_;
 
