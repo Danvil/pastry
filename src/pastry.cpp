@@ -240,11 +240,12 @@ Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 	return m;
 }
 
-void math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,
+void math_backproject(
+	const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,
+	const Eigen::Vector2f& mouse_screen,
 	Eigen::Vector3f& ray_a, Eigen::Vector3f& ray_u)
 {
 	// mouse in clipping coordinates
-	Eigen::Vector2f mouse_screen = mouse_get_position();
 	float mx = 2.0f*mouse_screen[0]/static_cast<float>(g_fb_width) - 1.0f;
 	float my = -(2.0f*mouse_screen[1]/static_cast<float>(g_fb_height) - 1.0f);
 	// un-project: get two points which are projected onto the mouse position
@@ -261,10 +262,13 @@ void math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,
 	ray_u = (cpb.block<3,1>(0,0) - cpa.block<3,1>(0,0)).normalized();
 }
 
-Eigen::Vector3f math_backproject(const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view, float z)
+Eigen::Vector3f math_backproject(
+	const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,
+	const Eigen::Vector2f& p,
+	float z)
 {
 	Eigen::Vector3f a, u;
-	math_backproject(proj, view, a, u);
+	math_backproject(proj, view, p, a, u);
 	// solve (a + s*u)_z == z
 	float s = (z - a[2]) / u[2];
 	return a + s * u;
