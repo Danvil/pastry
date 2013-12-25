@@ -935,6 +935,89 @@ namespace pastry
 	template<typename V>
 	using triangle_mesh = mesh<V, GL_TRIANGLES>;
 
+	struct single_mesh
+	{
+	private:
+		GLenum mode_;
+		GLenum index_type_;
+		
+		array_buffer vertex_bo_;
+		element_array_buffer index_bo_;
+
+		std::size_t num_vertices_;
+		std::size_t num_indices_;
+
+	public:
+		const array_buffer& get_vertex_bo() const { return vertex_bo_; }
+		const element_array_buffer& get_index_bo() const { return index_bo_; }
+		array_buffer& get_vertex_bo() { return vertex_bo_; }
+		element_array_buffer& get_index_bo() { return index_bo_; }
+		void set_vertex_bo(const array_buffer& o) { vertex_bo_ = o; }
+		void set_index_bo(const element_array_buffer& o) { index_bo_ = o; }
+
+	public:
+		single_mesh() {
+			clear();
+		}
+		
+		single_mesh(GLenum mode) {
+			set_mode(mode);
+			clear();
+			vertex_bo_ = array_buffer(create_yes);
+			index_bo_ = element_array_buffer(create_yes);
+		}
+
+		void clear() {
+			num_vertices_ = 0;
+			num_indices_ = 0;
+		}
+
+		void set_mode(GLenum mode) {
+			mode_ = mode;
+		}
+
+		template<typename V>
+		void set_vertices(const std::vector<V>& vertices) {
+			num_vertices_ = vertices.size();
+			vertex_bo_.update_data(vertices);
+		}
+
+		void set_indices(const std::vector<uint8_t>& indices) {
+			index_type_ = GL_UNSIGNED_BYTE;
+			num_indices_ = indices.size();
+			index_bo_.update_data(indices);
+		}
+
+		void set_indices(const std::vector<uint16_t>& indices) {
+			index_type_ = GL_UNSIGNED_SHORT;
+			num_indices_ = indices.size();
+			index_bo_.update_data(indices);
+		}
+
+		void set_indices(const std::vector<uint32_t>& indices) {
+			index_type_ = GL_UNSIGNED_INT;
+			num_indices_ = indices.size();
+			index_bo_.update_data(indices);
+		}
+
+		void clear_indices() {
+			set_indices(std::vector<uint8_t>{});
+		}
+
+		void render() {
+			if(num_vertices_ == 0) {
+				return;
+			}
+			if(num_indices_ == 0) {
+				glDrawArrays(mode_, 0, num_vertices_);
+			}
+			else {
+				index_bo_.bind(); // bind the index buffer object!
+				glDrawElements(mode_, num_indices_, index_type_, 0);
+			}
+		}
+	};
+
 	struct multi_mesh
 	{
 	private:
