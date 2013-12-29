@@ -171,7 +171,7 @@ void run()
 			fps = current_fps;
 			// set window title
 			char buffer[512];
-			sprintf(buffer, "pastry - %.0f fps\0", fps);
+			sprintf(buffer, "pastry - %.0f fps", fps);
 			glfwSetWindowTitle(g_window, buffer);
 		}
 	}

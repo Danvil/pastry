@@ -917,23 +917,23 @@ namespace pastry
 		}
 	};
 
-	template<typename V>
-	using point_mesh = mesh<V, GL_POINTS>;
+	// template<typename V>
+	// using point_mesh = mesh<V, GL_POINTS>;
 
-	template<typename V>
-	using line_strip_mesh = mesh<V, GL_LINE_STRIP>;
+	// template<typename V>
+	// using line_strip_mesh = mesh<V, GL_LINE_STRIP>;
 
-	template<typename V>
-	using line_mesh = mesh<V, GL_LINES>;
+	// template<typename V>
+	// using line_mesh = mesh<V, GL_LINES>;
 
-	template<typename V>
-	using triangle_strip_mesh = mesh<V, GL_TRIANGLE_STRIP>;
+	// template<typename V>
+	// using triangle_strip_mesh = mesh<V, GL_TRIANGLE_STRIP>;
 
-	template<typename V>
-	using triangle_fan_mesh = mesh<V, GL_TRIANGLE_FAN>;
+	// template<typename V>
+	// using triangle_fan_mesh = mesh<V, GL_TRIANGLE_FAN>;
 
-	template<typename V>
-	using triangle_mesh = mesh<V, GL_TRIANGLES>;
+	// template<typename V>
+	// using triangle_mesh = mesh<V, GL_TRIANGLES>;
 
 	struct single_mesh
 	{
