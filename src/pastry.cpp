@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <algorithm>
+#include <set>
 #include <ctime>
 
 namespace pastry {
@@ -52,7 +53,7 @@ int g_fb_width = 0;
 int g_fb_height = 0;
 bool g_fb_changed = true;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebuffer_size_callback(GLFWwindow*, int width, int height)
 {
 	g_fb_changed = true;
 	g_fb_width = width;
@@ -69,6 +70,19 @@ void fb_get_dimensions(int& width, int& height)
 {
 	width = g_fb_width;
 	height = g_fb_height;
+}
+
+std::set<int> input_pressed_keys;
+std::set<int> input_released_keys;
+
+void input_onkey(GLFWwindow*, int key, int scancode, int action, int mods)
+{
+	if(action == GLFW_PRESS) {
+		input_pressed_keys.insert(key);
+	}
+	if(action == GLFW_RELEASE) {
+		input_released_keys.insert(key);
+	}
 }
 
 void initialize_sprites();
@@ -117,6 +131,8 @@ void initialize()
 
 	glfwSetFramebufferSizeCallback(g_window, framebuffer_size_callback);
 
+	glfwSetKeyCallback(g_window, input_onkey);
+
 	g_scene = std::make_shared<render_group>();
 
 	initialize_sprites();
@@ -153,6 +169,8 @@ void run()
 		glFlush();
 
 		g_fb_changed = false;
+		input_pressed_keys.clear();
+		input_released_keys.clear();
 
 		// housekeeping
 		glfwSwapBuffers(g_window);
@@ -171,7 +189,7 @@ void run()
 			fps = current_fps;
 			// set window title
 			char buffer[512];
-			sprintf(buffer, "pastry - %.0f fps\0", fps);
+			sprintf(buffer, "pastry - %.0f fps", fps);
 			glfwSetWindowTitle(g_window, buffer);
 		}
 	}
@@ -280,6 +298,16 @@ bool key_is_pressed(int key)
 {
 	int q = glfwGetKey(g_window, key);
 	return q == GLFW_PRESS;
+}
+
+bool key_is_key_down(int key)
+{
+	return input_pressed_keys.find(key) != input_pressed_keys.end();
+}
+
+bool key_is_key_up(int key)
+{
+	return input_released_keys.find(key) != input_released_keys.end();
 }
 
 bool is_mouse_button_pressed(int button)

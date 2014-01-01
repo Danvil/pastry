@@ -70,7 +70,7 @@ void initialize_text()
 
 }
 
-void text_load_font(const std::string& name, const std::string& filename)
+void text_load_font(const std::string& name, const std::string& filename, float font_size)
 {
 	font f;
 	f.name = name;
@@ -87,7 +87,7 @@ void text_load_font(const std::string& name, const std::string& filename)
 	unsigned char temp_bitmap[TTF_TEX_SIZE*TTF_TEX_SIZE];
 	stbtt_BakeFontBitmap(
 		(unsigned char*)ttf_buffer,0,
-		32.0,
+		font_size,
 		temp_bitmap,TTF_TEX_SIZE,TTF_TEX_SIZE,
 		32,96,
 		f.cdata); // no guarantee this fits!
@@ -109,15 +109,20 @@ void text_load_font(const std::string& name, const std::string& filename)
 
 void text_render(float x, float y, const std::string& txt)
 {
-	text_render(x, y, txt, {1,1,1,1});
+	text_render(x, y, txt, {1,1,1,1}, g_default_font);
 }
 
 void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba)
 {
+	text_render(x, y, txt, rgba, g_default_font);
+}
+
+void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& fontname)
+{
 	// find font
-	auto it = g_fonts.find(g_default_font);
+	auto it = g_fonts.find(fontname);
 	if(it == g_fonts.end()) {
-		std::cerr << "ERROR text_render: Invalid font '" << g_default_font << "'" << std::endl;
+		std::cerr << "ERROR text_render: Invalid font '" << fontname << "'" << std::endl;
 		return;
 	}
 	font& f = it->second;

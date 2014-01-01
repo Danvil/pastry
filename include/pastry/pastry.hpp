@@ -9,6 +9,9 @@
 #include <map>
 #include <memory>
 
+#include <GL/glew.h> // must be included before glfw header!
+#include <GLFW/glfw3.h>
+
 namespace pastry {
 
 // ----- BASIC RENDERLINGS -----------------------------------------------------
@@ -160,6 +163,12 @@ Eigen::Vector3f math_backproject(
 /** Checks if a key is pressed right now */
 bool key_is_pressed(int key);
 
+/** Checks if a key down happend during last frame */
+bool key_is_key_down(int key);
+
+/** Checks if a key up happend during last frame */
+bool key_is_key_up(int key);
+
 /** Checks if left mouse button is pressed right now */
 bool mouse_is_left_button_pressed();
 
@@ -183,12 +192,13 @@ void texture_save(const texture& tex, const std::string& fn);
 // ----- TEXT RENDERING --------------------------------------------------------
 
 /** Loads a font (first to load is the default) */
-void text_load_font(const std::string& name, const std::string& filename);
+void text_load_font(const std::string& name, const std::string& filename, float font_size=32.0f);
 
 /** Renders white text at the specific location on the screen (in pixels) */
 void text_render(float x, float y, const std::string& txt);
 
 /** Renders colored and transparent text */
+void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& font);
 void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba);
 
 // ----- SPRITES ---------------------------------------------------------------
