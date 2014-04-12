@@ -72,6 +72,11 @@ void fb_get_dimensions(int& width, int& height)
 	height = g_fb_height;
 }
 
+float fb_get_aspect()
+{
+	return static_cast<float>(g_fb_height)/static_cast<float>(g_fb_width);
+}
+
 std::set<int> input_pressed_keys;
 std::set<int> input_released_keys;
 
@@ -237,7 +242,7 @@ Eigen::Matrix4f math_orthogonal_projection(float n, float f, bool ydown)
 
 Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown)
 {
-	float aspect = static_cast<float>(g_fb_height)/static_cast<float>(g_fb_width);
+	float aspect = fb_get_aspect();
 	aspect *= (ydown ? 1.0f : -1.0f);
 	return pastry::math_orthogonal_projection(
 		-s, +s,

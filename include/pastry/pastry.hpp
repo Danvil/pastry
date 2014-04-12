@@ -97,6 +97,9 @@ bool fb_has_changed();
 /** Gets the size of the framebuffer */
 void fb_get_dimensions(int& width, int& height);
 
+/** Gets the aspect ratio of the framebuffer */
+float fb_get_aspect();
+
 /** Run the main loop. Call this once your initial setup is finished. */
 void run();
 
