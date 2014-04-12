@@ -24,7 +24,7 @@ namespace pastry
 	struct fragment_shader_id {};
 	struct program_id {};
 	struct vertex_array_id {};
-	struct texture_id {};
+	struct texture_base_id {};
 	struct renderbuffer_id {};
 	struct framebuffer_id {};
 
@@ -40,7 +40,7 @@ namespace pastry
 		PASTRY_RESOURCE_NAME_IMPL(fragment_shader_id)
 		PASTRY_RESOURCE_NAME_IMPL(program_id)
 		PASTRY_RESOURCE_NAME_IMPL(vertex_array_id)
-		PASTRY_RESOURCE_NAME_IMPL(texture_id)
+		PASTRY_RESOURCE_NAME_IMPL(texture_base_id)
 		PASTRY_RESOURCE_NAME_IMPL(renderbuffer_id)
 		PASTRY_RESOURCE_NAME_IMPL(framebuffer_id)
 	}
@@ -86,7 +86,7 @@ namespace pastry
 			static void gl_delete(id_t id) { glDeleteVertexArrays(1, &id); }
 		};
 
-		template<> struct handler<texture_id>
+		template<> struct handler<texture_base_id>
 		{
 			static id_t gl_create() { id_t id; glGenTextures(1, &id); return id; }
 			static void gl_delete(id_t id) { glDeleteTextures(1, &id); }
@@ -1127,21 +1127,38 @@ namespace pastry
 		}
 	};
 
-	struct texture : public detail::resource<texture_id>
+	namespace detail
+	{
+		template<unsigned C> struct texture_format;
+		#define TEXTURE_FORMAT(N,V) \
+			template<> struct texture_format<N> { \
+				static constexpr GLint result = V; \
+			};
+		TEXTURE_FORMAT(1, GL_RED)
+		TEXTURE_FORMAT(2, GL_RG)
+		TEXTURE_FORMAT(3, GL_RGB)
+		TEXTURE_FORMAT(4, GL_RGBA)
+		#undef TEXTURE_FORMAT
+
+		template<typename T> struct texture_type;
+		#define TEXTURE_TYPE(T,V) \
+			template<> struct texture_type<T> { \
+				static constexpr GLint result = V; \
+			};
+		TEXTURE_TYPE(unsigned char, GL_UNSIGNED_BYTE)
+		TEXTURE_TYPE(char, GL_BYTE)
+		TEXTURE_TYPE(unsigned short, GL_UNSIGNED_SHORT)
+		TEXTURE_TYPE(short, GL_SHORT)
+		TEXTURE_TYPE(unsigned int, GL_UNSIGNED_INT)
+		TEXTURE_TYPE(int, GL_INT)
+		TEXTURE_TYPE(float, GL_FLOAT)
+		#undef TEXTURE_TYPE
+	}
+
+	struct texture_base : public detail::resource<texture_base_id>
 	{
 		static constexpr GLenum target = GL_TEXTURE_2D;
-		int width_;
-		int height_;
-		int channels_;
-		RESOURCE_DEFAULT_CONSTRUCTOR(texture)
-		texture(int w, int h, float* data_rgb_f) {
-			create();
-			image_2d_rgb_f(w, h, data_rgb_f);
-		}
-		texture(int w, int h, unsigned char* data_rgb_ub) {
-			create();
-			image_2d_rgb_ub(w, h, data_rgb_ub);
-		}
+		RESOURCE_DEFAULT_CONSTRUCTOR(texture_base)
 		void create(GLenum filter, GLenum wrap) {
 			id_create();
 			bind();
@@ -1151,8 +1168,6 @@ namespace pastry
 		void create() {
 			create(GL_LINEAR, GL_REPEAT);
 		}
-		int width() const { return width_; }
-		int height() const { return height_; }
 		void bind() const {
 			glBindTexture(target, id());
 		}
@@ -1183,53 +1198,118 @@ namespace pastry
 		// void generate_mipmap() {
 		// 	glGenerateMipmap(target);
 		// }
-		void image_2d_rgb_f(int w, int h, float* data_rgb_f) {
-			width_ = w;
-			height_ = h;
-			channels_ = 3;
-			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_FLOAT, data_rgb_f);
-		}
-		void image_2d_rgb_ub(int w, int h, unsigned char* data_rgb_ub) {
-			width_ = w;
-			height_ = h;
-			channels_ = 3;
-			glTexImage2D(target, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data_rgb_ub);
-		}
-		void image_2d_rgba_ub(int w, int h, unsigned char* data_rgb_ub) {
-			width_ = w;
-			height_ = h;
-			channels_ = 3;
-			glTexImage2D(target, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_rgb_ub);
-		}
-		std::vector<unsigned char> get_image_rgb_ub() const {
-			bind();
-			std::vector<unsigned char> buff(width_*height_*3);
-			glGetTexImage(target, 0, GL_RGB, GL_UNSIGNED_BYTE, buff.data());
-			return buff;
-		}
-		std::vector<unsigned char> get_image_red_ub() const {
-			bind();
-			std::vector<unsigned char> buff(width_*height_*1);
-			glGetTexImage(target, 0, GL_RED, GL_UNSIGNED_BYTE, buff.data());
-			return buff;
-		}
 		int get_param_i(GLenum pname) const {
 			bind();
 			GLint val;
 			glGetTexLevelParameteriv(target, 0, pname, &val);
 			return val;
 		}
-		int get_width() const {
+		int width() const {
 			return get_param_i(GL_TEXTURE_WIDTH);
 		}
-		int get_height() const {
+		int height() const {
 			return get_param_i(GL_TEXTURE_HEIGHT);
+		}
+		int channels() const {
+			GLint tif = get_param_i(GL_TEXTURE_INTERNAL_FORMAT);
+			switch(tif) {
+				case GL_RED:
+				case GL_R8: case GL_R32F:
+					return 1;
+				case GL_RG:
+				case GL_RG8: case GL_RG32F:
+					return 2;
+				case GL_RGB:
+				case GL_RGB8: case GL_RGB32F:
+					return 3;
+				case GL_RGBA:
+				case GL_RGBA8: case GL_RGBA32F:
+					return 4;
+				default:
+					// ERROR unknown
+					return 0;
+			}
+		}
+		template<typename S, unsigned C>
+		void set_image(GLint format, unsigned w, unsigned h, const S* data) {
+			glTexImage2D(target,
+				0, // level: use base image level
+				format, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
+				w, h,
+				0, // must be 0
+				detail::texture_format<C>::result, // format of source data
+				detail::texture_type<S>::result, // type of source data
+				data);
+		}
+		template<typename S, unsigned C>
+		std::vector<S> get_image() const {
+			bind();
+			std::vector<S> buff(width()*height()*C);
+			glGetTexImage(target,
+				0, // level: use base image level
+				detail::texture_format<C>::result,
+				detail::texture_type<S>::result,
+				buff.data());
+			return buff;
+		}
+		template<typename S, unsigned C>
+		static texture_base create(GLint format, unsigned w, unsigned h, const S* data) {
+			texture_base tex;
+			tex.create();
+			tex.set_image<S,C>(format, w, h, data);
+			return tex;
 		}
 		static void unbind() {
 			glBindTexture(target, detail::INVALID_ID);
 		}
 		static void activate_unit(unsigned int num) {
 			glActiveTexture(GL_TEXTURE0 + num);
+		}
+	};
+
+	namespace TextureModes
+	{
+		enum def {
+			NORM,
+			SNORM,
+			FLOAT,
+			INT,
+			UINT
+		};
+	}
+	typedef TextureModes::def TextureMode;
+
+	namespace detail
+	{
+		template<unsigned CHANNELS, int MODE, unsigned BPC> struct texture_internal_format;
+		#define TEXTURE_INTERNAL_FORMAT(C,M,BPC,V) \
+			template<> struct texture_internal_format<C,M,BPC> { \
+				static constexpr GLint result = V; \
+			};
+		TEXTURE_INTERNAL_FORMAT(1, TextureMode::NORM, 8, GL_R8)
+		TEXTURE_INTERNAL_FORMAT(2, TextureMode::NORM, 8, GL_RG8)
+		TEXTURE_INTERNAL_FORMAT(3, TextureMode::NORM, 8, GL_RGB8)
+		TEXTURE_INTERNAL_FORMAT(4, TextureMode::NORM, 8, GL_RGBA8)
+		TEXTURE_INTERNAL_FORMAT(1, TextureMode::FLOAT, 32, GL_R32F)
+		TEXTURE_INTERNAL_FORMAT(2, TextureMode::FLOAT, 32, GL_RG32F)
+		TEXTURE_INTERNAL_FORMAT(3, TextureMode::FLOAT, 32, GL_RGB32F)
+		TEXTURE_INTERNAL_FORMAT(4, TextureMode::FLOAT, 32, GL_RGBA32F)
+		#undef TEXTURE_INTERNAL_FORMAT
+	}
+
+	template<unsigned CHANNELS, int MODE, unsigned BPC>
+	struct texture : public texture_base
+	{
+		texture(detail::create::type c=detail::create::no)
+		: texture_base(c) {}
+		constexpr GLint internal_format() {
+			return detail::texture_internal_format<CHANNELS,MODE,BPC>::result;
+		}
+		template<typename S, unsigned C>
+		void set_image(unsigned w, unsigned h, const S* data) {
+			set_image<S,C>(
+				internal_format(),
+				w, h, data);
 		}
 	};
 
@@ -1250,7 +1330,7 @@ namespace pastry
 		void bind() {
 			glBindFramebuffer(GL_FRAMEBUFFER, id());
 		}
-		void attach(GLenum attachment, const texture& tex) {
+		void attach(GLenum attachment, const texture_base& tex) {
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex.id(), 0);
 		}
 		void attach(GLenum attachment, const renderbuffer& rbo) {

@@ -184,10 +184,10 @@ Eigen::Vector2f mouse_get_position();
 // ----- TEXTURE LOADING -------------------------------------------------------
 
 /** Loads an image from file into a texture (only some image formats supported) */
-texture texture_load(const std::string& fn);
+texture_base texture_load(const std::string& fn);
 
 /** Saves an RGB or single channel texture to a file */
-void texture_save(const texture& tex, const std::string& fn);
+void texture_save(const texture_base& tex, const std::string& fn);
 
 // ----- TEXT RENDERING --------------------------------------------------------
 
@@ -215,7 +215,7 @@ namespace detail
 	struct def_sheet
 	{
 		std::string tag;
-		texture tex;
+		texture_base tex;
 		std::vector<def_sprite> sprites;
 	};
 

@@ -340,9 +340,9 @@ Eigen::Vector2f mouse_get_position()
 
 // ----- TEXTURE LOADING -------------------------------------------------------
 
-texture texture_load(const std::string& fn)
+texture_base texture_load(const std::string& fn)
 {
-	texture tex;
+	texture_base tex;
 	GLuint q = SOIL_load_OGL_texture(
 		fn.data(),
 		SOIL_LOAD_AUTO,
@@ -353,20 +353,19 @@ texture texture_load(const std::string& fn)
 		std::cerr << "ERROR in texture_load: Failed to load image '" << fn << "'" << std::endl;
 	}
 	tex.id_set(q);
-	tex.width_ = tex.get_width();
-	tex.height_ = tex.get_height();
 	return tex;
 }
 
-void texture_save(const texture& tex, const std::string& fn)
+void texture_save(const texture_base& tex, const std::string& fn)
 {
 	std::vector<unsigned char> img;
-	if(tex.channels_ == 1) img = tex.get_image_red_ub();
-	if(tex.channels_ == 3) img = tex.get_image_rgb_ub();
+	if(tex.channels() == 1) img = tex.get_image<unsigned char, 1>();
+	if(tex.channels() == 3) img = tex.get_image<unsigned char, 3>();
+	if(tex.channels() == 4) img = tex.get_image<unsigned char, 4>();
 	SOIL_save_image(
 		fn.data(),
 		SOIL_SAVE_TYPE_PNG,
-		tex.width(), tex.height(), tex.channels_,
+		tex.width(), tex.height(), tex.channels(),
 		img.data()
 	);
 }

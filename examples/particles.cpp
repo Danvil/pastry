@@ -20,7 +20,7 @@ private:
 	pastry::array_buffer vbo;
 	pastry::program spo;
 	pastry::vertex_array va;
-	pastry::texture tex;
+	pastry::texture_base tex;
 
 	std::vector<particle> particles_;
 
@@ -100,7 +100,7 @@ public:
 		auto state = pastry::capability(GL_BLEND,true);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		// render
-		pastry::texture::activate_unit(0);
+		pastry::texture_base::activate_unit(0);
 		tex.bind();
 		spo.use();
 		va.bind();

@@ -21,7 +21,7 @@ struct font
 {
 	std::string name;
 	std::string filename;
-	pastry::texture tex;
+	pastry::texture_base tex;
 	stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
 };
 
@@ -93,12 +93,8 @@ void text_load_font(const std::string& name, const std::string& filename, float 
 		f.cdata); // no guarantee this fits!
 	std::fclose(fh);
 
-	f.tex.create();
+	f.tex = texture_base::create<unsigned char, 1>(GL_R8, TTF_TEX_SIZE, TTF_TEX_SIZE, temp_bitmap);
 	f.tex.bind();
-	f.tex.width_ = TTF_TEX_SIZE;
-	f.tex.height_ = TTF_TEX_SIZE;
-	f.tex.channels_ = 1;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, TTF_TEX_SIZE,TTF_TEX_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
 
 	g_fonts[name] = f;
 
@@ -163,7 +159,7 @@ void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f
 		// update vbo and render data
 		spo.use();
 		spo.get_uniform<Eigen::Vector4f>("color").set(rgba);
-		pastry::texture::activate_unit(0);
+		pastry::texture_base::activate_unit(0);
 		f.tex.bind();
 		vao.bind();
 		vbo.update_data(data);

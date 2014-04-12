@@ -133,7 +133,7 @@ class galaxy : public pastry::renderling
 	pastry::array_buffer vbo_inst;
 	pastry::program spo;
 	pastry::vertex_array va;
-	pastry::texture tex;
+	pastry::texture_base tex;
 
 	std::vector<star> stars_;
 
@@ -256,7 +256,7 @@ public:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		// render instances
 		spo.use();
-		pastry::texture::activate_unit(0);
+		pastry::texture_base::activate_unit(0);
 		tex.bind();
 		va.bind();
 		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, stars_.size());

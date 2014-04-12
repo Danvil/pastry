@@ -6,7 +6,7 @@ namespace postfx {
 struct buffer
 {
 	int width_, height_;
-	pastry::texture tex;
+	pastry::texture_base tex;
 	pastry::renderbuffer rbo;
 	pastry::framebuffer fbo;
 
@@ -14,7 +14,7 @@ struct buffer
 		pastry::fb_get_dimensions(width_, height_);
 
 		tex.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		tex.image_2d_rgba_ub(width_, height_, 0);
+		tex.set_image<unsigned char, 4>(GL_RGBA8, width_, height_, 0);
 
 		rbo.id_create();
 		rbo.bind();
@@ -36,7 +36,7 @@ struct buffer
 			pastry::fb_get_dimensions(width_, height_);
 			fbo.bind();
 			tex.bind();
-			tex.image_2d_rgba_ub(width_, height_, 0);
+			tex.set_image<unsigned char, 4>(GL_RGBA8, width_, height_, 0);
 			rbo.bind();
 			rbo.storage(GL_DEPTH_COMPONENT16, width_, height_);
 			fbo.unbind();
@@ -119,12 +119,12 @@ struct effect
 		sfx_->update(t, dt, spo);
 	}
 
-	void render(const texture& tex, unsigned w, unsigned h) {
+	void render(const texture_base& tex, unsigned w, unsigned h) {
 		// render quad with texture
 		spo.use();
 		if(u_dim.is_valid())
 			u_dim.set({w,h});
-		pastry::texture::activate_unit(0);
+		pastry::texture_base::activate_unit(0);
 		tex.bind();
 		vbo.bind();
 		vao.bind();

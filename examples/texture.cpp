@@ -87,12 +87,12 @@ int main(void)
 			tex_pixels[i+2] = cb;
 		}
 	}
-	pastry::texture::activate_unit(0);
-	pastry::texture tex1(160, 120, tex_pixels.data());
+	pastry::texture_base::activate_unit(0);
+	pastry::texture_base tex1 = pastry::texture_base::create<float,3>(GL_RGB8, 160, 120, tex_pixels.data());
 	tex1.bind();
 
-	pastry::texture::activate_unit(1);
-	pastry::texture tex2 = pastry::texture_load("assets/kitten.jpg");
+	pastry::texture_base::activate_unit(1);
+	pastry::texture_base tex2 = pastry::texture_load("assets/kitten.jpg");
 	tex2.bind();
 
 	sp.get_uniform<int>("texPattern").set(0);

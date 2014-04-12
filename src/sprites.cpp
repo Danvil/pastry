@@ -9,12 +9,12 @@ namespace pastry
 		program spo;
 		array_buffer vbo;
 		vertex_array vao;
-		texture tex;
+		texture_base tex;
 		int w, h;
 
 		void render(const std::vector<detail::sprite_vertex>& v) {
 			spo.use();
-			texture::activate_unit(0);
+			texture_base::activate_unit(0);
 			tex.bind();
 			vbo.bind();
 			vbo.update_data(v);

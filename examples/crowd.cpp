@@ -47,7 +47,6 @@ class agent_group : public pastry::renderling
 	pastry::array_buffer vbo_inst;
 	pastry::program spo;
 	pastry::vertex_array va;
-	pastry::texture tex;
 
 	std::vector<agent> agents_;
 

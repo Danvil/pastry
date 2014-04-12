@@ -71,8 +71,8 @@ int main(void)
 
 	std::cout << "Texture" << std::endl;
 
-	pastry::texture::activate_unit(0);
-	pastry::texture tex = pastry::texture_load("assets/kitten.jpg");
+	pastry::texture_base::activate_unit(0);
+	pastry::texture_base tex = pastry::texture_load("assets/kitten.jpg");
 	tex.bind();
 
 	sp.get_uniform<int>("texKitten").set(0);
