@@ -188,12 +188,18 @@ private:
 	pastry::array_buffer vbo;
 	pastry::vertex_array vao;
 
+	pastry::texture_base tex_mask_;
+
 	pastry::texture_base tex_;
 
 public:
 	mosaik(const pastry::texture_base& tex)
 	: tex_(tex)
 	{
+		tex_mask_ = pastry::texture_load("assets/mask.png");
+		tex_mask_.set_filter(GL_LINEAR);
+		tex_mask_.set_wrap(GL_REPEAT);
+
 		vbo = pastry::array_buffer({
 			{"pos", GL_FLOAT, 2}
 		});
@@ -229,11 +235,14 @@ public:
 		);
 		std::string src_frag = PASTRY_GLSL(
 			uniform sampler2D postfx_tex;
-			uniform int patch_size;
+			uniform sampler2D mask;
+			uniform int src_width;
 			in vec2 postfx_fuv;
 			out vec4 postfx_outColor;
 			void main() {
-				vec4 color = texture(postfx_tex, postfx_fuv);
+				vec4 color =
+				 texture(mask, postfx_fuv * src_width)
+				 * texture(postfx_tex, postfx_fuv);
 				postfx_outColor = color;
 			}
 		);
@@ -241,7 +250,8 @@ public:
 		//spo = pastry::load_program("assets/post"); // FIXME
 		spo = pastry::program(src_vert, src_geom, src_frag);
 		spo.get_uniform<int>("postfx_tex").set(0);
-		spo.get_uniform<int>("patch_size").set(PATCH_SIZE);
+		spo.get_uniform<int>("mask").set(1);
+		spo.get_uniform<int>("src_width").set(tex_.width());
 
 		vao = pastry::vertex_array(spo, {{"pos", vbo}});
 	}
@@ -259,6 +269,8 @@ public:
 		spo.use();
 		pastry::texture_base::activate_unit(0);
 		tex_.bind();
+		pastry::texture_base::activate_unit(1);
+		tex_mask_.bind();
 		vbo.bind();
 		vao.bind();
 		glDrawArrays(GL_POINTS, 0, 1);
