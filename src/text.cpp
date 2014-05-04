@@ -11,11 +11,10 @@ namespace pastry
 
 constexpr unsigned int TTF_TEX_SIZE = 512;
 
-struct text_vertex { float x, y, u, v; };
-
-pastry::array_buffer vbo;
-pastry::program spo;
-pastry::vertex_array vao;
+struct text_vertex
+{
+	float x, y, u, v;
+};
 
 struct font
 {
@@ -25,11 +24,33 @@ struct font
 	stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
 };
 
-std::map<std::string, font> g_fonts;
+struct text
+{
+	pastry::array_buffer vbo;
+	pastry::program spo;
+	pastry::vertex_array vao;
 
-std::string g_default_font;
+	std::map<std::string, font> fonts_;
 
-void initialize_text()
+	std::string default_font_;
+
+	text();
+
+	void load_font(const std::string& name, const std::string& filename, float font_size);
+
+	void render(float x, float y, const std::string& txt)
+	{ render(x, y, txt, {1,1,1,1}); }
+
+	void render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba)
+	{ render(x, y, txt, rgba, default_font_); }
+
+	void render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& fontname);
+
+};
+
+std::shared_ptr<text> g_text;
+
+text::text()
 {
 	vbo = pastry::array_buffer{
 		{"xy", GL_FLOAT, 2},
@@ -70,7 +91,7 @@ void initialize_text()
 
 }
 
-void text_load_font(const std::string& name, const std::string& filename, float font_size)
+void text::load_font(const std::string& name, const std::string& filename, float font_size)
 {
 	font f;
 	f.name = name;
@@ -96,28 +117,18 @@ void text_load_font(const std::string& name, const std::string& filename, float 
 	f.tex = texture_base::create<unsigned char, 1>(GL_R8, TTF_TEX_SIZE, TTF_TEX_SIZE, temp_bitmap);
 	f.tex.bind();
 
-	g_fonts[name] = f;
+	fonts_[name] = f;
 
-	if(g_default_font.empty()) {
-		g_default_font = name;
+	if(default_font_.empty()) {
+		default_font_ = name;
 	}
 }
 
-void text_render(float x, float y, const std::string& txt)
-{
-	text_render(x, y, txt, {1,1,1,1}, g_default_font);
-}
-
-void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba)
-{
-	text_render(x, y, txt, rgba, g_default_font);
-}
-
-void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& fontname)
+void text::render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& fontname)
 {
 	// find font
-	auto it = g_fonts.find(fontname);
-	if(it == g_fonts.end()) {
+	auto it = fonts_.find(fontname);
+	if(it == fonts_.end()) {
 		std::cerr << "ERROR text_render: Invalid font '" << fontname << "'" << std::endl;
 		return;
 	}
@@ -166,6 +177,31 @@ void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f
 		glDrawArrays(GL_TRIANGLES, 0, data.size());
 		// disable transparency
 	}
+}
+
+void initialize_text()
+{
+	g_text = std::make_shared<text>();
+}
+
+void text_load_font(const std::string& name, const std::string& filename, float font_size)
+{
+	g_text->load_font(name, filename, font_size);
+}
+
+void text_render(float x, float y, const std::string& txt)
+{
+	g_text->render(x, y, txt);
+}
+
+void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba)
+{
+	g_text->render(x, y, txt, rgba);
+}
+
+void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& fontname)
+{
+	g_text->render(x, y, txt, rgba, fontname);
 }
 
 }

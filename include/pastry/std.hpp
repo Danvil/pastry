@@ -16,7 +16,7 @@ namespace pastry {
 	class instance_manager
 	{
 	private:
-		typedef uint64_t id_t;
+		typedef uint64_t glid_t;
 
 		/** Family defines type (shader, attributes) */
 		struct family
@@ -40,16 +40,16 @@ namespace pastry {
 		/** Instances defines instance data */
 		struct instance {
 			std::string species;
-			id_t spos;
+			glid_t spos;
 		};
 
 		std::map<std::string,family> families_;
 		std::map<std::string,species> species_;
-		std::map<id_t,instance> instances_;
-		id_t next_id_;
+		std::map<glid_t,instance> instances_;
+		glid_t next_id_;
 
 	private:
-		void set_instance_data_impl(id_t id, const std::vector<unsigned char>& v) {
+		void set_instance_data_impl(glid_t id, const std::vector<unsigned char>& v) {
 			const instance& x = instances_[id];
 			species& s = species_[x.species];
 			const family& f = families_[s.family];
@@ -85,7 +85,6 @@ namespace pastry {
 			for(const auto& x : f.mapping.mapping_instance) {
 				vao_m.push_back({ x[0], s.mesh.get_instance_bo(), x[1], 1});
 			}
-			s.vao = vertex_array(create_yes);
 			s.vao.set_layout(f.spo, vao_m.begin(), vao_m.end());
 			s.num_instances = 0;
 			s.dirty = true;
@@ -104,13 +103,13 @@ namespace pastry {
 			x.species = sname;
 			x.spos = s.num_instances++;
 			s.data.insert(s.data.end(), f.instance_size, 0);
-			id_t id = next_id_++;
+			glid_t id = next_id_++;
 			instances_[id] = x;
 			return id;
 		}
 
 		template<typename Inst> // Inst must be POD
-		void set_instance_data(id_t id, const Inst& data) {
+		void set_instance_data(glid_t id, const Inst& data) {
 			std::size_t n = sizeof(data);
 			std::size_t n_check = families_[species_[instances_[id].species].family].instance_size;
 			if(n != n_check) {

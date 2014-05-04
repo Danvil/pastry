@@ -75,6 +75,7 @@ int main()
 
 	pastry::scene_add(std::make_shared<kitten_manager>());
 
+	// wobbel
 	pastry::postfx_add(
 		"uniform float offset;"
 		"vec4 sfx(vec2 uv) {"
@@ -86,6 +87,7 @@ int main()
 		}
 	);
 
+	// flash red
 	pastry::postfx_add(
 		"uniform float a;"
 		"vec4 sfx(vec2 uv) {"
@@ -97,6 +99,7 @@ int main()
 		}
 	);
 
+	// edge detector
 	pastry::postfx_add(
 		"vec4 sfx(vec2 uv) {"
 		"	return   sfx_read_fb(uv+vec2(+1,0)/postfx_dim)"

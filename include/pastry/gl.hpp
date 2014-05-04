@@ -16,212 +16,228 @@
 
 namespace pastry
 {
-	typedef GLuint id_t;
+	typedef GLuint glid_t;
 
-	struct buffer_id {};
-	struct vertex_shader_id {};
-	struct geometry_shader_id {};
-	struct fragment_shader_id {};
-	struct program_id {};
-	struct vertex_array_id {};
-	struct texture_base_id {};
-	struct renderbuffer_id {};
-	struct framebuffer_id {};
+	enum class rid
+	{
+		buffer,
+		vertex_shader,
+		geometry_shader,
+		fragment_shader,
+		program,
+		vertex_array,
+		texture_base,
+		renderbuffer,
+		framebuffer
+	};
 
 	namespace detail
 	{
-		template<typename T> struct resource_name;
-		#define PASTRY_RESOURCE_NAME_IMPL(T) template<> struct resource_name<T> { \
-			static const char* get() { return #T; } \
-		};
-		PASTRY_RESOURCE_NAME_IMPL(buffer_id)
-		PASTRY_RESOURCE_NAME_IMPL(vertex_shader_id)
-		PASTRY_RESOURCE_NAME_IMPL(geometry_shader_id)
-		PASTRY_RESOURCE_NAME_IMPL(fragment_shader_id)
-		PASTRY_RESOURCE_NAME_IMPL(program_id)
-		PASTRY_RESOURCE_NAME_IMPL(vertex_array_id)
-		PASTRY_RESOURCE_NAME_IMPL(texture_base_id)
-		PASTRY_RESOURCE_NAME_IMPL(renderbuffer_id)
-		PASTRY_RESOURCE_NAME_IMPL(framebuffer_id)
+		inline const char* name(rid r)
+		{
+			#define PASTRY_RESOURCE_NAME(T) case rid::T: return #T;
+			switch(r) {
+			PASTRY_RESOURCE_NAME(buffer)
+			PASTRY_RESOURCE_NAME(vertex_shader)
+			PASTRY_RESOURCE_NAME(geometry_shader)
+			PASTRY_RESOURCE_NAME(fragment_shader)
+			PASTRY_RESOURCE_NAME(program)
+			PASTRY_RESOURCE_NAME(vertex_array)
+			PASTRY_RESOURCE_NAME(texture_base)
+			PASTRY_RESOURCE_NAME(renderbuffer)
+			PASTRY_RESOURCE_NAME(framebuffer)
+			}
+			#undef PASTRY_RESOURCE_NAME
+		}
 	}
 
+	inline std::ostream& operator<<(std::ostream& os, rid r)
+	{ os << detail::name(r); return os; }
+
 	namespace detail
 	{
-		template<typename ID>
-		struct handler;
+		template<rid id> struct handler;
 
-		template<> struct handler<buffer_id>
+		template<> struct handler<rid::buffer>
 		{
-			static id_t gl_create() { id_t id; glGenBuffers(1, &id); return id; }
-			static void gl_delete(id_t id) { glDeleteBuffers(1, &id); }
+			static glid_t gl_create() { glid_t id; glGenBuffers(1, &id); return id; }
+			static void gl_delete(glid_t id) { glDeleteBuffers(1, &id); }
 		};
 
-		template<> struct handler<vertex_shader_id>
+		template<> struct handler<rid::vertex_shader>
 		{
-			static id_t gl_create() { return glCreateShader(GL_VERTEX_SHADER); }
-			static void gl_delete(id_t id) { glDeleteShader(id); }
+			static glid_t gl_create() { return glCreateShader(GL_VERTEX_SHADER); }
+			static void gl_delete(glid_t id) { glDeleteShader(id); }
 		};
 
-		template<> struct handler<geometry_shader_id>
+		template<> struct handler<rid::geometry_shader>
 		{
-			static id_t gl_create() { return glCreateShader(GL_GEOMETRY_SHADER); }
-			static void gl_delete(id_t id) { glDeleteShader(id); }
+			static glid_t gl_create() { return glCreateShader(GL_GEOMETRY_SHADER); }
+			static void gl_delete(glid_t id) { glDeleteShader(id); }
 		};
 
-		template<> struct handler<fragment_shader_id>
+		template<> struct handler<rid::fragment_shader>
 		{
-			static id_t gl_create() { return glCreateShader(GL_FRAGMENT_SHADER); }
-			static void gl_delete(id_t id) { glDeleteShader(id); }
+			static glid_t gl_create() { return glCreateShader(GL_FRAGMENT_SHADER); }
+			static void gl_delete(glid_t id) { glDeleteShader(id); }
 		};
 
-		template<> struct handler<program_id>
+		template<> struct handler<rid::program>
 		{
-			static id_t gl_create() { return glCreateProgram(); }
-			static void gl_delete(id_t id) { glDeleteProgram(id); }
+			static glid_t gl_create() { return glCreateProgram(); }
+			static void gl_delete(glid_t id) { glDeleteProgram(id); }
 		};
 
-		template<> struct handler<vertex_array_id>
+		template<> struct handler<rid::vertex_array>
 		{
-			static id_t gl_create() { id_t id; glGenVertexArrays(1, &id); return id; }
-			static void gl_delete(id_t id) { glDeleteVertexArrays(1, &id); }
+			static glid_t gl_create() { glid_t id; glGenVertexArrays(1, &id); return id; }
+			static void gl_delete(glid_t id) { glDeleteVertexArrays(1, &id); }
 		};
 
-		template<> struct handler<texture_base_id>
+		template<> struct handler<rid::texture_base>
 		{
-			static id_t gl_create() { id_t id; glGenTextures(1, &id); return id; }
-			static void gl_delete(id_t id) { glDeleteTextures(1, &id); }
+			static glid_t gl_create() { glid_t id; glGenTextures(1, &id); return id; }
+			static void gl_delete(glid_t id) { glDeleteTextures(1, &id); }
 		};
 
-		template<> struct handler<renderbuffer_id>
+		template<> struct handler<rid::renderbuffer>
 		{
-			static id_t gl_create() { id_t id; glGenRenderbuffers(1, &id); return id; }
-			static void gl_delete(id_t id) { glDeleteRenderbuffers(1, &id); }
+			static glid_t gl_create() { glid_t id; glGenRenderbuffers(1, &id); return id; }
+			static void gl_delete(glid_t id) { glDeleteRenderbuffers(1, &id); }
 		};
 
-		template<> struct handler<framebuffer_id>
+		template<> struct handler<rid::framebuffer>
 		{
-			static id_t gl_create() { id_t id; glGenFramebuffers(1, &id); return id; }
-			static void gl_delete(id_t id) { glDeleteFramebuffers(1, &id); }
+			static glid_t gl_create() { glid_t id; glGenFramebuffers(1, &id); return id; }
+			static void gl_delete(glid_t id) { glDeleteFramebuffers(1, &id); }
 		};
 
-		constexpr id_t INVALID_ID = 0;
+		constexpr glid_t INVALID_ID = 0;
 
-		template<typename T>
-		struct resource_base
+		template<rid R>
+		class resource_base
 		{
 		private:
-			id_t id_;
+			glid_t id_;
+		
 		public:
-			resource_base() {
-				id_ = handler<T>::gl_create();
-			}
-			resource_base(id_t id) {
-				id_ = id;
-			}
-			~resource_base() {
-				handler<T>::gl_delete(id_);
-			}
-			id_t id() const { return id_; }
+			resource_base()
+			: id_(handler<R>::gl_create()) {}
+			
+			resource_base(glid_t id)
+			: id_(id) {}
+			
+			resource_base(const resource_base&) = delete;
+			resource_base& operator=(const resource_base&) = delete;
+			
+			~resource_base()
+			{ handler<R>::gl_delete(id_); }
+			
+			glid_t id() const
+			{ return id_; }
 		};
 
-		namespace create {
-			enum type { yes, no};
-		}
+		// class ressource_not_initialized : public std::runtime_error
+		// {
+		// public:
+		// 	ressource_not_initialized(rid r)
+		// 	: std::runtime_error(
+		// 		(std::string("pastry: resource of type ") + detail::name(r) + " is not initialized!").c_str()) {}
+		// };
 
-		template<typename T>
+		template<rid R>
 		struct resource
 		{
 		private:
-			std::shared_ptr<resource_base<T>> ptr_;
+			std::shared_ptr<resource_base<R>> ptr_;
+		
 		public:
-			typedef T id_type;
-			resource(create::type c=create::no) {
-				if(c==create::yes) {
-					id_create();
-				}
-			}
-			resource(id_t id) {
-				id_set(id);
-			}
-			bool id_is_valid() const {
-				return ptr_ && ptr_->id() != INVALID_ID;
-			}
-			void id_create_if_invalid() {
-				if(!id_is_valid())
-					id_create();
-			}
-			void id_set(id_t id) {
-				ptr_ = std::make_shared<resource_base<T>>(id);
-			}
-			void id_create() {
-				ptr_ = std::make_shared<resource_base<T>>();
-			}
-			void id_delete() {
-				ptr_.reset();
-			}
-			operator id_t() const {
-				return id();
-			}
-			id_t id() const {
-				if(ptr_) {
-					return ptr_->id();
-				}
-				std::cerr << "ERROR: Invalid resource ID! id=";
-				if(ptr_) {
-					std::cerr << ptr_->id();
-				}
-				else {
-					std::cerr << "(null)";
-				}
-				std::cerr << ", type=" << resource_name<T>::get() << std::endl;
-				return INVALID_ID;
-			}
+			resource()
+			: ptr_(std::make_shared<resource_base<R>>()) {}
+
+			resource(glid_t id)
+			: ptr_(std::make_shared<resource_base<R>>(id)) {}
+
+			glid_t id() const
+			{ return ptr_->id(); }
+			
+			operator glid_t() const
+			{ return ptr_->id(); }
 		};
 	}
 
-	static constexpr detail::create::type create_no = detail::create::no;
-	static constexpr detail::create::type create_yes = detail::create::yes;
+	struct exception
+	: public std::runtime_error
+	{
+		exception(const std::string& msg)
+		: std::runtime_error(msg.c_str())
+		{
+			std::cerr << "--------------------------------------------------------------------------------" << std::endl;
+			std::cerr << "--------  PASTRY ERROR  --------------------------------------------------------" << std::endl;
+			std::cerr << "--------------------------------------------------------------------------------" << std::endl;
+			std::cerr << msg << std::endl;
+			std::cerr << "--------------------------------------------------------------------------------" << std::endl;
+		}
+	};
 
-	#define RESOURCE_DEFAULT_CONSTRUCTOR(Name) \
-		Name(detail::create::type c=detail::create::no) \
-		: detail::resource<Name##_id>(c) {}
+	struct invalid_shader_source
+	: public exception
+	{
+		invalid_shader_source(const std::string& source)
+		: exception(std::string("pastry: invalid shader source:\n") + source)
+		{ }
+	};
 
-	template<typename T>
-	T create_resource() {
-		T t;
-		t.id_create();
-		return t;
-	}
+	struct invalid_shader_program
+	: public exception
+	{
+		invalid_shader_program()
+		: exception("pastry: invalide shader program")
+		{ }
+	};
+
+	struct file_not_found
+	: public exception
+	{
+		file_not_found(const std::string& fn)
+		: exception(std::string("pastry: file not found: '") + fn + "'")
+		{ }
+	};
 
 	namespace detail
 	{
-		inline bool can_read_file(const std::string& filename) {
+		inline bool can_read_file(const std::string& filename)
+		{
 			std::ifstream in(filename, std::ios::in | std::ios::binary);
 			return in;
 		}
 
-		inline std::string load_text_file(const std::string& filename) {
+		inline std::string load_text_file(const std::string& filename)
+		{
 			// http://insanecoding.blogspot.de/2011/11/how-to-read-in-file-in-c.html
 			std::ifstream in(filename, std::ios::in | std::ios::binary);
-			if(in) {
-				std::string contents;
-				in.seekg(0, std::ios::end);
-				contents.resize(in.tellg());
-				in.seekg(0, std::ios::beg);
-				in.read(&contents[0], contents.size());
-				in.close();
-				return contents;
+			if(!in) {
+				throw file_not_found(filename);
 			}
-			std::cerr << "ERROR in load_text_file: Could not open file '" << filename << "'" << std::endl;
-			return "";
+			std::string contents;
+			in.seekg(0, std::ios::end);
+			contents.resize(in.tellg());
+			in.seekg(0, std::ios::beg);
+			in.read(&contents[0], contents.size());
+			in.close();
+			return contents;
 		}
 
-		inline char int_to_char(unsigned i) {
-			if(i == 0 || i > 9) return '0';
-			return '1' + i - 1;
+		inline char int_to_char(unsigned i)
+		{
+			if(i == 0 || i > 9)
+				return '0';
+			else
+				return '1' + i - 1;
 		}
 
-		inline std::string int_to_string(unsigned i) {
+		inline std::string int_to_string(unsigned i)
+		{
 			std::string r = "";
 			while(i > 0) {
 				r = int_to_char(i % 10) + r;
@@ -233,7 +249,8 @@ namespace pastry
 			return r;
 		}
 
-		inline void compile_shader(id_t q, std::string source) {
+		inline void compile_shader(glid_t q, std::string source)
+		{
 			// prepare by replacing "; " with ";\n"
 			// this is to get better compiler error messages
 			{
@@ -269,84 +286,87 @@ namespace pastry
 				// get error message
 				char buffer[1024];
 				glGetShaderInfoLog(q, 1024, NULL, buffer);
-				// print everything
-				std::cerr << "ERROR: compile_shader" << std::endl;
-				std::cerr << source << std::endl;
-				std::cerr << "ERROR: " << buffer << std::endl;
+				// throw exception
+				throw invalid_shader_source(source);
 			}
 		}
 	}
 
-	struct vertex_shader : public detail::resource<vertex_shader_id>
+	struct vertex_shader
+	: public detail::resource<rid::vertex_shader>
 	{
-		RESOURCE_DEFAULT_CONSTRUCTOR(vertex_shader)
-		vertex_shader(const std::string& source) {
-			id_create();
-			compile(source);
-		}
-		void compile(const std::string& source) {
-			detail::compile_shader(id(), source);
-		}
+		vertex_shader() {}
+		
+		vertex_shader(const std::string& source)
+		{ compile(source); }
+		
+		void compile(const std::string& source)
+		{ detail::compile_shader(id(), source); }
 	};
 
-	struct geometry_shader : public detail::resource<geometry_shader_id>
+	struct geometry_shader
+	: public detail::resource<rid::geometry_shader>
 	{
-		RESOURCE_DEFAULT_CONSTRUCTOR(geometry_shader)
-		geometry_shader(const std::string& source) {
-			id_create();
-			compile(source);
-		}
-		void compile(const std::string& source) {
-			detail::compile_shader(id(), source);
-		}
+		geometry_shader() {}
+		
+		geometry_shader(const std::string& source)
+		{ compile(source); }
+		
+		void compile(const std::string& source)
+		{ detail::compile_shader(id(), source); }
 	};
 
-	struct fragment_shader : public detail::resource<fragment_shader_id>
+	struct fragment_shader
+	: public detail::resource<rid::fragment_shader>
 	{
-		RESOURCE_DEFAULT_CONSTRUCTOR(fragment_shader)
-		fragment_shader(const std::string& source) {
-			id_create();
-			compile(source);
-		}
-		void compile(const std::string& source) {
-			detail::compile_shader(id(), source);
-		}
+		fragment_shader() {}
+		
+		fragment_shader(const std::string& source)
+		{ compile(source); }
+		
+		void compile(const std::string& source)
+		{ detail::compile_shader(id(), source); }
 	};
 
 	template<typename T>
-	T load_shader(const std::string& filename) {
-		return T{detail::load_text_file(filename)};
-	}
+	T load_shader(const std::string& filename)
+	{ return T{detail::load_text_file(filename)}; }
 
 	struct vertex_attribute;
+
 	template<typename T, unsigned int NUM> struct uniform;
 
-	struct program : public detail::resource<program_id>
+	struct program
+	: public detail::resource<rid::program>
 	{
-		RESOURCE_DEFAULT_CONSTRUCTOR(program)
-		program(const vertex_shader& vs, const fragment_shader& fs) {
-			id_create();
+		program() {}
+		
+		program(const vertex_shader& vs, const fragment_shader& fs)
+		{
 			attach(vs);
 			attach(fs);
 			link();
 		}
-		program(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs) {
-			id_create();
+		
+		program(const vertex_shader& vs, const geometry_shader& gs, const fragment_shader& fs)
+		{
 			attach(vs);
 			attach(gs);
 			attach(fs);
 			link();
 		}
-		void attach(const vertex_shader& s) {
-			glAttachShader(id(), s.id());
-		}
-		void attach(const geometry_shader& s) {
-			glAttachShader(id(), s.id());
-		}
-		void attach(const fragment_shader& s) {
-			glAttachShader(id(), s.id());
-		}
-		void link() {
+		
+		void attach(const vertex_shader& s)
+		{ glAttachShader(id(), s.id()); }
+		
+		void attach(const geometry_shader& s)
+		{ glAttachShader(id(), s.id()); }
+		
+		void attach(const fragment_shader& s)	
+		{ glAttachShader(id(), s.id()); }
+		
+		void link()
+		{
 			glLinkProgram(id());
 			// check if link was successful
 			GLint status;
@@ -355,37 +375,42 @@ namespace pastry
 				// print error message
 				char buffer[1024];
 				glGetProgramInfoLog(id(), 1024, NULL, buffer);
-				std::cerr << "ERROR with glLinkProgram:" << std::endl;
-				std::cerr << "ERROR: " << buffer << std::endl;
+				throw invalid_shader_program();
 			}
 		}
-		void use() const {
-			glUseProgram(id());
-		}
-		static void unuse() {
-			glUseProgram(detail::INVALID_ID);
-		}
+		
+		void use() const
+		{ glUseProgram(id()); }
+		
+		static void unuse()
+		{ glUseProgram(detail::INVALID_ID); }
+		
 		inline vertex_attribute get_attribute(const std::string& name) const;
+
 		template<typename T, unsigned int NUM=1>
 		uniform<T,NUM> get_uniform(const std::string& name) const;
 	};
 
-	inline program create_program(const std::string& src_vertex, const std::string& src_frag) {
+	inline program create_program(const std::string& src_vertex, const std::string& src_frag) 
+	{
 		return program{ {src_vertex}, {src_frag} };
 	}
 
-	inline program create_program(const std::string& src_vertex, const std::string& src_geom, const std::string& src_frag) {
+	inline program create_program(const std::string& src_vertex, const std::string& src_geom, const std::string& src_frag)
+	{
 		return program{ {src_vertex}, {src_geom}, {src_frag} };
 	}
 
-	inline program load_program(const std::string& fn_vertex, const std::string& fn_frag) {
+	inline program load_program(const std::string& fn_vertex, const std::string& fn_frag)
+	{
 		return program{
 			load_shader<vertex_shader>(fn_vertex),
 			load_shader<fragment_shader>(fn_frag)
 		};
 	}
 
-	inline program load_program(const std::string& fn_vertex, const std::string& fn_geom, const std::string& fn_frag) {
+	inline program load_program(const std::string& fn_vertex, const std::string& fn_geom, const std::string& fn_frag)
+	{
 		return program{
 			load_shader<vertex_shader>(fn_vertex),
 			load_shader<geometry_shader>(fn_geom),
@@ -394,7 +419,8 @@ namespace pastry
 	}
 
 	/** Tries to load a shader with files fn.vert, fn.geom, fn.frag */
-	inline program load_program(const std::string& fn) {
+	inline program load_program(const std::string& fn)
+	{
 		std::string fn_vert = fn + ".vert";
 		std::string fn_geom = fn + ".geom";
 		std::string fn_frag = fn + ".frag";
@@ -409,21 +435,22 @@ namespace pastry
 	struct vertex_attribute
 	{
 		GLint loc;
-		bool is_valid() const {
-			return loc >= 0;
-		}
-		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer) {
-			glVertexAttribPointer(loc, size, type, normalized, stride, pointer);
-		}
-		void set_divisor(unsigned divisor) {
-			glVertexAttribDivisor(loc, divisor);
-		}
-		void enable() {
-			glEnableVertexAttribArray(loc);
-		}
+
+		bool is_valid() const
+		{ return loc >= 0; }
+
+		void configure(GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
+		{ glVertexAttribPointer(loc, size, type, normalized, stride, pointer); }
+
+		void set_divisor(unsigned divisor)
+		{ glVertexAttribDivisor(loc, divisor); }
+
+		void enable()
+		{ glEnableVertexAttribArray(loc); }
 	};
 
-	vertex_attribute program::get_attribute(const std::string& name) const {
+	vertex_attribute program::get_attribute(const std::string& name) const
+	{
 		vertex_attribute va;
 		va.loc = glGetAttribLocation(id(), name.data());
 		if(va.loc == -1) {
@@ -435,13 +462,14 @@ namespace pastry
 	namespace detail
 	{
 		template<typename K, unsigned int ROWS, unsigned int COLS, unsigned int NUM>
-		struct uniform_impl {
-			// static_assert(false,
-			// 	"\n\n"
-			// 	"ERROR with pastry::uniform / glUniform / glUniformMatrix:\n"
-			// 	"\tInvalid row/column dimensions for OpenGL uniform.\n"
-			// 	"\tSupported are: 1x1, 2x1, 3x1, 4x1, 2x2, 3x3, 4x4, 2x3, 3x2, 2x4, 4x2, 3x4, 4x3.\n");
-		};
+		struct uniform_impl;
+		// {
+		// 	static_assert(false,
+		// 		"\n\n"
+		// 		"ERROR with pastry::uniform / glUniform / glUniformMatrix:\n"
+		// 		"\tInvalid row/column dimensions for OpenGL uniform.\n"
+		// 		"\tSupported are: 1x1, 2x1, 3x1, 4x1, 2x2, 3x3, 4x4, 2x3, 3x2, 2x4, 4x2, 3x4, 4x3.\n");
+		// };
 
 		// K => glUniform1Kv
 		// K[N] => glUniformNKv
@@ -455,8 +483,8 @@ namespace pastry
 		#define PASTRY_UNIFORM_VAL_DEF(TYPE,N,SETVEC,GETVEC) \
 			template<unsigned int NUM> \
 			struct uniform_impl<TYPE,N,1,NUM> { \
-				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, v); } \
-				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
+				static void set(glid_t loc, const TYPE* v) { SETVEC(loc, NUM, v); } \
+				static void get(glid_t prog, glid_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
 			};
 
 		PASTRY_UNIFORM_TYPES_IMPL_VAL(PASTRY_UNIFORM_VAL_DEF,1)
@@ -472,8 +500,8 @@ namespace pastry
 		#define PASTRY_UNIFORM_MATN_DEF(TYPE,N,SETVEC,GETVEC) \
 			template<unsigned int NUM> \
 			struct uniform_impl<TYPE,N,N,NUM> { \
-				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, GL_FALSE, v); } \
-				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
+				static void set(glid_t loc, const TYPE* v) { SETVEC(loc, NUM, GL_FALSE, v); } \
+				static void get(glid_t prog, glid_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
 			};
 
 		PASTRY_UNIFORM_TYPES_IMPL_MATN(PASTRY_UNIFORM_MATN_DEF,2)
@@ -488,8 +516,8 @@ namespace pastry
 		#define PASTRY_UNIFORM_MATRC_DEF(TYPE,R,C,SETVEC,GETVEC) \
 			template<unsigned int NUM> \
 			struct uniform_impl<TYPE,R,C,NUM> { \
-				static void set(id_t loc, const TYPE* v) { SETVEC(loc, NUM, GL_FALSE, v); } \
-				static void get(id_t prog, id_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
+				static void set(glid_t loc, const TYPE* v) { SETVEC(loc, NUM, GL_FALSE, v); } \
+				static void get(glid_t prog, glid_t loc, TYPE* v) { GETVEC(prog, loc, v); } \
 			};
 
 		PASTRY_UNIFORM_TYPES_IMPL_MATRC(PASTRY_UNIFORM_MATRC_DEF,2,3)
@@ -509,15 +537,32 @@ namespace pastry
 	| uniform<Eigen::Matrix4f,2>	| mat4 v[2]
 */
 
+	struct invalid_uniform_location
+	: public exception
+	{
+		invalid_uniform_location(const std::string& name)
+		: exception("pastry: Inactive or invalid uniform location: name=" + name)
+		{}
+	};
+
 	struct uniform_base
 	{
+		std::string name;
+
 		GLint loc;
+
 		program spo;
-		void use_program() {
+
+		bool valid() const
+		{ return loc >= 0; }
+
+	protected:
+		void prepare() const
+		{
+			if(!valid()) {
+				throw invalid_uniform_location{name};
+			}
 			spo.use();
-		}
-		bool is_valid() const {
-			return loc >= 0;
 		}
 	};
 
@@ -526,19 +571,23 @@ namespace pastry
 	 * NUM>1: length of uniform array (for NUM=1 there is a specialization)
 	 */
 	template<typename T, unsigned int NUM=1>
-	struct uniform : public uniform_base
+	struct uniform
+	: public uniform_base
 	{
-		void set(std::initializer_list<T> values_list) {
+		void set(std::initializer_list<T> values_list)
+		{
 			if(values_list.size() != NUM) {
 				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
 				return;
 			}
-			use_program();
+			prepare();
 			detail::uniform_impl<T,1,1,NUM>::set(loc, values_list.begin());
 		}
-		std::array<T,NUM> get(id_t prog_id) {
+
+		std::array<T,NUM> get(glid_t prog_id)
+		{
 			std::array<T,NUM> a;
-			use_program();
+			prepare();
 			detail::uniform_impl<T,1,1,NUM>::get(prog_id, loc, a.begin());
 			return a;
 		}
@@ -546,15 +595,19 @@ namespace pastry
 
 	/** Example: C++ int / GLSL int */
 	template<typename T>
-	struct uniform<T,1> : public uniform_base
+	struct uniform<T,1>
+	: public uniform_base
 	{
-		void set(const T& v) {
-			use_program();
+		void set(const T& v)
+		{
+			prepare();
 			detail::uniform_impl<T,1,1,1>::set(loc, &v);
 		}
-		T get(id_t prog_id) {
+
+		T get(glid_t prog_id)
+		{
 			T v;
-			use_program();
+			prepare();
 			detail::uniform_impl<T,1,1,1>::get(prog_id, loc, &v);
 			return v;
 		}
@@ -565,16 +618,28 @@ namespace pastry
 	struct uniform<Eigen::Matrix<K,R,C>,1> : public uniform_base
 	{
 		typedef Eigen::Matrix<K,R,C> mat_t;
-		void set(const mat_t& v) {
-			use_program();
+
+		void set(const mat_t& v)
+		{
+			prepare();
 			detail::uniform_impl<K,R,C,1>::set(loc, v.data());
 		}
-		mat_t get(id_t prog_id) {
+
+		mat_t get(glid_t prog_id)
+		{
 			mat_t v;
-			use_program();
+			prepare();
 			detail::uniform_impl<K,R,C,1>::get(prog_id, loc, v.data());
 			return v;
 		}
+	};
+
+	struct invalid_uniform_initializer_list
+	: public exception
+	{
+		invalid_uniform_initializer_list(unsigned expected, unsigned actual)
+		: exception("pastry: invalid initializer_list for uniform: expected=TODO, actual=TODO")
+		{}
 	};
 
 	/** Example: C++ Eigen::Vector3f[2] / GLSL vec3[2] */
@@ -582,10 +647,11 @@ namespace pastry
 	struct uniform<Eigen::Matrix<K,R,C>,NUM> : public uniform_base
 	{
 		typedef Eigen::Matrix<K,R,C> mat_t;
-		void set(std::initializer_list<mat_t> values_list) {
+
+		void set(std::initializer_list<mat_t> values_list)
+		{
 			if(values_list.size() != NUM) {
-				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
-				return;
+				throw invalid_uniform_initializer_list{NUM, values_list.list()};
 			}
 			// copy to continuous memory
 			K buff[R*C*NUM];
@@ -594,13 +660,15 @@ namespace pastry
 				std::copy(p, p+R*C, &buff[i*R*C]);
 			}
 			// write to opengl
-			use_program();
+			prepare();
 			detail::uniform_impl<K,R,C,NUM>::set(loc, buff);
 		}
-		std::array<mat_t,NUM> get(id_t prog_id) {
+
+		std::array<mat_t,NUM> get(glid_t prog_id)
+		{
 			// read from opengl
 			K buff[R*C*NUM];
-			use_program();
+			prepare();
 			detail::uniform_impl<K,R,C,NUM>::get(prog_id, loc, buff);
 			// create array
 			std::array<mat_t,NUM> a;
@@ -616,11 +684,9 @@ namespace pastry
 	uniform<T,NUM> program::get_uniform(const std::string& name) const
 	{
 		uniform<T,NUM> u;
+		u.name = name;
 		u.spo = *this;
 		u.loc = glGetUniformLocation(id(), name.data());
-		if(u.loc == -1) {
-			std::cerr << "ERROR: Inactive or invalid uniform name '" << name << "'" << std::endl;
-		}
 		return u;
 	}
 
@@ -637,13 +703,15 @@ namespace pastry
 			std::size_t offset_end;
 		};
 
-		struct layout_item {
+		struct layout_item
+		{
 			std::string name;
 			GLenum type;
 			int size;
 		};
 
-		inline std::size_t bytes_per_element(GLenum type) {
+		inline std::size_t bytes_per_element(GLenum type)
+		{
 			switch(type) {
 			case GL_BYTE: return 1;
 			case GL_UNSIGNED_BYTE: return 1;
@@ -657,7 +725,8 @@ namespace pastry
 			}
 		}
 
-		inline std::vector<va_data> va_conf(const std::vector<layout_item>& list) {
+		inline std::vector<va_data> va_conf(const std::vector<layout_item>& list)
+		{
 			std::vector<va_data> q;
 			q.reserve(list.size());
 			for(const layout_item& i : list) {
@@ -674,7 +743,8 @@ namespace pastry
 			return q;
 		}
 
-		inline std::size_t va_bytes_total(const std::vector<layout_item>& list) {
+		inline std::size_t va_bytes_total(const std::vector<layout_item>& list)
+		{
 			std::size_t n = 0;
 			for(const layout_item& i : list) {
 				n += i.size * bytes_per_element(i.type);
@@ -683,17 +753,16 @@ namespace pastry
 		}
 	}
 
-	inline detail::layout_item layout_skip_bytes(int a) {
-		return {"", 0, a};
-	}
+	inline detail::layout_item layout_skip_bytes(int a)
+	{ return {"", 0, a}; }
 
 	template<typename K, unsigned int N>
-	inline detail::layout_item layout_skip() {
-		return layout_skip_bytes(sizeof(K)*N);
-	}
+	inline detail::layout_item layout_skip()
+	{ return layout_skip_bytes(sizeof(K)*N); }
 
 	template<int TARGET>
-	struct buffer : public detail::resource<buffer_id>
+	struct buffer
+	: public detail::resource<rid::buffer>
 	{
 	private:
 		std::size_t num_bytes_;
@@ -702,68 +771,63 @@ namespace pastry
 	public:
 		std::vector<detail::va_data> layout_;
 
-		buffer(detail::create::type c=create_no)
-		: detail::resource<buffer_id>(c), num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {}
+		buffer()
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {}
 
 		buffer(std::initializer_list<detail::layout_item> list)
-		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
-			id_create();
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW)
+		{
 			bind();
 			set_layout(list);
 		}
 
 		buffer(std::initializer_list<detail::layout_item> list, std::size_t num_bytes, GLuint usage)
-		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW) {
-			id_create();
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW)
+		{
 			bind();
 			set_layout(list);
 			init_data(num_bytes, usage);
 		}
 
-		void set_layout(const std::vector<detail::layout_item>& list) {
-			layout_ = detail::va_conf(list);
-		}
+		void set_layout(const std::vector<detail::layout_item>& list)
+		{ layout_ = detail::va_conf(list); }
 		
-		void bind() const {
-			glBindBuffer(TARGET, id());
-		}
+		void bind() const
+		{ glBindBuffer(TARGET, id()); }
 		
 		template<typename T>
-		void init_data(const std::vector<T>& v, GLuint usage) {
-			init_data(v.data(), v.size(), usage);
-		}
+		void init_data(const std::vector<T>& v, GLuint usage)
+		{ init_data(v.data(), v.size(), usage); }
 		
 		template<typename T>
-		void init_data(const T* buf, std::size_t num_elements, GLuint usage) {
-			init_data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements, usage);
-		}
+		void init_data(const T* buf, std::size_t num_elements, GLuint usage)
+		{ init_data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements, usage); }
 		
-		void init_data(const void* buf, std::size_t num_bytes, GLuint usage) {
+		void init_data(std::size_t num_bytes, GLuint usage)
+		{ init_data(nullptr, num_bytes_, usage); }
+
+		void init_data(GLuint usage)
+		{ init_data(nullptr, 0, usage); }
+
+		template<typename T>
+		void update_data(const std::vector<T>& v)
+		{ update_data(v.data(), v.size()); }
+		
+		template<typename T>
+		void update_data(const T* buf, std::size_t num_elements)
+		{ update_data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements); }
+		
+	private:
+		void init_data(const void* buf, std::size_t num_bytes, GLuint usage)
+		{
 			usage_ = usage;
 			num_bytes_ = num_bytes;
 			bind();
 			glBufferData(TARGET, num_bytes_, buf, usage);
 		}
 
-		void init_data(std::size_t num_bytes, GLuint usage) {
-			init_data(NULL, num_bytes_, usage);
-		}
-
-		void init_data(GLuint usage) {
-			init_data(NULL, 0, usage);
-		}
-
-		template<typename T>
-		void update_data(const std::vector<T>& v) {
-			update_data(v.data(), v.size());
-		}
-		
-		template<typename T>
-		void update_data(const T* buf, std::size_t num_elements) {
-			update_data(reinterpret_cast<const void*>(buf), sizeof(T)*num_elements);
-		}
-		
-		void update_data(const void* buf, std::size_t num_bytes) {
+		void update_data(const void* buf, std::size_t num_bytes)
+		{
 			if(num_bytes != num_bytes_) {
 				init_data(buf, num_bytes, usage_);
 			}
@@ -772,9 +836,9 @@ namespace pastry
 				glBufferSubData(TARGET, 0, num_bytes, buf);
 			}
 		}
-		static void unbind() {
-			glBindBuffer(TARGET, detail::INVALID_ID);
-		}
+
+		static void unbind()
+		{ glBindBuffer(TARGET, detail::INVALID_ID); }
 	};
 
 	typedef buffer<GL_ARRAY_BUFFER> array_buffer;
@@ -789,29 +853,38 @@ namespace pastry
 			array_buffer vb;
 			std::string vb_name;
 			unsigned divisor;
-			mapping() {}
+			
+			mapping()
+			{}
+			
 			mapping(const std::string& nsn, const array_buffer& nvb)
-			: shader_name(nsn), vb(nvb), vb_name(nsn), divisor(0) {}
+			: shader_name(nsn), vb(nvb), vb_name(nsn), divisor(0)
+			{}
+			
 			mapping(const std::string& nsn, const array_buffer& nvb, const std::string& nvbn)
-			: shader_name(nsn), vb(nvb), vb_name(nvbn), divisor(0) {}
+			: shader_name(nsn), vb(nvb), vb_name(nvbn), divisor(0)
+			{}
+			
 			mapping(const std::string& nsn, const array_buffer& nvb, const std::string& nvbn, unsigned nd)
-			: shader_name(nsn), vb(nvb), vb_name(nvbn), divisor(nd) {}
+			: shader_name(nsn), vb(nvb), vb_name(nvbn), divisor(nd)
+			{}
 		};
 	}
 
-	struct vertex_array : public detail::resource<vertex_array_id>
+	struct vertex_array
+	: public detail::resource<rid::vertex_array>
 	{
 		std::vector<vertex_attribute> attributes_;
 
-		RESOURCE_DEFAULT_CONSTRUCTOR(vertex_array)
+		vertex_array()
+		{}
 
-		vertex_array(const program& p, std::initializer_list<detail::mapping> list) {
-			id_create();
-			set_layout(p, list.begin(), list.end());
-		}
+		vertex_array(const program& p, std::initializer_list<detail::mapping> list)
+		{ set_layout(p, list.begin(), list.end()); }
 
 		template<typename It>
-		void set_layout(const program& p, It kt1, It kt2) {
+		void set_layout(const program& p, It kt1, It kt2)
+		{
 			bind();
 			for(auto kt=kt1; kt!=kt2; ++kt) {
 				const detail::mapping& m = *kt;
@@ -844,7 +917,8 @@ namespace pastry
 			}
 		}
 
-		void bind() {
+		void bind()
+		{
 			glBindVertexArray(id());
 		}
 
@@ -874,8 +948,11 @@ namespace pastry
 		INDEX_TYPE_DEF(GL_UNSIGNED_SHORT,uint16_t)
 		INDEX_TYPE_DEF(GL_UNSIGNED_INT,uint32_t)
 
-		template<typename I, int N> struct index { typedef std::array<I,N> result; };
-		template<typename I> struct index<I,1> { typedef I result; };
+		template<typename I, int N>
+		struct index { typedef std::array<I,N> result; };
+		
+		template<typename I>
+		struct index<I,1> { typedef I result; };
 	}
 
 	/** Class to hold mesh data
@@ -890,28 +967,31 @@ namespace pastry
 	struct mesh
 	{
 		typedef detail::mesh_type_traits<MODE> m_traits;
+		
 		typedef detail::mesh_index_types_traits<INDEX_TYPE> i_traits;
+		
 		typedef typename detail::index<
 			typename i_traits::result,
 			m_traits::num_per_element>::result I;
 		
 		std::vector<V> vertices;
+		
 		std::vector<I> indices;
 
-		void draw_arrays() const {
-			glDrawArrays(MODE, 0, vertices.size());
-		}
+		void draw_arrays() const
+		{ glDrawArrays(MODE, 0, vertices.size()); }
 
-		void draw_arrays_instanced(std::size_t primcount) const {
-			glDrawArraysInstanced(MODE, 0, vertices.size(), primcount);
-		}
+		void draw_arrays_instanced(std::size_t primcount) const
+		{ glDrawArraysInstanced(MODE, 0, vertices.size(), primcount); }
 
-		void draw_elements() const {
+		void draw_elements() const
+		{
 			std::size_t count = m_traits::num_per_element*indices.size();
 			glDrawElements(MODE, count, INDEX_TYPE, 0);
 		}
 
-		void draw_elements_instanced(std::size_t primcount) const {
+		void draw_elements_instanced(std::size_t primcount) const
+		{
 			std::size_t count = m_traits::num_per_element*indices.size();
 			glDrawElementsInstanced(MODE, count, INDEX_TYPE, 0, primcount);
 		}
@@ -948,12 +1028,23 @@ namespace pastry
 		std::size_t num_indices_;
 
 	public:
-		const array_buffer& get_vertex_bo() const { return vertex_bo_; }
-		const element_array_buffer& get_index_bo() const { return index_bo_; }
-		array_buffer& get_vertex_bo() { return vertex_bo_; }
-		element_array_buffer& get_index_bo() { return index_bo_; }
-		void set_vertex_bo(const array_buffer& o) { vertex_bo_ = o; }
-		void set_index_bo(const element_array_buffer& o) { index_bo_ = o; }
+		const array_buffer& get_vertex_bo() const
+		{ return vertex_bo_; }
+		
+		const element_array_buffer& get_index_bo() const
+		{ return index_bo_; }
+		
+		array_buffer& get_vertex_bo()
+		{ return vertex_bo_; }
+		
+		element_array_buffer& get_index_bo()
+		{ return index_bo_; }
+		
+		void set_vertex_bo(const array_buffer& o)
+		{ vertex_bo_ = o; }
+		
+		void set_index_bo(const element_array_buffer& o)
+		{ index_bo_ = o; }
 
 	public:
 		single_mesh() {
@@ -963,8 +1054,6 @@ namespace pastry
 		single_mesh(GLenum mode) {
 			set_mode(mode);
 			clear();
-			vertex_bo_ = array_buffer(create_yes);
-			index_bo_ = element_array_buffer(create_yes);
 		}
 
 		void clear() {
@@ -1051,9 +1140,6 @@ namespace pastry
 		multi_mesh(GLenum mode) {
 			set_mode(mode);
 			clear();
-			vertex_bo_ = array_buffer(create_yes);
-			index_bo_ = element_array_buffer(create_yes);
-			instance_bo_ = array_buffer(create_yes);
 		}
 
 		void clear() {
@@ -1155,62 +1241,81 @@ namespace pastry
 		#undef TEXTURE_TYPE
 	}
 
-	struct texture_base : public detail::resource<texture_base_id>
+	struct texture_base
+	: public detail::resource<rid::texture_base>
 	{
 		static constexpr GLenum target = GL_TEXTURE_2D;
-		RESOURCE_DEFAULT_CONSTRUCTOR(texture_base)
-		void create(GLenum filter, GLenum wrap) {
-			id_create();
+
+		texture_base()
+		{}
+
+		texture_base(glid_t tex_id)
+		: detail::resource<rid::texture_base>(tex_id)
+		{}
+		
+		void create(GLenum filter, GLenum wrap)
+		{
 			bind();
 			set_filter(filter);
 			set_wrap(wrap);
 		}
-		void create() {
-			create(GL_LINEAR, GL_REPEAT);
-		}
-		void bind() const {
-			glBindTexture(target, id());
-		}
-		void set_wrap_s(GLint value) {
-			glTexParameteri(target, GL_TEXTURE_WRAP_S, value);
-		}
-		void set_wrap_t(GLint value) {
-			glTexParameteri(target, GL_TEXTURE_WRAP_T, value);
-		}
-		void set_wrap(GLint value) {
+	
+		void create()
+		{ create(GL_LINEAR, GL_REPEAT); }
+		
+		void bind() const
+		{ glBindTexture(target, id()); }
+		
+		void set_wrap_s(GLint value)
+		{ glTexParameteri(target, GL_TEXTURE_WRAP_S, value); }
+		
+		void set_wrap_t(GLint value)
+		{ glTexParameteri(target, GL_TEXTURE_WRAP_T, value); }
+		
+		void set_wrap(GLint value)
+		{
 			set_wrap_s(value);
 			set_wrap_t(value);
 		}
-		void set_border_color(float cr, float cg, float cb) {
+		
+		void set_border_color(float cr, float cg, float cb)
+		{
 			float color[] = {cr, cg, cb};
 			glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR, color);
 		}
-		void set_min_filter(GLint value) {
-			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, value);
-		}
-		void set_mag_filter(GLint value) {
-			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, value);
-		}
-		void set_filter(GLint value) {
+		
+		void set_min_filter(GLint value)
+		{ glTexParameteri(target, GL_TEXTURE_MIN_FILTER, value); }
+	
+		void set_mag_filter(GLint value)
+		{ glTexParameteri(target, GL_TEXTURE_MAG_FILTER, value); }
+		
+		void set_filter(GLint value)
+		{
 			set_min_filter(value);
 			set_mag_filter(value);
 		}
+		
 		// void generate_mipmap() {
 		// 	glGenerateMipmap(target);
 		// }
-		int get_param_i(GLenum pname) const {
+		
+		int get_param_i(GLenum pname) const
+		{
 			bind();
 			GLint val;
 			glGetTexLevelParameteriv(target, 0, pname, &val);
 			return val;
 		}
-		int width() const {
-			return get_param_i(GL_TEXTURE_WIDTH);
-		}
-		int height() const {
-			return get_param_i(GL_TEXTURE_HEIGHT);
-		}
-		int channels() const {
+		
+		int width() const
+		{ return get_param_i(GL_TEXTURE_WIDTH); }
+		
+		int height() const
+		{ return get_param_i(GL_TEXTURE_HEIGHT); }
+		
+		int channels() const
+		{
 			GLint tif = get_param_i(GL_TEXTURE_INTERNAL_FORMAT);
 			switch(tif) {
 				case GL_RED:
@@ -1230,8 +1335,10 @@ namespace pastry
 					return 0;
 			}
 		}
+
 		template<typename S, unsigned C>
-		void set_image(GLint format, unsigned w, unsigned h, const S* data) {
+		void set_image(GLint format, unsigned w, unsigned h, const S* data)
+		{
 			glTexImage2D(target,
 				0, // level: use base image level
 				format, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
@@ -1241,8 +1348,10 @@ namespace pastry
 				detail::texture_type<S>::result, // type of source data
 				data);
 		}
+
 		template<typename S, unsigned C>
-		std::vector<S> get_image() const {
+		std::vector<S> get_image() const
+		{
 			bind();
 			std::vector<S> buff(width()*height()*C);
 			glGetTexImage(target,
@@ -1252,19 +1361,21 @@ namespace pastry
 				buff.data());
 			return buff;
 		}
+
 		template<typename S, unsigned C>
-		static texture_base create(GLint format, unsigned w, unsigned h, const S* data) {
+		static texture_base create(GLint format, unsigned w, unsigned h, const S* data)
+		{
 			texture_base tex;
 			tex.create();
 			tex.set_image<S,C>(format, w, h, data);
 			return tex;
 		}
-		static void unbind() {
-			glBindTexture(target, detail::INVALID_ID);
-		}
-		static void activate_unit(unsigned int num) {
-			glActiveTexture(GL_TEXTURE0 + num);
-		}
+
+		static void unbind()
+		{ glBindTexture(target, detail::INVALID_ID); }
+
+		static void activate_unit(unsigned int num)
+		{ glActiveTexture(GL_TEXTURE0 + num); }
 	};
 
 	namespace TextureModes
@@ -1325,47 +1436,45 @@ namespace pastry
 	}
 
 	template<unsigned CHANNELS, int MODE, unsigned BPC>
-	struct texture : public texture_base
+	struct texture
+	: public texture_base
 	{
-		texture(detail::create::type c=detail::create::no)
-		: texture_base(c) {}
-		constexpr GLint internal_format() {
-			return detail::texture_internal_format<CHANNELS,MODE,BPC>::result;
-		}
+		constexpr GLint internal_format()
+		{ return detail::texture_internal_format<CHANNELS,MODE,BPC>::result; }
+
 		template<typename S, unsigned C>
-		void set_image(unsigned w, unsigned h, const S* data) {
+		void set_image(unsigned w, unsigned h, const S* data)
+		{
 			set_image<S,C>(
 				internal_format(),
 				w, h, data);
 		}
 	};
 
-	struct renderbuffer : public detail::resource<renderbuffer_id>
+	struct renderbuffer
+	: public detail::resource<rid::renderbuffer>
 	{		
-		RESOURCE_DEFAULT_CONSTRUCTOR(renderbuffer)
-		void bind() {
-			glBindRenderbuffer(GL_RENDERBUFFER, id());
-		}
-		void storage(GLenum internalformat, unsigned width, unsigned height) {
-			glRenderbufferStorage(GL_RENDERBUFFER, internalformat, width, height);
-		}
+		void bind()
+		{ glBindRenderbuffer(GL_RENDERBUFFER, id()); }
+		
+		void storage(GLenum internalformat, unsigned width, unsigned height)
+		{ glRenderbufferStorage(GL_RENDERBUFFER, internalformat, width, height); }
 	};
 
-	struct framebuffer : public detail::resource<framebuffer_id>
-	{
-		RESOURCE_DEFAULT_CONSTRUCTOR(framebuffer)
-		void bind() {
-			glBindFramebuffer(GL_FRAMEBUFFER, id());
-		}
-		void attach(GLenum attachment, const texture_base& tex) {
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex.id(), 0);
-		}
-		void attach(GLenum attachment, const renderbuffer& rbo) {
-			glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rbo.id());
-		}
-		static void unbind() {
-			glBindFramebuffer(GL_FRAMEBUFFER, detail::INVALID_ID);
-		}
+	struct framebuffer
+	: public detail::resource<rid::framebuffer>
+	{	
+		void bind()
+		{ glBindFramebuffer(GL_FRAMEBUFFER, id()); }
+		
+		void attach(GLenum attachment, const texture_base& tex)
+		{ glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex.id(), 0); }
+		
+		void attach(GLenum attachment, const renderbuffer& rbo)
+		{ glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rbo.id()); }
+		
+		static void unbind()
+		{ glBindFramebuffer(GL_FRAMEBUFFER, detail::INVALID_ID); }
 	};
 
 	/** Enables/disables an OpenGL capability like GL_BLEND and automatically restores the state
@@ -1376,7 +1485,8 @@ namespace pastry
 	 */
 	struct capability
 	{
-		capability(GLenum cap, bool set_to) {
+		capability(GLenum cap, bool set_to)
+		{
 			cap_ = cap;
 			was_enabled_ = glIsEnabled(cap_);
 			set_to_ = set_to;
@@ -1389,7 +1499,9 @@ namespace pastry
 				}
 			}
 		}
-		~capability() {
+
+		~capability()
+		{
 			if(was_enabled_ != set_to_) {
 				if(was_enabled_) {
 					glEnable(cap_);
@@ -1399,6 +1511,7 @@ namespace pastry
 				}
 			}
 		}
+
 	private:
 		GLenum cap_;
 		bool was_enabled_;

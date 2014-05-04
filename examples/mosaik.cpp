@@ -139,10 +139,8 @@ public:
 	render_to_texture(unsigned w, unsigned h) {
 		tex_.create(GL_NEAREST,GL_CLAMP_TO_EDGE);
 
-		rbo.id_create();
 		rbo.bind();
 
-		fbo.id_create();
 		fbo.bind();
 		fbo.attach(GL_COLOR_ATTACHMENT0, tex_);
 		fbo.attach(GL_DEPTH_ATTACHMENT, rbo);

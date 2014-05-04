@@ -10,28 +10,29 @@ struct buffer
 	pastry::renderbuffer rbo;
 	pastry::framebuffer fbo;
 
-	void create() {
+	void create()
+	{
 		pastry::fb_get_dimensions(width_, height_);
 
 		tex.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
 		tex.set_image<unsigned char, 4>(GL_RGBA8, width_, height_, 0);
 
-		rbo.id_create();
 		rbo.bind();
 		rbo.storage(GL_DEPTH_COMPONENT16, width_, height_);
 
-		fbo.id_create();
 		fbo.bind();
 		fbo.attach(GL_COLOR_ATTACHMENT0, tex);
 		fbo.attach(GL_DEPTH_ATTACHMENT, rbo);
 		fbo.unbind();
 	}
 
-	void bind() {
+	void bind()
+	{
 		fbo.bind();
 	}
 
-	void update() {
+	void update()
+	{
 		if(pastry::fb_has_changed()) {
 			pastry::fb_get_dimensions(width_, height_);
 			fbo.bind();
@@ -54,9 +55,11 @@ struct effect
 
 	post_effect_ptr sfx_;
 
-	effect() {}
+	effect()
+	{}
 
-	effect(const post_effect_ptr& sfx) {
+	effect(const post_effect_ptr& sfx)
+	{
 		sfx_ = sfx;
 
 		vbo = pastry::array_buffer({
@@ -115,15 +118,16 @@ struct effect
 		vao = pastry::vertex_array(spo, {{"pos", vbo}});
 	}
 
-	void update(float t, float dt) {
-		sfx_->update(t, dt, spo);
-	}
+	void update(float t, float dt)
+	{ sfx_->update(t, dt, spo); }
 
-	void render(const texture_base& tex, unsigned w, unsigned h) {
+	void render(const texture_base& tex, unsigned w, unsigned h)
+	{
 		// render quad with texture
 		spo.use();
-		if(u_dim.is_valid())
+		if(u_dim.valid()) {
 			u_dim.set({w,h});
+		}
 		pastry::texture_base::activate_unit(0);
 		tex.bind();
 		vbo.bind();
@@ -139,7 +143,8 @@ class manager : public pastry::renderling
 	std::vector<post_effect_ptr> remove_sheduled_;
 
 private:
-	void remove_impl(const post_effect_ptr& p) {
+	void remove_impl(const post_effect_ptr& p)
+	{
 		auto it = effects_.begin();
 		while(it != effects_.end()) {
 			it = std::find_if(it, effects_.end(),
@@ -153,20 +158,24 @@ private:
 	}
 
 public:
-	manager() {
+	manager()
+	{
 		buff_a_.create();
 		buff_b_.create();
 	}
 
-	void add(const effect& e) {
+	void add(const effect& e)
+	{
 		effects_.push_back(e);
 	}
 
-	void remove(const post_effect_ptr& p) {
+	void remove(const post_effect_ptr& p)
+	{
 		remove_sheduled_.push_back(p);
 	}
 
-	void update(float t, float dt) {
+	void update(float t, float dt)
+	{
 		// remove sheduled
 		for(const auto& p : remove_sheduled_) {
 			remove_impl(p);
@@ -192,7 +201,8 @@ public:
 		//std::cout << "Render ->A" << std::endl;
 	}
 
-	void render() {
+	void render()
+	{
 		if(effects_.empty()) {
 			return;
 		}
@@ -231,8 +241,10 @@ class post_effect_stateless : public post_effect
 public:
 	std::string source_;
 	func_postfx_update on_update_;
+
 public:
-	std::string source() const {
+	std::string source() const
+	{
 		return source_;
 	}
 	void update(float t, float dt, const program& spo) {

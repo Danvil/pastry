@@ -347,7 +347,6 @@ Eigen::Vector2f mouse_get_position()
 
 texture_base texture_load(const std::string& fn)
 {
-	texture_base tex;
 	GLuint q = SOIL_load_OGL_texture(
 		fn.data(),
 		SOIL_LOAD_AUTO,
@@ -356,9 +355,9 @@ texture_base texture_load(const std::string& fn)
 	);
 	if(q == 0) {
 		std::cerr << "ERROR in texture_load: Failed to load image '" << fn << "'" << std::endl;
+		throw file_not_found(fn);
 	}
-	tex.id_set(q);
-	return tex;
+	return texture_base{q};
 }
 
 void texture_save(const texture_base& tex, const std::string& fn)
