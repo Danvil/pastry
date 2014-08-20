@@ -287,7 +287,7 @@ namespace pastry
 				char buffer[1024];
 				glGetShaderInfoLog(q, 1024, NULL, buffer);
 				// throw exception
-				throw invalid_shader_source(source);
+				throw invalid_shader_source(source + "\n" + buffer);
 			}
 		}
 	}
@@ -781,6 +781,14 @@ namespace pastry
 			set_layout(list);
 		}
 
+		buffer(std::initializer_list<detail::layout_item> list, GLuint usage)
+		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW)
+		{
+			bind();
+			set_layout(list);
+			init_data(usage);
+		}
+
 		buffer(std::initializer_list<detail::layout_item> list, std::size_t num_bytes, GLuint usage)
 		: num_bytes_(0), usage_(GL_DYNAMIC_DRAW)
 		{
@@ -1024,8 +1032,8 @@ namespace pastry
 		array_buffer vertex_bo_;
 		element_array_buffer index_bo_;
 
-		std::size_t num_vertices_;
-		std::size_t num_indices_;
+		std::size_t num_vertices_ = 0;
+		std::size_t num_indices_ = 0;
 
 	public:
 		const array_buffer& get_vertex_bo() const
@@ -1098,9 +1106,11 @@ namespace pastry
 				return;
 			}
 			if(num_indices_ == 0) {
+				vertex_bo_.bind();
 				glDrawArrays(mode_, 0, num_vertices_);
 			}
 			else {
+				vertex_bo_.bind();
 				index_bo_.bind(); // bind the index buffer object!
 				glDrawElements(mode_, num_indices_, index_type_, 0);
 			}
@@ -1337,7 +1347,7 @@ namespace pastry
 		}
 
 		template<typename S, unsigned C>
-		void set_image(GLint format, unsigned w, unsigned h, const S* data)
+		void set_image(GLint format, unsigned w, unsigned h, const S* data=0)
 		{
 			glTexImage2D(target,
 				0, // level: use base image level
