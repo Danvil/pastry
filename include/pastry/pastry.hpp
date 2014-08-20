@@ -148,8 +148,16 @@ Eigen::Matrix4f math_orthogonal_projection(float n, float f, bool ydown=false);
 
 Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown=false);
 
+Eigen::Matrix4f math_perspective_projection(float l, float r, float t, float b, float n, float f);
+
+Eigen::Matrix4f math_perspective_projection(float w, float h, float n, float f);
+
+Eigen::Matrix4f math_perspective_projection(float angle, float n, float f);
+
 /** Create a 2D transformation matrix */
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta);
+
+Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& center, const Eigen::Vector3f& up);
 
 void math_backproject(
 	const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,

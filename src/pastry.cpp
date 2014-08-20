@@ -250,6 +250,30 @@ Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown
 		n, f);
 }
 
+Eigen::Matrix4f math_perspective_projection(float l, float r, float t, float b, float n, float f)
+{
+	// see http://www.songho.ca/opengl/gl_projectionmatrix.html
+	Eigen::Matrix4f m;
+	m <<
+		+2.0f*n/(r-l), 0, (r+l)/(r-l), 0,
+		0, +2.0f*n/(t-b), (t+b)/(t-b), 0,
+		0, 0, -(f+n)/(f-n), -2*f*n/(f-n),
+		0, 0, -1, 0;
+	return m;
+}
+
+Eigen::Matrix4f math_perspective_projection(float w, float h, float n, float f)
+{
+	return math_perspective_projection(-0.5f*w, +0.5f*w, -0.5f*h, +0.5f*h, n, f);
+}
+
+Eigen::Matrix4f math_perspective_projection(float angle, float n, float f)
+{
+	float q = std::tan(0.5f*angle);
+	float a = fb_get_aspect(); // w/h
+	return math_perspective_projection(a*q*n,q*n,n,f);
+}
+
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 {
 	float st = std::sin(theta);
@@ -261,6 +285,28 @@ Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 		  0,   0, 1, 0,
 		  0,   0, 0, 1;
 	return m;
+}
+
+Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& center, const Eigen::Vector3f& up)
+{
+	// https://github.com/g-truc/glm/blob/2b747cbbadfd3af39b443e88902f1c98bd231083/glm/gtc/matrix_transform.inl
+	const Eigen::Vector3f f = (center - eye).normalized();
+	const Eigen::Vector3f s = f.cross(up).normalized();
+	const Eigen::Vector3f u = s.cross(f);
+	Eigen::Matrix4f Result = Eigen::Matrix4f::Identity();
+	Result(0,0) = s.x();
+	Result(1,0) = s.y();
+	Result(2,0) = s.z();
+	Result(0,1) = u.x();
+	Result(1,1) = u.y();
+	Result(2,1) = u.z();
+	Result(0,2) =-f.x();
+	Result(1,2) =-f.y();
+	Result(2,2) =-f.z();
+	Result(3,0) =-s.dot(eye);
+	Result(3,1) =-u.dot(eye);
+	Result(3,2) = f.dot(eye);
+	return Result;
 }
 
 void math_backproject(
