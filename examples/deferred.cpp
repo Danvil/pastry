@@ -40,60 +40,86 @@ namespace obj
 			tokens[2].empty() ? 0 : boost::lexical_cast<int>(tokens[2])};
 	}
 
-	Mesh Load(const std::string& fn)
+	class Loader
 	{
-		std::ifstream ifs(fn);
-		Mesh mesh;
-		mesh.v.emplace_back(Eigen::Vector3f::Zero());
-		mesh.uv.emplace_back(Eigen::Vector2f::Zero());
-		mesh.vn.emplace_back(Eigen::Vector3f::Zero());
-		std::string line;
-		std::vector<std::string> tokens;
-		std::vector<std::string> tokens2;
-		while(std::getline(ifs, line)) {
-			boost::split(tokens, line, boost::is_any_of(" "));
-			const std::string& head = tokens[0];
-			if(head == "#") {
-				continue;
-			}
-			else if(head == "o") {
-				mesh.name = tokens[1];
-			}
-			else if(head == "v") {
-				mesh.v.emplace_back(
-					boost::lexical_cast<float>(tokens[1]),
-					boost::lexical_cast<float>(tokens[2]),
-					boost::lexical_cast<float>(tokens[3]));
-			}
-			else if(head == "uv") {
-				mesh.uv.emplace_back(
-					boost::lexical_cast<float>(tokens[1]),
-					boost::lexical_cast<float>(tokens[2]));
-			}
-			else if(head == "vn") {
-				mesh.vn.emplace_back(
-					boost::lexical_cast<float>(tokens[1]),
-					boost::lexical_cast<float>(tokens[2]),
-					boost::lexical_cast<float>(tokens[3]));
-			}
-			else if(head == "f") {
-				mesh.f.push_back({
-					ParseVertexIndices(tokens[1]),
-					ParseVertexIndices(tokens[2]),
-					ParseVertexIndices(tokens[3])});
+	public:
+		Mesh Load(const std::string& fn)
+		{
+			auto it = cache_.find(fn);
+			if(it == cache_.end()) {
+				Mesh mesh = LoadImpl(fn);
+				cache_[fn] = mesh;
+				return mesh;
 			}
 			else {
-				std::cerr << "Unknown line in obj file starting with '" << head << "'" << std::endl;
+				return it->second;
 			}
 		}
-		std::cout << "Mesh { "
-			<< "name: " << mesh.name
-			<< ", v: " << mesh.v.size()
-			<< ", uv: " << mesh.uv.size()
-			<< ", vn: " << mesh.vn.size()
-			<< ", f: " << mesh.f.size()
-			<< "}" << std::endl;
-		return mesh;
+
+	private:
+		Mesh LoadImpl(const std::string& fn) {
+			std::ifstream ifs(fn);
+			Mesh mesh;
+			mesh.v.emplace_back(Eigen::Vector3f::Zero());
+			mesh.uv.emplace_back(Eigen::Vector2f::Zero());
+			mesh.vn.emplace_back(Eigen::Vector3f::Zero());
+			std::string line;
+			std::vector<std::string> tokens;
+			std::vector<std::string> tokens2;
+			while(std::getline(ifs, line)) {
+				boost::split(tokens, line, boost::is_any_of(" "));
+				const std::string& head = tokens[0];
+				if(head == "#") {
+					continue;
+				}
+				else if(head == "o") {
+					mesh.name = tokens[1];
+				}
+				else if(head == "v") {
+					mesh.v.emplace_back(
+						boost::lexical_cast<float>(tokens[1]),
+						boost::lexical_cast<float>(tokens[2]),
+						boost::lexical_cast<float>(tokens[3]));
+				}
+				else if(head == "uv") {
+					mesh.uv.emplace_back(
+						boost::lexical_cast<float>(tokens[1]),
+						boost::lexical_cast<float>(tokens[2]));
+				}
+				else if(head == "vn") {
+					mesh.vn.emplace_back(
+						boost::lexical_cast<float>(tokens[1]),
+						boost::lexical_cast<float>(tokens[2]),
+						boost::lexical_cast<float>(tokens[3]));
+				}
+				else if(head == "f") {
+					mesh.f.push_back({
+						ParseVertexIndices(tokens[1]),
+						ParseVertexIndices(tokens[2]),
+						ParseVertexIndices(tokens[3])});
+				}
+				else {
+					std::cerr << "Unknown line in obj file starting with '" << head << "'" << std::endl;
+				}
+			}
+			std::cout << "Mesh { "
+				<< "name: " << mesh.name
+				<< ", v: " << mesh.v.size()
+				<< ", uv: " << mesh.uv.size()
+				<< ", vn: " << mesh.vn.size()
+				<< ", f: " << mesh.f.size()
+				<< "}" << std::endl;
+			return mesh;
+		}
+
+	private:
+		std::map<std::string,Mesh> cache_;
+	};
+
+	Mesh Load(const std::string& fn)
+	{
+		static Loader s_loader;
+		return s_loader.Load(fn);
 	}
 
 	struct Vertex
