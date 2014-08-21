@@ -1474,8 +1474,19 @@ namespace pastry
 	struct framebuffer
 	: public detail::resource<rid::framebuffer>
 	{	
-		void bind()
-		{ glBindFramebuffer(GL_FRAMEBUFFER, id()); }
+		enum class target { READ, WRITE, BOTH };
+
+		static GLenum GetTarget(target t)
+		{
+			switch(t) {
+				case target::READ: return GL_READ_FRAMEBUFFER;
+				case target::WRITE: return GL_DRAW_FRAMEBUFFER;
+				default: case target::BOTH: return GL_FRAMEBUFFER;
+			}
+		}
+
+		void bind(target t=target::BOTH)
+		{ glBindFramebuffer(GetTarget(t), id()); }
 		
 		void attach(GLenum attachment, const texture_base& tex)
 		{ glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex.id(), 0); }
@@ -1483,8 +1494,8 @@ namespace pastry
 		void attach(GLenum attachment, const renderbuffer& rbo)
 		{ glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, attachment, GL_RENDERBUFFER, rbo.id()); }
 		
-		static void unbind()
-		{ glBindFramebuffer(GL_FRAMEBUFFER, detail::INVALID_ID); }
+		static void unbind(target t=target::BOTH)
+		{ glBindFramebuffer(GetTarget(t), detail::INVALID_ID); }
 	};
 
 	/** Enables/disables an OpenGL capability like GL_BLEND and automatically restores the state
