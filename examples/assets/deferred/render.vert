@@ -16,6 +16,6 @@ void main()
 	Position = pos0.xyz;
 	Texcoord = texcoord;
 	Normal = (view*vec4(normal, 0.0)).xyz;
-	Color = vec3(1,0.5,0);
+	Color = vec3(1,1,1);
 	gl_Position = proj*pos0;
 }

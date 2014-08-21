@@ -1,6 +1,9 @@
 #version 150
 
-uniform mat4 view;
+uniform vec3 lightpos;
+uniform vec3 lightcol;
+uniform float lightfalloff;
+
 in vec2 uv;
 uniform sampler2D texPosition;
 uniform sampler2D texNormal;
@@ -13,10 +16,9 @@ void main()
 	vec3 normal = texture(texNormal, uv).xyz;
 	vec3 color = texture(texColor, uv).xyz;
 
-	vec3 light = (view*vec4(0,3,4,1)).xyz;
-	vec3 d = light - pos;
+	vec3 d = lightpos - pos;
 	float ld = length(d);
-	float q = dot(d,normal) / ld / (1.0f + 0.05f*ld*ld);
+	float q = dot(d,normal) / ld / (1.0f + lightfalloff*ld*ld);
 	if(q < 0) q = 0;
-	outColor = vec4(q*color,1);
+	outColor = vec4(q*lightcol*color,1);
 }

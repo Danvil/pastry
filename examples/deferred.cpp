@@ -165,8 +165,8 @@ public:
 		//std::cout << projmat << std::endl;
 		sp_.get_uniform<Eigen::Matrix4f>("proj").set(projmat);
 
-		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}).transpose();
-		//std::cout << viewmat << std::endl;
+		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1});
+		std::cout << viewmat << std::endl;
 		sp_.get_uniform<Eigen::Matrix4f>("view").set(viewmat);
 
 		va_ = pastry::vertex_array(sp_, {
@@ -197,6 +197,77 @@ public:
 	pastry::vertex_array va_;
 };
 
+class LightObject
+{
+private:
+	pastry::program sp_;
+	pastry::single_mesh mesh_;
+	pastry::vertex_array va_;
+
+	Eigen::Vector3f light_pos_;
+	Eigen::Vector3f light_color_;
+	float falloff_;
+
+public:
+	LightObject()
+	:	light_pos_(Eigen::Vector3f::Zero()),
+		light_color_(Eigen::Vector3f::Ones()),
+		falloff_(0.05f)
+	{
+		mesh_ = pastry::single_mesh(GL_TRIANGLES);
+
+		pastry::array_buffer vbo(
+			{ {"uv", GL_FLOAT, 2} },
+			GL_STATIC_DRAW
+		);
+		mesh_.set_vertex_bo(vbo);
+
+		std::vector<float> data = {
+			0, 0,
+			1, 0,
+			1, 1,
+			0, 0,
+			1, 1,
+			0, 1
+		};
+		mesh_.set_vertices(data);
+
+		sp_ = pastry::load_program("assets/deferred/deferred");
+		sp_.get_uniform<int>("texPosition").set(0);
+		sp_.get_uniform<int>("texNormal").set(1);
+		sp_.get_uniform<int>("texColor").set(2);
+
+		va_ = pastry::vertex_array(sp_, {
+			{"quv", vbo, "uv"}
+		});
+		va_.bind();
+	}
+
+	void setLightPosition(const Eigen::Vector3f& pos)
+	{ light_pos_ = pos; }
+
+	void setLightColor(const Eigen::Vector3f& color)
+	{ light_color_ = color; }
+
+	void setLightFalloff(float falloff)
+	{ falloff_ = falloff; }
+
+	void render()
+	{
+		sp_.use();
+
+		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}); // FIXME
+		Eigen::Vector4f lightpos4 = viewmat*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
+		Eigen::Vector3f lightpos(lightpos4[0],lightpos4[1],lightpos4[2]);
+		sp_.get_uniform<Eigen::Vector3f>("lightpos").set(lightpos);
+		sp_.get_uniform<Eigen::Vector3f>("lightcol").set(light_color_);
+		sp_.get_uniform<float>("lightfalloff").set(falloff_);
+
+		va_.bind();
+		mesh_.render();
+	}
+};
+
 class GBuffer
 {
 private:
@@ -205,10 +276,6 @@ private:
 	pastry::texture_base tex_final;
 	pastry::texture_base tex_depth;
 	pastry::framebuffer fbo;
-
-	pastry::program sp_;
-	pastry::single_mesh mesh_;
-	pastry::vertex_array va_;
 
 public:
 	GBuffer()
@@ -237,41 +304,6 @@ public:
 		fbo.attach(GL_DEPTH_ATTACHMENT, tex_depth);
 
 		fbo.unbind();
-
-		// screen quad for rendering
-
-		mesh_ = pastry::single_mesh(GL_TRIANGLES);
-
-		pastry::array_buffer vbo(
-			{ {"uv", GL_FLOAT, 2} },
-			GL_STATIC_DRAW
-		);
-		mesh_.set_vertex_bo(vbo);
-
-		std::vector<float> data = {
-			0, 0,
-			1, 0,
-			1, 1,
-			0, 0,
-			1, 1,
-			0, 1
-		};
-		mesh_.set_vertices(data);
-
-		sp_ = pastry::load_program("assets/deferred/deferred");
-		sp_.get_uniform<int>("texPosition").set(0);
-		sp_.get_uniform<int>("texNormal").set(1);
-		sp_.get_uniform<int>("texColor").set(2);
-
-		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}).transpose();
-		//std::cout << viewmat << std::endl;
-		sp_.get_uniform<Eigen::Matrix4f>("view").set(viewmat);
-
-		va_ = pastry::vertex_array(sp_, {
-			{"quv", vbo, "uv"}
-		});
-		va_.bind();
-
 	}
 
 	void startGeometryPass()
@@ -344,7 +376,7 @@ public:
 	void stopLightPass()
 	{
 		glDisable(GL_BLEND);
-		
+
 		pastry::texture_save(tex_final, "/tmp/deferred_final.png");
 	}
 
@@ -356,13 +388,6 @@ public:
 		glBlitFramebuffer(0, 0, width_, height_,
 		                  0, 0, width_, height_, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
-
-	void runlightPass()
-	{
-		sp_.use();
-		va_.bind();
-		mesh_.render();
-	}
 };
 
 class DeferredRenderer
@@ -372,6 +397,11 @@ public:
 	DeferredRenderer()
 	{
 		std::cout << "Create G-Buffer" << std::endl;
+
+		light1.setLightPosition({+1,3,4});
+
+		light2.setLightPosition({-2,3,4});
+		light2.setLightColor({1,0,0});
 	}
 
 	void update(float t, float dt)
@@ -386,7 +416,8 @@ public:
 		gbuff.stopGeometryPass();
 
 		gbuff.startLightPass();
-		gbuff.runlightPass();
+		light1.render();
+		light2.render();
 		gbuff.stopLightPass();
 
 		gbuff.finalPass();
@@ -394,6 +425,7 @@ public:
 
 	GBuffer gbuff;
 	MeshObject mesh;
+	LightObject light1, light2;
 };
 
 int main(void)
