@@ -26,17 +26,20 @@ void DeferredRenderer::update(float t, float dt)
 
 void DeferredRenderer::render()
 {
-	gbuff_.startGeometryPass();
+	gbuff_.startPrePass();
 	skybox_->render(camera_);
+	gbuff_.stopPrePass();
+
+	gbuff_.startGeometryPass();
 	for(const auto& v : geometry_) {
 		v->render(camera_);
 	}
 	gbuff_.stopGeometryPass();
 
 	gbuff_.startLightPass();
-	// for(const auto& v : lights_) {
-	// 	v->render(camera_);
-	// }
+	for(const auto& v : lights_) {
+		v->render(camera_);
+	}
 	gbuff_.stopLightPass();
 
 	gbuff_.finalPass();
