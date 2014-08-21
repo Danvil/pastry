@@ -304,6 +304,8 @@ private:
 	pastry::texture_base tex_depth;
 	pastry::framebuffer fbo;
 
+	int dbg_ = 0;
+
 public:
 	GBuffer()
 	{
@@ -335,6 +337,8 @@ public:
 
 	void startGeometryPass()
 	{
+		dbg_++;
+
 		fbo.bind(pastry::framebuffer::target::WRITE);
 		GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 		glDrawBuffers(3, buffers);
@@ -349,10 +353,12 @@ public:
 
 	void stopGeometryPass()
 	{
-		pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
-		pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
-		pastry::texture_save(tex_color, "/tmp/deferred_color.png");
-		pastry::texture_save(tex_depth, "/tmp/deferred_depth.png");
+		if(dbg_ == 50) {
+			pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
+			pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
+			pastry::texture_save(tex_color, "/tmp/deferred_color.png");
+			pastry::texture_save(tex_depth, "/tmp/deferred_depth.png");
+		}
 	}
 
 	void update()
@@ -404,7 +410,9 @@ public:
 	{
 		glDisable(GL_BLEND);
 
-		pastry::texture_save(tex_final, "/tmp/deferred_final.png");
+		if(dbg_ == 50) {
+			pastry::texture_save(tex_final, "/tmp/deferred_final.png");
+		}
 	}
 
 	void finalPass()
