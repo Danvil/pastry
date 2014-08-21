@@ -1408,7 +1408,7 @@ namespace pastry
 		{}
 		
 		template<typename S>
-		void set_image_impl(GLint internalformat, GLenum format, unsigned w, unsigned h, const S* data)
+		void set_image_impl(GLint internalformat, unsigned w, unsigned h, GLenum format, const S* data)
 		{
 			bind();
 			glTexImage2D(target,
