@@ -1328,17 +1328,25 @@ namespace pastry
 		{
 			GLint tif = get_param_i(GL_TEXTURE_INTERNAL_FORMAT);
 			switch(tif) {
+				case GL_DEPTH_COMPONENT:
+				case GL_DEPTH_COMPONENT16:
+				case GL_DEPTH_COMPONENT24:
+				case GL_DEPTH_COMPONENT32F:
 				case GL_RED:
-				case GL_R8: case GL_R32F:
+				case GL_R8:
+				case GL_R32F:
 					return 1;
 				case GL_RG:
-				case GL_RG8: case GL_RG32F:
+				case GL_RG8:
+				case GL_RG32F:
 					return 2;
 				case GL_RGB:
-				case GL_RGB8: case GL_RGB32F:
+				case GL_RGB8:
+				case GL_RGB32F:
 					return 3;
 				case GL_RGBA:
-				case GL_RGBA8: case GL_RGBA32F:
+				case GL_RGBA8:
+				case GL_RGBA32F:
 					return 4;
 				default:
 					// ERROR unknown
@@ -1346,12 +1354,43 @@ namespace pastry
 			}
 		}
 
+		GLenum format() const
+		{
+			GLint tif = get_param_i(GL_TEXTURE_INTERNAL_FORMAT);
+			switch(tif) {
+				case GL_DEPTH_COMPONENT:
+				case GL_DEPTH_COMPONENT16:
+				case GL_DEPTH_COMPONENT24:
+				case GL_DEPTH_COMPONENT32F:
+					return GL_DEPTH_COMPONENT;
+				case GL_RED:
+				case GL_R8:
+				case GL_R32F:
+					return GL_RED;
+				case GL_RG:
+				case GL_RG8:
+				case GL_RG32F:
+					return GL_RG;
+				case GL_RGB:
+				case GL_RGB8:
+				case GL_RGB32F:
+					return GL_RGB;
+				case GL_RGBA:
+				case GL_RGBA8:
+				case GL_RGBA32F:
+					return GL_RGBA;
+				default:
+					// ERROR unknown
+					return 0;
+			}
+		}
+
 		template<typename S, unsigned C>
-		void set_image(GLint format, unsigned w, unsigned h, const S* data=0)
+		void set_image(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
 			glTexImage2D(target,
 				0, // level: use base image level
-				format, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
+				internalformat, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
 				w, h,
 				0, // must be 0
 				detail::texture_format<C>::result, // format of source data
@@ -1359,25 +1398,47 @@ namespace pastry
 				data);
 		}
 
-		template<typename S, unsigned C>
+		template<typename S>
+		void set_image_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		{
+			glTexImage2D(target,
+				0, // level: use base image level
+				internalformat, // i.e. GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32F
+				w, h,
+				0, // must be 0
+				GL_DEPTH_COMPONENT, // format of source data
+				detail::texture_type<S>::result, // type of source data
+				data);
+		}
+
+		template<typename S>
 		std::vector<S> get_image() const
 		{
 			bind();
-			std::vector<S> buff(width()*height()*C);
+			std::vector<S> buff(width()*height()*channels());
 			glGetTexImage(target,
 				0, // level: use base image level
-				detail::texture_format<C>::result,
+				format(),
 				detail::texture_type<S>::result,
 				buff.data());
 			return buff;
 		}
 
 		template<typename S, unsigned C>
-		static texture_base create(GLint format, unsigned w, unsigned h, const S* data)
+		static texture_base create(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
 			texture_base tex;
 			tex.create();
-			tex.set_image<S,C>(format, w, h, data);
+			tex.set_image<S,C>(internalformat, w, h, data);
+			return tex;
+		}
+
+		template<typename S>
+		static texture_base create_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		{
+			texture_base tex;
+			tex.create();
+			tex.set_image_depth<S>(internalformat, w, h, data);
 			return tex;
 		}
 

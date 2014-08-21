@@ -408,10 +408,7 @@ texture_base texture_load(const std::string& fn)
 
 void texture_save(const texture_base& tex, const std::string& fn)
 {
-	std::vector<unsigned char> img;
-	if(tex.channels() == 1) img = tex.get_image<unsigned char, 1>();
-	if(tex.channels() == 3) img = tex.get_image<unsigned char, 3>();
-	if(tex.channels() == 4) img = tex.get_image<unsigned char, 4>();
+	std::vector<unsigned char> img = tex.get_image<unsigned char>();
 	SOIL_save_image(
 		fn.data(),
 		SOIL_SAVE_TYPE_PNG,
