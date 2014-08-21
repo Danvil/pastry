@@ -125,59 +125,6 @@ namespace obj
 	}
 }
 
-struct GBuffer
-{
-	int width_, height_;
-	pastry::texture_base tex_position, tex_normal, tex_color, tex_depth;
-	pastry::framebuffer fbo;
-
-	void create()
-	{
-		pastry::fb_get_dimensions(width_, height_);
-		fbo.bind();
-
-		tex_position.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
-		fbo.attach(GL_COLOR_ATTACHMENT0, tex_position);
-
-		tex_normal.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
-		fbo.attach(GL_COLOR_ATTACHMENT1, tex_normal);
-
-		tex_color.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		tex_color.set_image<float, 3>(GL_RGBA8, width_, height_);
-		fbo.attach(GL_COLOR_ATTACHMENT2, tex_color);
-
-		tex_depth.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		tex_depth.set_image<float, 1>(GL_DEPTH_COMPONENT32F, width_, height_);
-		fbo.attach(GL_DEPTH_ATTACHMENT, tex_depth);
-
-		fbo.unbind();
-	}
-
-	void bind()
-	{
-		fbo.bind();
-	}
-
-	void update()
-	{
-		if(pastry::fb_has_changed()) {
-			pastry::fb_get_dimensions(width_, height_);
-			fbo.bind();
-			tex_position.bind();
-			tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
-			tex_normal.bind();
-			tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
-			tex_color.bind();
-			tex_color.set_image<float, 3>(GL_RGBA8, width_, height_);
-			tex_depth.bind();
-			tex_depth.set_image<float, 1>(GL_DEPTH_COMPONENT32F, width_, height_);
-			fbo.unbind();
-		}
-	}
-};
-
 Eigen::Matrix4f math_transform_3d(const Eigen::Vector3f& pos, float theta)
 {
 	float st = std::sin(theta);
@@ -191,73 +138,235 @@ Eigen::Matrix4f math_transform_3d(const Eigen::Vector3f& pos, float theta)
 	return m;
 }
 
+class MeshObject
+: public pastry::renderling
+{
+public:
+	MeshObject()
+	{
+		mesh_ = pastry::single_mesh(GL_TRIANGLES);
+
+		pastry::array_buffer vbo(
+			{
+				{"pos", GL_FLOAT, 3},
+				{"uv", GL_FLOAT, 2},
+				{"normal", GL_FLOAT, 3}
+			},
+			GL_STATIC_DRAW
+		);
+		mesh_.set_vertex_bo(vbo);
+
+		obj::Mesh meshdata = obj::Load("assets/suzanne.obj");
+		mesh_.set_vertices(GetData(meshdata));
+
+		sp_ = pastry::load_program("assets/deferred/render");
+
+		auto projmat = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 10.0f);
+		//std::cout << projmat << std::endl;
+		sp_.get_uniform<Eigen::Matrix4f>("proj").set(projmat);
+
+		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}).transpose();
+		//std::cout << viewmat << std::endl;
+		sp_.get_uniform<Eigen::Matrix4f>("view").set(viewmat);
+
+		va_ = pastry::vertex_array(sp_, {
+			{"position", vbo, "pos"},
+			{"texcoord", vbo, "uv"},
+			{"normal", vbo, "normal"}
+		});
+		va_.bind();
+
+	}
+
+	void update(float t, float dt)
+	{
+
+
+	}
+
+	void render()
+	{
+		sp_.use();
+		va_.bind();
+		mesh_.render();
+	}
+
+public:
+	pastry::program sp_;
+	pastry::single_mesh mesh_;
+	pastry::vertex_array va_;
+};
+
+class GBuffer
+{
+private:
+	int width_, height_;
+	pastry::texture_base tex_position, tex_normal, tex_color;
+	// pastry::texture_base tex_depth;
+	pastry::framebuffer fbo;
+
+	pastry::program sp_;
+	pastry::single_mesh mesh_;
+	pastry::vertex_array va_;
+
+public:
+	GBuffer()
+	{
+		pastry::fb_get_dimensions(width_, height_);
+		fbo.bind();
+
+		tex_position.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+		tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
+		fbo.attach(GL_COLOR_ATTACHMENT0, tex_position);
+
+		tex_normal.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+		tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
+		fbo.attach(GL_COLOR_ATTACHMENT1, tex_normal);
+
+		tex_color.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+		tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
+		fbo.attach(GL_COLOR_ATTACHMENT2, tex_color);
+
+		// tex_depth.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+		// tex_depth.set_image<float, 1>(GL_DEPTH_COMPONENT32F, width_, height_);
+		// fbo.attach(GL_DEPTH_ATTACHMENT, tex_depth);
+
+		GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		glDrawBuffers(3, buffers);
+
+		fbo.unbind();
+
+		// screen quad for rendering
+
+		mesh_ = pastry::single_mesh(GL_TRIANGLES);
+
+		pastry::array_buffer vbo(
+			{ {"uv", GL_FLOAT, 2} },
+			GL_STATIC_DRAW
+		);
+		mesh_.set_vertex_bo(vbo);
+
+		std::vector<float> data = {
+			0, 0,
+			1, 0,
+			1, 1,
+			0, 0,
+			1, 1,
+			0, 1
+		};
+		mesh_.set_vertices(data);
+
+		sp_ = pastry::load_program("assets/deferred/deferred");
+		sp_.get_uniform<int>("texPosition").set(0);
+		sp_.get_uniform<int>("texNormal").set(1);
+		sp_.get_uniform<int>("texColor").set(2);
+
+		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}).transpose();
+		//std::cout << viewmat << std::endl;
+		sp_.get_uniform<Eigen::Matrix4f>("view").set(viewmat);
+
+		va_ = pastry::vertex_array(sp_, {
+			{"quv", vbo, "uv"}
+		});
+		va_.bind();
+
+	}
+
+	void startGeometryPass()
+	{
+		fbo.bind(pastry::framebuffer::target::WRITE);
+
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void update()
+	{
+		if(pastry::fb_has_changed()) {
+			pastry::fb_get_dimensions(width_, height_);
+			fbo.bind();
+			tex_position.bind();
+			tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
+			tex_normal.bind();
+			tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
+			tex_color.bind();
+			tex_color.set_image<unsigned char, 3>(GL_RGB8, width_, height_);
+			// tex_depth.bind();
+			// tex_depth.set_image<float, 1>(GL_DEPTH_COMPONENT32F, width_, height_);
+			fbo.unbind();
+		}
+	}
+
+	void runlightPass()
+	{
+		static unsigned i=0;
+		i++;
+
+		//fbo.bind(pastry::framebuffer::target::READ);
+		//fbo.unbind(pastry::framebuffer::target::WRITE);
+		fbo.unbind();
+
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+//		glClearColor(1.0, 1.0, 0.0, 1.0);
+//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		pastry::texture_base::activate_unit(0);
+		tex_position.bind();		
+		pastry::texture_base::activate_unit(1);
+		tex_normal.bind();
+		pastry::texture_base::activate_unit(2);
+		tex_color.bind();
+
+		if(i == 100) {
+			pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
+			pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
+			pastry::texture_save(tex_color, "/tmp/deferred_color.png");
+		}
+		
+		sp_.use();
+		va_.bind();
+		mesh_.render();
+	}
+};
+
+class DeferredRenderer
+: public pastry::renderling
+{
+public:
+	DeferredRenderer()
+	{
+		std::cout << "Create G-Buffer" << std::endl;
+	}
+
+	void update(float t, float dt)
+	{
+
+	}
+
+	void render()
+	{
+		gbuff.startGeometryPass();
+
+		mesh.render();
+
+		gbuff.runlightPass();
+	}
+
+	GBuffer gbuff;
+	MeshObject mesh;
+};
+
 int main(void)
 {
 	std::cout << "Starting engine" << std::endl;
 
-	obj::Mesh meshdata = obj::Load("assets/suzanne.obj");
-
 	pastry::initialize();
 
-	std::cout << "Create G-Buffer" << std::endl;
-
-	GBuffer gbuff;
-	gbuff.create();
-
-	std::cout << "Generating array buffer" << std::endl;
-
-	pastry::array_buffer vbo(
-		{
-			{"pos", GL_FLOAT, 3},
-			{"uv", GL_FLOAT, 2},
-			{"normal", GL_FLOAT, 3}
-		},
-		GL_STATIC_DRAW
-	);
-	pastry::single_mesh mesh(GL_TRIANGLES);
-	mesh.set_vertex_bo(vbo);
-	mesh.set_vertices(GetData(meshdata));
-
-	pastry::program sp = pastry::load_program("assets/deferred/render");
-	sp.use();
-
-	auto projmat = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 10.0f);
-	std::cout << projmat << std::endl;
-	sp.get_uniform<Eigen::Matrix4f>("proj").set(
-//		pastry::math_orthogonal_projection(2.0f*5.0f, 1.0f, +10.0f));
-		projmat);
-
-	auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}).transpose();
-	std::cout << viewmat << std::endl;
-	sp.get_uniform<Eigen::Matrix4f>("view").set(
-//		math_transform_3d(Eigen::Vector3f{0,0,-7}, 0.0f));
-		viewmat);
-
-	std::cout << "Setting up vertex arrays" << std::endl;
-
-	pastry::vertex_array va(sp, {
-		{"position", vbo, "pos"},
-		{"texcoord", vbo, "uv"},
-		{"normal", vbo, "normal"}
-	});
-	va.bind();
-
-	std::cout << "Texture" << std::endl;
-
-	pastry::texture_base::activate_unit(0);
-	pastry::texture_base tex = pastry::texture_load("assets/kitten.jpg");
-	tex.bind();
-
-//	sp.get_uniform<int>("texKitten").set(0);
-
-	pastry::scene_add(
-		[&mesh]() {
-			glEnable(GL_CULL_FACE);
-			glEnable(GL_DEPTH_TEST);
-			glClearColor(0.0, 0.0, 0.0, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			mesh.render();
-		});
+	auto dr = std::make_shared<DeferredRenderer>();
+	pastry::scene_add(dr);
 
 	std::cout << "Running main loop" << std::endl;
 

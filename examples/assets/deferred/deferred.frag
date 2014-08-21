@@ -1,23 +1,22 @@
 #version 150
 
-in vec3 uv;
+uniform mat4 view;
+in vec2 uv;
 uniform sampler2D texPosition;
 uniform sampler2D texNormal;
 uniform sampler2D texColor;
-
 out vec4 outColor;
 
 void main()
 {
-	vec3 pos = texture(texPosition, uv);
-	vec3 normal = texture(texNormal, uv);
-	vec3 color = texture(texColor, uv);
+	vec3 pos = texture(texPosition, uv).xyz;
+	vec3 normal = texture(texNormal, uv).xyz;
+	vec3 color = texture(texColor, uv).xyz;
+
 	vec3 light = (view*vec4(0,3,4,1)).xyz;
-	vec3 d = light - Position;
+	vec3 d = light - pos;
 	float ld = length(d);
-	float q = dot(d,Normal) / ld / (1.0f + 0.05f*ld*ld);
+	float q = dot(d,normal) / ld / (1.0f + 0.05f*ld*ld);
 	if(q < 0) q = 0;
-	//vec4 col1 = texture(texKitten, Texcoord);
-	//outColor = mix(col1, vec4(Color,1.0), 0.5);
-	outColor = vec4(q*Color,1);
+	outColor = vec4(q*color,1);
 }
