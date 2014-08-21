@@ -1,156 +1,11 @@
 
 #include <pastry/pastry.hpp>
 #include <pastry/gl.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>
+#include <pastry/obj.hpp>
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <cmath>
 
-namespace obj
-{
-	struct VertexIndices
-	{
-		int v, uv, vn;
-	};
-
-	struct Face
-	{
-		VertexIndices a, b, c;
-	};
-
-	struct Mesh
-	{
-		std::string name;
-		std::vector<Eigen::Vector3f> v;
-		std::vector<Eigen::Vector2f> uv;
-		std::vector<Eigen::Vector3f> vn;
-		std::vector<Face> f;
-	};
-
-	VertexIndices ParseVertexIndices(const std::string& str)
-	{
-		static std::vector<std::string> tokens;
-		boost::split(tokens, str, boost::is_any_of("/"));
-		return VertexIndices{
-			tokens[0].empty() ? 0 : boost::lexical_cast<int>(tokens[0]),
-			tokens[1].empty() ? 0 : boost::lexical_cast<int>(tokens[1]),
-			tokens[2].empty() ? 0 : boost::lexical_cast<int>(tokens[2])};
-	}
-
-	class Loader
-	{
-	public:
-		Mesh Load(const std::string& fn)
-		{
-			auto it = cache_.find(fn);
-			if(it == cache_.end()) {
-				Mesh mesh = LoadImpl(fn);
-				cache_[fn] = mesh;
-				return mesh;
-			}
-			else {
-				return it->second;
-			}
-		}
-
-	private:
-		Mesh LoadImpl(const std::string& fn) {
-			std::ifstream ifs(fn);
-			Mesh mesh;
-			mesh.v.emplace_back(Eigen::Vector3f::Zero());
-			mesh.uv.emplace_back(Eigen::Vector2f::Zero());
-			mesh.vn.emplace_back(Eigen::Vector3f::Zero());
-			std::string line;
-			std::vector<std::string> tokens;
-			std::vector<std::string> tokens2;
-			while(std::getline(ifs, line)) {
-				boost::split(tokens, line, boost::is_any_of(" "));
-				const std::string& head = tokens[0];
-				if(head == "#") {
-					continue;
-				}
-				else if(head == "o") {
-					mesh.name = tokens[1];
-				}
-				else if(head == "v") {
-					mesh.v.emplace_back(
-						boost::lexical_cast<float>(tokens[1]),
-						boost::lexical_cast<float>(tokens[2]),
-						boost::lexical_cast<float>(tokens[3]));
-				}
-				else if(head == "uv") {
-					mesh.uv.emplace_back(
-						boost::lexical_cast<float>(tokens[1]),
-						boost::lexical_cast<float>(tokens[2]));
-				}
-				else if(head == "vn") {
-					mesh.vn.emplace_back(
-						boost::lexical_cast<float>(tokens[1]),
-						boost::lexical_cast<float>(tokens[2]),
-						boost::lexical_cast<float>(tokens[3]));
-				}
-				else if(head == "f") {
-					mesh.f.push_back({
-						ParseVertexIndices(tokens[1]),
-						ParseVertexIndices(tokens[2]),
-						ParseVertexIndices(tokens[3])});
-				}
-				else {
-					std::cerr << "Unknown line in obj file starting with '" << head << "'" << std::endl;
-				}
-			}
-			std::cout << "Mesh { "
-				<< "name: " << mesh.name
-				<< ", v: " << mesh.v.size()
-				<< ", uv: " << mesh.uv.size()
-				<< ", vn: " << mesh.vn.size()
-				<< ", f: " << mesh.f.size()
-				<< "}" << std::endl;
-			return mesh;
-		}
-
-	private:
-		std::map<std::string,Mesh> cache_;
-	};
-
-	Mesh Load(const std::string& fn)
-	{
-		static Loader s_loader;
-		return s_loader.Load(fn);
-	}
-
-	struct Vertex
-	{
-		float vx, vy, vz;
-		float u, v;
-		float nx, ny, nz;
-	};
-
-	Vertex GetVertex(const Mesh& mesh, const VertexIndices& v)
-	{
-		return {
-			mesh.v[v.v][0], mesh.v[v.v][1], mesh.v[v.v][2],
-			mesh.uv[v.uv][0], mesh.uv[v.uv][1],
-			mesh.vn[v.vn][0], mesh.vn[v.vn][1], mesh.vn[v.vn][2]
-		};
-	}
-
-	std::vector<Vertex> GetData(const Mesh& mesh)
-	{
-		std::vector<Vertex> result;
-		result.reserve(mesh.f.size() * 3 * 8);
-		for(const auto& f : mesh.f) {
-			result.push_back(GetVertex(mesh, f.a));
-			result.push_back(GetVertex(mesh, f.c));
-			result.push_back(GetVertex(mesh, f.b));
-		}
-		return result;
-	}
-}
 
 struct Camera
 {
@@ -178,8 +33,7 @@ public:
 		);
 		mesh_.set_vertex_bo(vbo);
 
-		obj::Mesh meshdata = obj::Load(fn_obj);
-		mesh_.set_vertices(GetData(meshdata));
+		mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj)));
 
 		sp_ = pastry::load_program("assets/deferred/render");
 
