@@ -12,6 +12,7 @@ ADD_LIBRARY(pastry SHARED
 	deferred/GBuffer.cpp
 	deferred/Geometry.cpp
 	deferred/Light.cpp
+	deferred/SkyBox.cpp
 	# SOIL
 	dep/SOIL2/etc1_utils.c
 	dep/SOIL2/image_DXT.c

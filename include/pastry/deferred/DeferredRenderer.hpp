@@ -4,6 +4,7 @@
 #include <pastry/deferred/Camera.hpp>
 #include <pastry/deferred/Light.hpp>
 #include <pastry/deferred/Geometry.hpp>
+#include <pastry/deferred/SkyBox.hpp>
 #include <pastry/pastry.hpp>
 #include <pastry/gl.hpp>
 
@@ -29,6 +30,8 @@ public:
 	pastry::deferred::GBuffer gbuff_;
 
 	std::shared_ptr<pastry::deferred::Camera> camera_;
+
+	std::shared_ptr<pastry::deferred::SkyBox> skybox_;
 
 	std::vector<std::shared_ptr<pastry::deferred::Geometry>> geometry_;
 	std::vector<std::shared_ptr<pastry::deferred::Light>> lights_;

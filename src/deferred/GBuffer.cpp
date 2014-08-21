@@ -37,8 +37,8 @@ void GBuffer::startGeometryPass()
 	dbg_++;
 
 	fbo.bind(pastry::framebuffer::target::WRITE);
-	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, buffers);
+	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+	glDrawBuffers(4, buffers);
 
 	glEnable(GL_CULL_FACE);
 	glDepthMask(GL_TRUE);
@@ -88,8 +88,8 @@ void GBuffer::startLightPass()
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
 
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+//	glClearColor(0.0, 0.0, 0.0, 1.0);
+//	glClear(GL_COLOR_BUFFER_BIT);
 
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
