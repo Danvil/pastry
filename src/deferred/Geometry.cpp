@@ -8,7 +8,6 @@ Geometry::Geometry(const std::string& fn_obj)
 : pose_(Eigen::Matrix4f::Identity())
 {
 	mesh_ = pastry::single_mesh(GL_TRIANGLES);
-
 	pastry::array_buffer vbo(
 		{
 			{"pos", GL_FLOAT, 3},
@@ -18,7 +17,6 @@ Geometry::Geometry(const std::string& fn_obj)
 		GL_STATIC_DRAW
 	);
 	mesh_.set_vertex_bo(vbo);
-
 	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj)));
 
 	sp_ = pastry::load_program("assets/deferred/render");
