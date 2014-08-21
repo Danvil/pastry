@@ -197,6 +197,9 @@ Eigen::Vector2f mouse_get_position();
 /** Loads an image from file into a texture (only some image formats supported) */
 texture_2d texture_load(const std::string& fn);
 
+/** Loads a cube texture image from file into a cube texture (only some image formats supported) */
+texture_cube_map texture_load_cube(const std::string& fn, const std::string& order);
+
 /** Saves an RGB or single channel texture to a file */
 void texture_save(const texture_2d& tex, const std::string& fn);
 

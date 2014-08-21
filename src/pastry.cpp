@@ -403,9 +403,27 @@ texture_2d texture_load(const std::string& fn)
 	);
 	if(q == 0) {
 		std::cerr << "ERROR in texture_load: Failed to load image '" << fn << "'" << std::endl;
+		std::cerr << SOIL_last_result() << std::endl;
 		throw file_not_found(fn);
 	}
 	return texture_2d{q};
+}
+
+texture_cube_map texture_load_cube(const std::string& fn, const std::string& order)
+{
+	GLuint q = SOIL_load_OGL_single_cubemap(
+		fn.data(),
+		order.data(),
+		SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_INVERT_Y | SOIL_FLAG_TEXTURE_REPEATS
+	);
+	if(q == 0) {
+		std::cerr << "ERROR in texture_load: Failed to load cube texture image '" << fn << "'" << std::endl;
+		std::cerr << SOIL_last_result() << std::endl;
+		throw file_not_found(fn);
+	}
+	return texture_cube_map{q};
 }
 
 void texture_save(const texture_2d& tex, const std::string& fn)
