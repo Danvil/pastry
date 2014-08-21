@@ -106,7 +106,9 @@ void initialize()
 		return;
 	}
 
-	glfwWindowHint(GLFW_DEPTH_BITS, 16);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+//	glfwWindowHint(GLFW_DEPTH_BITS, 16);
 
 	// create window (windowed)
 	g_window = glfwCreateWindow(g_fb_width, g_fb_height, "pastry", NULL, NULL);
