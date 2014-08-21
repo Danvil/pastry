@@ -138,11 +138,18 @@ Eigen::Matrix4f math_transform_3d(const Eigen::Vector3f& pos, float theta)
 	return m;
 }
 
+struct Camera
+{
+	Eigen::Matrix4f projection;
+	Eigen::Matrix4f view;
+};
+
+Camera g_camera;
+
 class MeshObject
-: public pastry::renderling
 {
 public:
-	MeshObject()
+	MeshObject(const std::string& fn_obj)
 	{
 		mesh_ = pastry::single_mesh(GL_TRIANGLES);
 
@@ -156,18 +163,12 @@ public:
 		);
 		mesh_.set_vertex_bo(vbo);
 
-		obj::Mesh meshdata = obj::Load("assets/suzanne.obj");
+		obj::Mesh meshdata = obj::Load(fn_obj);
 		mesh_.set_vertices(GetData(meshdata));
 
 		sp_ = pastry::load_program("assets/deferred/render");
-
-		auto projmat = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 10.0f);
-		//std::cout << projmat << std::endl;
-		sp_.get_uniform<Eigen::Matrix4f>("proj").set(projmat);
-
-		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1});
-		std::cout << viewmat << std::endl;
-		sp_.get_uniform<Eigen::Matrix4f>("view").set(viewmat);
+		sp_.get_uniform<Eigen::Matrix4f>("proj").set(g_camera.projection);
+		sp_.get_uniform<Eigen::Matrix4f>("view").set(g_camera.view);
 
 		va_ = pastry::vertex_array(sp_, {
 			{"position", vbo, "pos"},
@@ -178,11 +179,8 @@ public:
 
 	}
 
-	void update(float t, float dt)
-	{
-
-
-	}
+	void setPose(const Eigen::Matrix4f& pose)
+	{ pose_ = pose; }
 
 	void render()
 	{
@@ -195,19 +193,12 @@ public:
 	pastry::program sp_;
 	pastry::single_mesh mesh_;
 	pastry::vertex_array va_;
+
+	Eigen::Matrix4f pose_;
 };
 
 class LightObject
 {
-private:
-	pastry::program sp_;
-	pastry::single_mesh mesh_;
-	pastry::vertex_array va_;
-
-	Eigen::Vector3f light_pos_;
-	Eigen::Vector3f light_color_;
-	float falloff_;
-
 public:
 	LightObject()
 	:	light_pos_(Eigen::Vector3f::Zero()),
@@ -256,8 +247,7 @@ public:
 	{
 		sp_.use();
 
-		auto viewmat = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1}); // FIXME
-		Eigen::Vector4f lightpos4 = viewmat*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
+		Eigen::Vector4f lightpos4 = g_camera.view*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
 		Eigen::Vector3f lightpos(lightpos4[0],lightpos4[1],lightpos4[2]);
 		sp_.get_uniform<Eigen::Vector3f>("lightpos").set(lightpos);
 		sp_.get_uniform<Eigen::Vector3f>("lightcol").set(light_color_);
@@ -266,6 +256,16 @@ public:
 		va_.bind();
 		mesh_.render();
 	}
+
+private:
+	pastry::program sp_;
+	pastry::single_mesh mesh_;
+	pastry::vertex_array va_;
+
+	Eigen::Vector3f light_pos_;
+	Eigen::Vector3f light_color_;
+	float falloff_;
+
 };
 
 class GBuffer
@@ -395,14 +395,13 @@ class DeferredRenderer
 {
 public:
 	DeferredRenderer()
-	{
-		std::cout << "Create G-Buffer" << std::endl;
+	{ }
 
-		light1.setLightPosition({+1,3,4});
+	void add(const std::shared_ptr<MeshObject>& mesh)
+	{ geometry_.push_back(mesh); }
 
-		light2.setLightPosition({-2,3,4});
-		light2.setLightColor({1,0,0});
-	}
+	void add(const std::shared_ptr<LightObject>& light)
+	{ lights_.push_back(light); }
 
 	void update(float t, float dt)
 	{
@@ -411,21 +410,25 @@ public:
 
 	void render()
 	{
-		gbuff.startGeometryPass();
-		mesh.render();
-		gbuff.stopGeometryPass();
+		gbuff_.startGeometryPass();
+		for(const auto& v : geometry_) {
+			v->render();
+		}
+		gbuff_.stopGeometryPass();
 
-		gbuff.startLightPass();
-		light1.render();
-		light2.render();
-		gbuff.stopLightPass();
+		gbuff_.startLightPass();
+		for(const auto& v : lights_) {
+			v->render();
+		}
+		gbuff_.stopLightPass();
 
-		gbuff.finalPass();
+		gbuff_.finalPass();
 	}
 
-	GBuffer gbuff;
-	MeshObject mesh;
-	LightObject light1, light2;
+	GBuffer gbuff_;
+
+	std::vector<std::shared_ptr<MeshObject>> geometry_;
+	std::vector<std::shared_ptr<LightObject>> lights_;
 };
 
 int main(void)
@@ -436,6 +439,31 @@ int main(void)
 
 	auto dr = std::make_shared<DeferredRenderer>();
 	pastry::scene_add(dr);
+
+	// camera
+	{
+		g_camera.projection = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 10.0f);
+		g_camera.view = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1});
+	}
+
+	// geometry
+	{
+		auto geom = std::make_shared<MeshObject>("assets/suzanne.obj");
+		dr->add(geom);
+	}
+
+	// lights
+	{
+		auto light = std::make_shared<LightObject>();
+		light->setLightPosition({+1,3,4});
+		dr->add(light);
+	}
+	{
+		auto light = std::make_shared<LightObject>();
+		light->setLightPosition({-2,3,4});
+		light->setLightColor({1,0,0});
+		dr->add(light);
+	}
 
 	std::cout << "Running main loop" << std::endl;
 
