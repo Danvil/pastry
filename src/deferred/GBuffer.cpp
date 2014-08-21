@@ -15,10 +15,6 @@ GBuffer::GBuffer()
 	tex_final.set_image<float, 3>(GL_RGB32F, width_, height_);
 	fbo.attach(GL_COLOR_ATTACHMENT0, tex_final);
 
-	tex_depth.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-	tex_depth.set_image_depth<float>(GL_DEPTH_COMPONENT32F, width_, height_);
-	fbo.attach(GL_DEPTH_ATTACHMENT, tex_depth);
-
 	tex_position.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
 	tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
 	fbo.attach(GL_COLOR_ATTACHMENT1, tex_position);
@@ -30,6 +26,10 @@ GBuffer::GBuffer()
 	tex_color.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
 	tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
 	fbo.attach(GL_COLOR_ATTACHMENT3, tex_color);
+
+	tex_depth.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+	tex_depth.set_image_depth_stencil(GL_DEPTH24_STENCIL8, width_, height_);
+	fbo.attach(GL_DEPTH_STENCIL_ATTACHMENT, tex_depth);
 
 	fbo.unbind();
 }
@@ -44,6 +44,7 @@ void GBuffer::startPrePass()
 	glDrawBuffers(4, buffers);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	fbo.unbind();
 
 	// use final buffer for rendering
 	fbo.bind(pastry::framebuffer::target::WRITE);
@@ -54,6 +55,7 @@ void GBuffer::startPrePass()
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+	glDisable(GL_STENCIL_TEST);
 }
 
 void GBuffer::stopPrePass()
@@ -96,14 +98,14 @@ void GBuffer::update()
 		fbo.bind();
 		tex_final.bind();
 		tex_final.set_image<float, 3>(GL_RGB32F, width_, height_);
-		tex_depth.bind();
-		tex_depth.set_image_depth<float>(GL_DEPTH_COMPONENT32F, width_, height_);
 		tex_position.bind();
 		tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
 		tex_normal.bind();
 		tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
 		tex_color.bind();
 		tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
+		tex_depth.bind();
+		tex_depth.set_image_depth<float>(GL_DEPTH24_STENCIL8, width_, height_);
 		fbo.unbind();
 	}
 }
