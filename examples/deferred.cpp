@@ -202,7 +202,8 @@ class GBuffer
 private:
 	int width_, height_;
 	pastry::texture_base tex_position, tex_normal, tex_color;
-	// pastry::texture_base tex_depth;
+	pastry::texture_base tex_final;
+	pastry::texture_base tex_depth;
 	pastry::framebuffer fbo;
 
 	pastry::program sp_;
@@ -227,12 +228,13 @@ public:
 		tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
 		fbo.attach(GL_COLOR_ATTACHMENT2, tex_color);
 
-		// tex_depth.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
-		// tex_depth.set_image<float, 1>(GL_DEPTH_COMPONENT32F, width_, height_);
-		// fbo.attach(GL_DEPTH_ATTACHMENT, tex_depth);
+		tex_final.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+		tex_final.set_image<float, 3>(GL_RGB32F, width_, height_);
+		fbo.attach(GL_COLOR_ATTACHMENT3, tex_final);
 
-		GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-		glDrawBuffers(3, buffers);
+		tex_depth.create(GL_LINEAR,GL_CLAMP_TO_EDGE);
+		tex_depth.set_image_depth<float>(GL_DEPTH_COMPONENT32F, width_, height_);
+		fbo.attach(GL_DEPTH_ATTACHMENT, tex_depth);
 
 		fbo.unbind();
 
@@ -275,11 +277,23 @@ public:
 	void startGeometryPass()
 	{
 		fbo.bind(pastry::framebuffer::target::WRITE);
+		GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		glDrawBuffers(3, buffers);
 
 		glEnable(GL_CULL_FACE);
+		glDepthMask(GL_TRUE);
 		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void stopGeometryPass()
+	{
+		pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
+		pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
+		pastry::texture_save(tex_color, "/tmp/deferred_color.png");
+		pastry::texture_save(tex_depth, "/tmp/deferred_depth.png");
 	}
 
 	void update()
@@ -292,26 +306,31 @@ public:
 			tex_normal.bind();
 			tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
 			tex_color.bind();
-			tex_color.set_image<unsigned char, 3>(GL_RGB8, width_, height_);
-			// tex_depth.bind();
-			// tex_depth.set_image<float, 1>(GL_DEPTH_COMPONENT32F, width_, height_);
+			tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
+			tex_final.bind();
+			tex_final.set_image<float, 3>(GL_RGB32F, width_, height_);
+			tex_depth.bind();
+			tex_depth.set_image_depth<float>(GL_DEPTH_COMPONENT32F, width_, height_);
 			fbo.unbind();
 		}
 	}
 
-	void runlightPass()
+	void startLightPass()
 	{
-		static unsigned i=0;
-		i++;
-
-		//fbo.bind(pastry::framebuffer::target::READ);
-		//fbo.unbind(pastry::framebuffer::target::WRITE);
-		fbo.unbind();
+		fbo.bind();
+		glDrawBuffer(GL_COLOR_ATTACHMENT3);
 
 		glDisable(GL_CULL_FACE);
+
+		glDepthMask(GL_FALSE);
 		glDisable(GL_DEPTH_TEST);
-//		glClearColor(1.0, 1.0, 0.0, 1.0);
-//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE);
 
 		pastry::texture_base::activate_unit(0);
 		tex_position.bind();		
@@ -320,12 +339,26 @@ public:
 		pastry::texture_base::activate_unit(2);
 		tex_color.bind();
 
-		if(i == 100) {
-			pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
-			pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
-			pastry::texture_save(tex_color, "/tmp/deferred_color.png");
-		}
+	}
+
+	void stopLightPass()
+	{
+		glDisable(GL_BLEND);
 		
+		pastry::texture_save(tex_final, "/tmp/deferred_final.png");
+	}
+
+	void finalPass()
+	{
+		fbo.unbind();
+		fbo.bind(pastry::framebuffer::target::READ);
+		glReadBuffer(GL_COLOR_ATTACHMENT3);
+		glBlitFramebuffer(0, 0, width_, height_,
+		                  0, 0, width_, height_, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	}
+
+	void runlightPass()
+	{
 		sp_.use();
 		va_.bind();
 		mesh_.render();
@@ -349,10 +382,14 @@ public:
 	void render()
 	{
 		gbuff.startGeometryPass();
-
 		mesh.render();
+		gbuff.stopGeometryPass();
 
+		gbuff.startLightPass();
 		gbuff.runlightPass();
+		gbuff.stopLightPass();
+
+		gbuff.finalPass();
 	}
 
 	GBuffer gbuff;
