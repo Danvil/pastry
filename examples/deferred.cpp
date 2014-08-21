@@ -152,19 +152,6 @@ namespace obj
 	}
 }
 
-Eigen::Matrix4f math_transform_3d(const Eigen::Vector3f& pos, float theta)
-{
-	float st = std::sin(theta);
-	float ct = std::cos(theta);
-	Eigen::Matrix4f m;
-	m <<
-		 ct, +st, 0, pos.x(),
-		-st,  ct, 0, pos.y(),
-		  0,   0, 1, pos.z(),
-		  0,   0, 0, 1;
-	return m;
-}
-
 struct Camera
 {
 	Eigen::Matrix4f projection;
