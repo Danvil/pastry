@@ -9,6 +9,6 @@ out vec3 TexCoord0;
 void main()
 {
     vec4 WVP_Pos = gWVP * vec4(Position, 1.0);
-    gl_Position = WVP_Pos.xyww; // trick!
+    gl_Position = WVP_Pos;//.xyww; // trick!
     TexCoord0 = Position; // trick!
 }

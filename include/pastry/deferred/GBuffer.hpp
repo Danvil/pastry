@@ -25,8 +25,8 @@ public:
 
 private:
 	int width_, height_;
-	pastry::texture_2d tex_position, tex_normal, tex_color;
 	pastry::texture_2d tex_final;
+	pastry::texture_2d tex_position, tex_normal, tex_color;
 	pastry::texture_2d tex_depth;
 	pastry::framebuffer fbo;
 

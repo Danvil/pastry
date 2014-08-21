@@ -48,7 +48,6 @@ void SkyBox::render(const std::shared_ptr<pastry::deferred::Camera>& camera)
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
-	glDisable(GL_DEPTH_TEST);
 
 	pastry::texture_cube_map::activate_unit(0);
 	cm_.bind();
@@ -62,7 +61,6 @@ void SkyBox::render(const std::shared_ptr<pastry::deferred::Camera>& camera)
 	mesh_.render();
 
 	glCullFace(GL_BACK);
-	glEnable(GL_DEPTH_TEST);
 }
 
 }}
