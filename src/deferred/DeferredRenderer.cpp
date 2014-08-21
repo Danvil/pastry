@@ -39,6 +39,8 @@ void DeferredRenderer::render()
 	gbuff_.stopForwardPass();
 
 	gbuff_.startLightPass();
+	pastry::texture_cube_map::activate_unit(4);
+	skybox_->bind();
 	for(const auto& v : lights_) {
 		v->render(camera_);
 	}

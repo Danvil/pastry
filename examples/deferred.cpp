@@ -41,7 +41,7 @@ int main(void)
 	{
 		auto camera = std::make_shared<pastry::deferred::Camera>();
 		camera->projection = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 100.0f);
-		camera->view = pastry::lookAt(3*Eigen::Vector3f{2,4,3},{0,0,0},{0,0,-1});
+		camera->view = pastry::lookAt(Eigen::Vector3f{6,10,4},{0,0,0},{0,0,-1});
 		dr->setCamera(camera);
 	}
 
@@ -74,10 +74,15 @@ int main(void)
 	// 	dr->add(light);
 	// }
 	{
+		auto light = std::make_shared<pastry::deferred::EnvironmentLight>();
+		light->setSkybox(dr->skybox_);
+		dr->add(light);
+	}
+	{
 		constexpr int R = 3;
 		for(int x=-R; x<=+R; x++) {
 			for(int y=-R; y<=+R; y++) {
-				auto light = std::make_shared<pastry::deferred::Light>();
+				auto light = std::make_shared<pastry::deferred::PointLight>();
 				light->setLightPosition({SPACE*x,SPACE*y,1.5});
 				light->setLightColor(HSL(std::atan2(y,x)/6.2831853f,1.0f,0.5f));
 				light->setLightFalloff(1.65f);

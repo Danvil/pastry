@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pastry/deferred/Camera.hpp>
+#include <pastry/deferred/SkyBox.hpp>
 #include <pastry/gl.hpp>
 #include <Eigen/Dense>
 
@@ -10,7 +11,38 @@ namespace deferred {
 class Light
 {
 public:
-	Light();
+	virtual ~Light()
+	{}
+
+	virtual void render(const std::shared_ptr<Camera>& camera) = 0;
+
+};
+
+class EnvironmentLight
+: public Light
+{
+public:
+	EnvironmentLight();
+
+	void setSkybox(const std::shared_ptr<SkyBox>& skybox)
+	{ skybox_ = skybox; }
+
+	void render(const std::shared_ptr<Camera>& camera);
+
+private:
+	pastry::program sp_;
+	pastry::single_mesh mesh_;
+	pastry::vertex_array va_;
+
+	std::shared_ptr<SkyBox> skybox_;
+
+};
+
+class PointLight
+: public Light
+{
+public:
+	PointLight();
 
 	void setLightPosition(const Eigen::Vector3f& pos)
 	{ light_pos_ = pos; }

@@ -13,6 +13,9 @@ public:
 
 	void render(const std::shared_ptr<pastry::deferred::Camera>& camera);
 
+	void bind()
+	{ cm_.bind(); }
+
 	texture_cube_map cm_;
 	program sp_;
 	single_mesh mesh_;

@@ -7,6 +7,7 @@ in vec3 Color;
 out vec3 outPosition;
 out vec3 outNormal;
 out vec3 outColor;
+out vec3 outMaterial;
 
 void main()
 {
@@ -14,4 +15,5 @@ void main()
 	outNormal = Normal;
 	//outColor = mix(texture(texKitten, Texcoord), vec4(Color,1.0), 0.5);
 	outColor = Color;
+	outMaterial = vec3(0.5, 0.5, 0.5f); // roughness, metallic, specular
 }
