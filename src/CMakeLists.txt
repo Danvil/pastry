@@ -7,6 +7,11 @@ ADD_LIBRARY(pastry SHARED
 	text.cpp
 	postfx.cpp
 	obj.cpp
+	# pastry.deferred
+	deferred/DeferredRenderer.cpp
+	deferred/GBuffer.cpp
+	deferred/Geometry.cpp
+	deferred/Light.cpp
 	# SOIL
 	dep/SOIL2/etc1_utils.c
 	dep/SOIL2/image_DXT.c
