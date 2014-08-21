@@ -1403,30 +1403,30 @@ namespace pastry
 		: texture_base<GL_TEXTURE_2D>(tex_id)
 		{}
 		
-		template<typename S, unsigned C>
-		void set_image(GLint internalformat, unsigned w, unsigned h, const S* data=0)
-		{
-			glTexImage2D(target,
-				0, // level: use base image level
-				internalformat, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
-				w, h,
-				0, // must be 0
-				detail::texture_format<C>::result, // format of source data
-				detail::texture_type<S>::result, // type of source data
-				data);
-		}
-
 		template<typename S>
-		void set_image_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		void set_image_impl(GLint internalformat, GLenum format, unsigned w, unsigned h, const S* data)
 		{
+			bind();
 			glTexImage2D(target,
 				0, // level: use base image level
 				internalformat, // i.e. GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32F
 				w, h,
 				0, // must be 0
-				GL_DEPTH_COMPONENT, // format of source data
+				format, // format of source data
 				detail::texture_type<S>::result, // type of source data
 				data);
+		}
+
+		template<typename S, unsigned C>
+		void set_image(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		{
+			set_image_impl<S>(internalformat, w, h, detail::texture_format<C>::result, data);
+		}
+
+		template<typename S>
+		void set_image_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		{
+			set_image_impl<S>(internalformat, w, h, GL_DEPTH_COMPONENT, data);
 		}
 
 		template<typename S>
@@ -1458,6 +1458,54 @@ namespace pastry
 			tex.create();
 			tex.set_image_depth<S>(internalformat, w, h, data);
 			return tex;
+		}
+
+	};
+
+	struct texture_cube_map
+	: public texture_base<GL_TEXTURE_CUBE_MAP>
+	{
+		static GLenum cube_map_type(unsigned i)
+		{
+			constexpr GLenum types[6] = { 
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+				GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+				GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+				GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+			return types[i];
+		}
+
+		template<typename S, unsigned C>
+		void set_image(GLint internalformat, unsigned w, unsigned h, const std::vector<S*>& data={})
+		{
+			bind();
+			for(int i=0; i<6; i++) {
+				glTexImage2D(cube_map_type(i),
+					0, // level: use base image level
+					internalformat, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
+					w, h,
+					0, // must be 0
+					detail::texture_format<C>::result, // format of source data
+					detail::texture_type<S>::result, // type of source data
+					i < data.size() ? data[i] : 0);
+			}
+		}
+
+		template<typename S>
+		std::vector<std::vector<S>> get_image() const
+		{
+			std::vector<std::vector<S>> result(6, std::vector<S>(width()*height()*channels()));
+			for(int i=0; i<6; i++) {
+				bind();
+				glGetTexImage(cube_map_type(i),
+					0, // level: use base image level
+					format(),
+					detail::texture_type<S>::result,
+					result[i].data());
+			}
+			return result;
 		}
 
 	};
