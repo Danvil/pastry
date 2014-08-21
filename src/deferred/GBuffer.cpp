@@ -34,7 +34,26 @@ GBuffer::GBuffer()
 	fbo.unbind();
 }
 
-void GBuffer::startPrePass()
+void GBuffer::update()
+{
+	if(pastry::fb_has_changed()) {
+		pastry::fb_get_dimensions(width_, height_);
+		fbo.bind();
+		tex_final.bind();
+		tex_final.set_image<float, 3>(GL_RGB32F, width_, height_);
+		tex_position.bind();
+		tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
+		tex_normal.bind();
+		tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
+		tex_color.bind();
+		tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
+		tex_depth.bind();
+		tex_depth.set_image_depth<float>(GL_DEPTH24_STENCIL8, width_, height_);
+		fbo.unbind();
+	}
+}
+
+void GBuffer::prePass()
 {
 	dbg_++;
 
@@ -46,24 +65,7 @@ void GBuffer::startPrePass()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	fbo.unbind();
 
-	// use final buffer for rendering
-	fbo.bind(pastry::framebuffer::target::WRITE);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-	// set render settings
-	glEnable(GL_CULL_FACE);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
 	glDisable(GL_STENCIL_TEST);
-}
-
-void GBuffer::stopPrePass()
-{
-	if(dbg_ == 0) {
-		std::cout << "Storing GBuffer to files (1)" << std::endl;
-		pastry::texture_save(tex_final, "/tmp/deferred_final_pre.png");
-	}
 }
 
 void GBuffer::startGeometryPass()
@@ -88,25 +90,6 @@ void GBuffer::stopGeometryPass()
 		pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
 		pastry::texture_save(tex_color, "/tmp/deferred_color.png");
 		pastry::texture_save(tex_depth, "/tmp/deferred_depth.png");
-	}
-}
-
-void GBuffer::update()
-{
-	if(pastry::fb_has_changed()) {
-		pastry::fb_get_dimensions(width_, height_);
-		fbo.bind();
-		tex_final.bind();
-		tex_final.set_image<float, 3>(GL_RGB32F, width_, height_);
-		tex_position.bind();
-		tex_position.set_image<float, 3>(GL_RGB32F, width_, height_);
-		tex_normal.bind();
-		tex_normal.set_image<float, 3>(GL_RGB32F, width_, height_);
-		tex_color.bind();
-		tex_color.set_image<float, 3>(GL_RGB32F, width_, height_);
-		tex_depth.bind();
-		tex_depth.set_image_depth<float>(GL_DEPTH24_STENCIL8, width_, height_);
-		fbo.unbind();
 	}
 }
 
@@ -143,6 +126,27 @@ void GBuffer::stopLightPass()
 	if(dbg_ == 0) {
 		std::cout << "Storing GBuffer to files (3)" << std::endl;
 		pastry::texture_save(tex_final, "/tmp/deferred_final.png");
+	}
+}
+
+void GBuffer::startForwardPass()
+{
+	// use final buffer for rendering
+	fbo.bind(pastry::framebuffer::target::WRITE);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+	// set render settings
+	glEnable(GL_CULL_FACE);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+}
+
+void GBuffer::stopForwardPass()
+{
+	if(dbg_ == 0) {
+		std::cout << "Storing GBuffer to files (1)" << std::endl;
+		pastry::texture_save(tex_final, "/tmp/deferred_final_pre.png");
 	}
 }
 

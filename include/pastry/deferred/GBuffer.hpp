@@ -10,16 +10,18 @@ class GBuffer
 public:
 	GBuffer();
 
-	void startPrePass();
-	void stopPrePass();
+	void update();
+
+	void prePass();
 
 	void startGeometryPass();
 	void stopGeometryPass();
 
-	void update();
-
 	void startLightPass();
 	void stopLightPass();
+
+	void startForwardPass();
+	void stopForwardPass();
 
 	void finalPass();
 
