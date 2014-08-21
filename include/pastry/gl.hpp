@@ -1337,6 +1337,9 @@ namespace pastry
 				case GL_DEPTH_COMPONENT16:
 				case GL_DEPTH_COMPONENT24:
 				case GL_DEPTH_COMPONENT32F:
+				case GL_DEPTH_STENCIL:
+				case GL_DEPTH32F_STENCIL8:
+				case GL_DEPTH24_STENCIL8:
 				case GL_RED:
 				case GL_R8:
 				case GL_R32F:
@@ -1368,6 +1371,10 @@ namespace pastry
 				case GL_DEPTH_COMPONENT24:
 				case GL_DEPTH_COMPONENT32F:
 					return GL_DEPTH_COMPONENT;
+				case GL_DEPTH_STENCIL:
+				case GL_DEPTH32F_STENCIL8:
+				case GL_DEPTH24_STENCIL8:
+					return GL_DEPTH_STENCIL;
 				case GL_RED:
 				case GL_R8:
 				case GL_R32F:
@@ -1407,8 +1414,7 @@ namespace pastry
 		: texture_base<GL_TEXTURE_2D>(tex_id)
 		{}
 		
-		template<typename S>
-		void set_image_impl(GLint internalformat, unsigned w, unsigned h, GLenum format, const S* data)
+		void set_image_impl(GLint internalformat, unsigned w, unsigned h, GLenum format, GLenum type, const void* data)
 		{
 			bind();
 			glTexImage2D(target,
@@ -1417,7 +1423,7 @@ namespace pastry
 				w, h,
 				0, // must be 0
 				format, // format of source data
-				detail::texture_type<S>::result, // type of source data
+				type, // type of source data
 				data);
 		}
 
@@ -1425,14 +1431,23 @@ namespace pastry
 		void set_image(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
 			 // internalformat is i.e. GL_RGBA8, GL_RGB32F, ...
-			set_image_impl<S>(internalformat, w, h, detail::texture_format<C>::result, data);
+			set_image_impl(internalformat, w, h, detail::texture_format<C>::result, detail::texture_type<S>::result, data);
 		}
 
 		template<typename S>
 		void set_image_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
 			 // internalformat is i.e. GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32F
-			set_image_impl<S>(internalformat, w, h, GL_DEPTH_COMPONENT, data);
+			set_image_impl(internalformat, w, h, GL_DEPTH_COMPONENT, detail::texture_type<S>::result, data);
+		}
+
+		void set_image_depth_stencil(GLint internalformat, unsigned w, unsigned h)
+		{
+			 // internalformat is i.e. GL_DEPTH32F_STENCIL8, GL_DEPTH24_STENCIL8
+			GLenum type = 0;
+			if(internalformat == GL_DEPTH24_STENCIL8) type = GL_UNSIGNED_INT_24_8;
+			if(internalformat == GL_DEPTH32F_STENCIL8) type = GL_FLOAT_32_UNSIGNED_INT_24_8_REV; // ??
+			set_image_impl(internalformat, w, h, GL_DEPTH_STENCIL, type, 0);
 		}
 
 		template<typename S>
