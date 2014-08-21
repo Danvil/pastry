@@ -150,6 +150,7 @@ class MeshObject
 {
 public:
 	MeshObject(const std::string& fn_obj)
+	: pose_(Eigen::Matrix4f::Identity())
 	{
 		mesh_ = pastry::single_mesh(GL_TRIANGLES);
 
@@ -167,8 +168,6 @@ public:
 		mesh_.set_vertices(GetData(meshdata));
 
 		sp_ = pastry::load_program("assets/deferred/render");
-		sp_.get_uniform<Eigen::Matrix4f>("proj").set(g_camera.projection);
-		sp_.get_uniform<Eigen::Matrix4f>("view").set(g_camera.view);
 
 		va_ = pastry::vertex_array(sp_, {
 			{"position", vbo, "pos"},
@@ -185,6 +184,8 @@ public:
 	void render()
 	{
 		sp_.use();
+		sp_.get_uniform<Eigen::Matrix4f>("proj").set(g_camera.projection);
+		sp_.get_uniform<Eigen::Matrix4f>("view").set(g_camera.view*pose_);
 		va_.bind();
 		mesh_.render();
 	}
@@ -442,25 +443,33 @@ int main(void)
 
 	// camera
 	{
-		g_camera.projection = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 10.0f);
-		g_camera.view = pastry::lookAt({2,4,3},{0,0,0},{0,0,-1});
+		g_camera.projection = pastry::math_perspective_projection(90.0f/180.0f*3.1415f, 1.0f, 100.0f);
+		g_camera.view = pastry::lookAt(3*Eigen::Vector3f{2,4,3},{0,0,0},{0,0,-1});
 	}
 
 	// geometry
 	{
-		auto geom = std::make_shared<MeshObject>("assets/suzanne.obj");
-		dr->add(geom);
+		constexpr int R = 3;
+		for(int x=-R; x<=+R; x++) {
+			for(int y=-R; y<=+R; y++) {
+				auto geom = std::make_shared<MeshObject>("assets/suzanne.obj");
+				Eigen::Affine3f pose = Eigen::Translation3f(3.0f*Eigen::Vector3f(x,y,0)) *  Eigen::AngleAxisf(0.0f,Eigen::Vector3f{0,0,1});
+				std::cout << pose.matrix() << std::endl;
+				geom->setPose(pose.matrix());
+				dr->add(geom);				
+			}
+		}
 	}
 
 	// lights
 	{
 		auto light = std::make_shared<LightObject>();
-		light->setLightPosition({+1,3,4});
+		light->setLightPosition({+3,3,4});
 		dr->add(light);
 	}
 	{
 		auto light = std::make_shared<LightObject>();
-		light->setLightPosition({-2,3,4});
+		light->setLightPosition({-4,1,4});
 		light->setLightColor({1,0,0});
 		dr->add(light);
 	}
