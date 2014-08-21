@@ -306,7 +306,7 @@ Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& center
 	Result(3,0) =-s.dot(eye);
 	Result(3,1) =-u.dot(eye);
 	Result(3,2) = f.dot(eye);
-	return Result;
+	return Result.transpose();
 }
 
 void math_backproject(
