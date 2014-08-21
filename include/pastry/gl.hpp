@@ -1474,13 +1474,35 @@ namespace pastry
 		static GLenum cube_map_type(unsigned i)
 		{
 			constexpr GLenum types[6] = { 
-				GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-				GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-				GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-				GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-				GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-				GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+				GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // left 
+				GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // front
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X, // right
+				GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // back
+				GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, // bottom
+				GL_TEXTURE_CUBE_MAP_POSITIVE_Y  // top
+			};
 			return types[i];
+		}
+
+		texture_cube_map()
+		{}
+
+		texture_cube_map(glid_t tex_id)
+		: texture_base<GL_TEXTURE_CUBE_MAP>(tex_id)
+		{}
+		
+		template<typename S, unsigned C>
+		void set_image(GLenum target, GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		{
+			bind();
+			glTexImage2D(target,
+				0, // level: use base image level
+				internalformat, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
+				w, h,
+				0, // must be 0
+				detail::texture_format<C>::result, // format of source data
+				detail::texture_type<S>::result, // type of source data
+				data);
 		}
 
 		template<typename S, unsigned C>
