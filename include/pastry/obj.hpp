@@ -34,6 +34,6 @@ namespace pastry
 		float nx, ny, nz;
 	};
 
-	std::vector<ObjVertex> GetVertexData(const ObjMesh& mesh);
+	std::vector<ObjVertex> GetVertexData(const ObjMesh& mesh, float scale=1.0f, bool invert_normals=false);
 
 }

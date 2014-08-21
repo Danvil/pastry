@@ -22,6 +22,10 @@ namespace pastry
 	ObjMesh LoadImpl(const std::string& fn)
 	{
 		std::ifstream ifs(fn);
+		if(!ifs.is_open()) {
+			std::cerr << "Could not load obj file '" << fn << "'" << std::endl;
+			return ObjMesh{};
+		}
 		ObjMesh mesh;
 		mesh.v.emplace_back(Eigen::Vector3f::Zero());
 		mesh.uv.emplace_back(Eigen::Vector2f::Zero());
@@ -101,23 +105,24 @@ namespace pastry
 		return s_loader.Load(fn);
 	}
 
-	ObjVertex GetObjVertex(const ObjMesh& mesh, const ObjVertexIndices& v)
+	ObjVertex GetObjVertex(const ObjMesh& mesh, const ObjVertexIndices& v, float scale, bool invert_normals)
 	{
+		float ns = (invert_normals ? -1.0f : 1.0f);
 		return {
-			mesh.v[v.v][0], mesh.v[v.v][1], mesh.v[v.v][2],
+			scale*mesh.v[v.v][0], scale*mesh.v[v.v][1], scale*mesh.v[v.v][2],
 			mesh.uv[v.uv][0], mesh.uv[v.uv][1],
-			mesh.vn[v.vn][0], mesh.vn[v.vn][1], mesh.vn[v.vn][2]
+			ns*mesh.vn[v.vn][0], ns*mesh.vn[v.vn][1], ns*mesh.vn[v.vn][2]
 		};
 	}
 
-	std::vector<ObjVertex> GetVertexData(const ObjMesh& mesh)
+	std::vector<ObjVertex> GetVertexData(const ObjMesh& mesh, float scale, bool invert_normals)
 	{
 		std::vector<ObjVertex> result;
 		result.reserve(mesh.f.size() * 3 * 8);
 		for(const auto& f : mesh.f) {
-			result.push_back(GetObjVertex(mesh, f.a));
-			result.push_back(GetObjVertex(mesh, f.c));
-			result.push_back(GetObjVertex(mesh, f.b));
+			result.push_back(GetObjVertex(mesh, f.a, scale, invert_normals));
+			result.push_back(GetObjVertex(mesh, f.c, scale, invert_normals));
+			result.push_back(GetObjVertex(mesh, f.b, scale, invert_normals));
 		}
 		return result;
 	}
