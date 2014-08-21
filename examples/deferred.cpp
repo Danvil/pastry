@@ -480,7 +480,6 @@ int main(void)
 			for(int y=-R; y<=+R; y++) {
 				auto geom = std::make_shared<MeshObject>("assets/suzanne.obj");
 				Eigen::Affine3f pose = Eigen::Translation3f(3.0f*Eigen::Vector3f(x,y,0)) *  Eigen::AngleAxisf(0.0f,Eigen::Vector3f{0,0,1});
-				std::cout << pose.matrix() << std::endl;
 				geom->setPose(pose.matrix());
 				dr->add(geom);				
 			}
