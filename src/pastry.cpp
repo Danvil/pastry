@@ -410,6 +410,7 @@ texture_2d texture_load(const std::string& fn)
 
 void texture_save(const texture_2d& tex, const std::string& fn)
 {
+	std::cout << "Saving texture " << tex.width() << "x" << tex.height() << "x" << tex.channels() << " to '" << fn << "'" << std::endl;
 	std::vector<unsigned char> img = tex.get_image<unsigned char>();
 	SOIL_save_image(
 		fn.data(),

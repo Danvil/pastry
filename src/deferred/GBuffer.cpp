@@ -51,6 +51,7 @@ void GBuffer::startGeometryPass()
 void GBuffer::stopGeometryPass()
 {
 	if(dbg_ == 50) {
+		std::cout << "Storing GBuffer to files (1)" << std::endl;
 		pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
 		pastry::texture_save(tex_normal, "/tmp/deferred_normal.png");
 		pastry::texture_save(tex_color, "/tmp/deferred_color.png");
@@ -108,6 +109,7 @@ void GBuffer::stopLightPass()
 	glDisable(GL_BLEND);
 
 	if(dbg_ == 50) {
+		std::cout << "Storing GBuffer to files (2)" << std::endl;
 		pastry::texture_save(tex_final, "/tmp/deferred_final.png");
 	}
 }

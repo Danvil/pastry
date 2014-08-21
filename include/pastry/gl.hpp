@@ -1283,10 +1283,14 @@ namespace pastry
 		void set_wrap_t(GLint value)
 		{ glTexParameteri(target, GL_TEXTURE_WRAP_T, value); }
 		
+		void set_wrap_r(GLint value)
+		{ glTexParameteri(target, GL_TEXTURE_WRAP_R, value); }
+		
 		void set_wrap(GLint value)
 		{
 			set_wrap_s(value);
 			set_wrap_t(value);
+			set_wrap_r(value);
 		}
 		
 		void set_border_color(float cr, float cg, float cb)
@@ -1409,7 +1413,7 @@ namespace pastry
 			bind();
 			glTexImage2D(target,
 				0, // level: use base image level
-				internalformat, // i.e. GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32F
+				internalformat,
 				w, h,
 				0, // must be 0
 				format, // format of source data
@@ -1420,12 +1424,14 @@ namespace pastry
 		template<typename S, unsigned C>
 		void set_image(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
+			 // internalformat is i.e. GL_RGBA8, GL_RGB32F, ...
 			set_image_impl<S>(internalformat, w, h, detail::texture_format<C>::result, data);
 		}
 
 		template<typename S>
 		void set_image_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
+			 // internalformat is i.e. GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32F
 			set_image_impl<S>(internalformat, w, h, GL_DEPTH_COMPONENT, data);
 		}
 
