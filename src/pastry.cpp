@@ -393,7 +393,7 @@ Eigen::Vector2f mouse_get_position()
 
 // ----- TEXTURE LOADING -------------------------------------------------------
 
-texture_base texture_load(const std::string& fn)
+texture_2d texture_load(const std::string& fn)
 {
 	GLuint q = SOIL_load_OGL_texture(
 		fn.data(),
@@ -405,10 +405,10 @@ texture_base texture_load(const std::string& fn)
 		std::cerr << "ERROR in texture_load: Failed to load image '" << fn << "'" << std::endl;
 		throw file_not_found(fn);
 	}
-	return texture_base{q};
+	return texture_2d{q};
 }
 
-void texture_save(const texture_base& tex, const std::string& fn)
+void texture_save(const texture_2d& tex, const std::string& fn)
 {
 	std::vector<unsigned char> img = tex.get_image<unsigned char>();
 	SOIL_save_image(

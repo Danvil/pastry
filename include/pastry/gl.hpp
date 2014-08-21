@@ -1251,10 +1251,11 @@ namespace pastry
 		#undef TEXTURE_TYPE
 	}
 
+	template<GLenum TARGET>
 	struct texture_base
 	: public detail::resource<rid::texture_base>
 	{
-		static constexpr GLenum target = GL_TEXTURE_2D;
+		static constexpr GLenum target = TARGET;
 
 		texture_base()
 		{}
@@ -1385,6 +1386,23 @@ namespace pastry
 			}
 		}
 
+		static void unbind()
+		{ glBindTexture(target, detail::INVALID_ID); }
+
+		static void activate_unit(unsigned int num)
+		{ glActiveTexture(GL_TEXTURE0 + num); }
+	};
+
+	struct texture_2d
+	: public texture_base<GL_TEXTURE_2D>
+	{
+		texture_2d()
+		{}
+
+		texture_2d(glid_t tex_id)
+		: texture_base<GL_TEXTURE_2D>(tex_id)
+		{}
+		
 		template<typename S, unsigned C>
 		void set_image(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
@@ -1425,28 +1443,23 @@ namespace pastry
 		}
 
 		template<typename S, unsigned C>
-		static texture_base create(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		static texture_2d create_normal(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
-			texture_base tex;
+			texture_2d tex;
 			tex.create();
 			tex.set_image<S,C>(internalformat, w, h, data);
 			return tex;
 		}
 
 		template<typename S>
-		static texture_base create_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		static texture_2d create_depth(GLint internalformat, unsigned w, unsigned h, const S* data=0)
 		{
-			texture_base tex;
+			texture_2d tex;
 			tex.create();
 			tex.set_image_depth<S>(internalformat, w, h, data);
 			return tex;
 		}
 
-		static void unbind()
-		{ glBindTexture(target, detail::INVALID_ID); }
-
-		static void activate_unit(unsigned int num)
-		{ glActiveTexture(GL_TEXTURE0 + num); }
 	};
 
 	namespace TextureModes
@@ -1508,7 +1521,7 @@ namespace pastry
 
 	template<unsigned CHANNELS, int MODE, unsigned BPC>
 	struct texture
-	: public texture_base
+	: public texture_2d
 	{
 		constexpr GLint internal_format()
 		{ return detail::texture_internal_format<CHANNELS,MODE,BPC>::result; }
@@ -1549,7 +1562,7 @@ namespace pastry
 		void bind(target t=target::BOTH)
 		{ glBindFramebuffer(GetTarget(t), id()); }
 		
-		void attach(GLenum attachment, const texture_base& tex)
+		void attach(GLenum attachment, const texture_2d& tex)
 		{ glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex.id(), 0); }
 		
 		void attach(GLenum attachment, const renderbuffer& rbo)

@@ -94,11 +94,11 @@ void GBuffer::startLightPass()
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
 
-	pastry::texture_base::activate_unit(0);
+	pastry::texture_2d::activate_unit(0);
 	tex_position.bind();		
-	pastry::texture_base::activate_unit(1);
+	pastry::texture_2d::activate_unit(1);
 	tex_normal.bind();
-	pastry::texture_base::activate_unit(2);
+	pastry::texture_2d::activate_unit(2);
 	tex_color.bind();
 
 }

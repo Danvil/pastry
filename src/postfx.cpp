@@ -6,7 +6,7 @@ namespace postfx {
 struct buffer
 {
 	int width_, height_;
-	pastry::texture_base tex;
+	pastry::texture_2d tex;
 	pastry::renderbuffer rbo;
 	pastry::framebuffer fbo;
 
@@ -121,14 +121,14 @@ struct effect
 	void update(float t, float dt)
 	{ sfx_->update(t, dt, spo); }
 
-	void render(const texture_base& tex, unsigned w, unsigned h)
+	void render(const texture_2d& tex, unsigned w, unsigned h)
 	{
 		// render quad with texture
 		spo.use();
 		if(u_dim.valid()) {
 			u_dim.set({w,h});
 		}
-		pastry::texture_base::activate_unit(0);
+		pastry::texture_2d::activate_unit(0);
 		tex.bind();
 		vbo.bind();
 		vao.bind();

@@ -131,7 +131,7 @@ public:
 class render_to_texture : public pastry::renderling
 {
 	unsigned width_, height_;
-	pastry::texture_base tex_;
+	pastry::texture_2d tex_;
 	pastry::renderbuffer rbo;
 	pastry::framebuffer fbo;
 
@@ -149,7 +149,7 @@ public:
 		resize(w,h);
 	}
 
-	const pastry::texture_base& tex() {
+	const pastry::texture_2d& tex() {
 		return tex_;
 	}
 
@@ -186,12 +186,12 @@ private:
 	pastry::array_buffer vbo;
 	pastry::vertex_array vao;
 
-	pastry::texture_base tex_mask_;
+	pastry::texture_2d tex_mask_;
 
-	pastry::texture_base tex_;
+	pastry::texture_2d tex_;
 
 public:
-	mosaik(const pastry::texture_base& tex)
+	mosaik(const pastry::texture_2d& tex)
 	: tex_(tex)
 	{
 		tex_mask_ = pastry::texture_load("assets/mask.png");
@@ -265,9 +265,9 @@ public:
 		glViewport(0,0,w,h);
 		// render quad with texture
 		spo.use();
-		pastry::texture_base::activate_unit(0);
+		pastry::texture_2d::activate_unit(0);
 		tex_.bind();
-		pastry::texture_base::activate_unit(1);
+		pastry::texture_2d::activate_unit(1);
 		tex_mask_.bind();
 		vbo.bind();
 		vao.bind();
