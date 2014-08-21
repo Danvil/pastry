@@ -184,7 +184,7 @@ void run()
 		// fps
 		num_frames ++;
 		fps_delta_time += delta_time;
-		if(num_frames >= 100 && fps_delta_time >= 1.0f) {
+		if((num_frames >= 100 && fps_delta_time > 0) || (num_frames > 0 && fps_delta_time >= 1.0f)) {
 			float current_fps = static_cast<float>(num_frames) / fps_delta_time;
 			num_frames = 0;
 			fps_delta_time = 0.0f;
@@ -194,7 +194,7 @@ void run()
 			fps = current_fps;
 			// set window title
 			char buffer[512];
-			sprintf(buffer, "pastry - %.0f fps", fps);
+			sprintf(buffer, "pastry - %.1f fps", fps);
 			glfwSetWindowTitle(g_window, buffer);
 		}
 	}
