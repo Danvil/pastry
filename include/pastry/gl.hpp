@@ -1347,6 +1347,9 @@ namespace pastry
 			return val;
 		}
 		
+		GLint internalformat() const
+		{ return get_param_i(GL_TEXTURE_INTERNAL_FORMAT); }
+
 		int width() const
 		{ return get_param_i(GL_TEXTURE_WIDTH); }
 		
@@ -1355,8 +1358,7 @@ namespace pastry
 		
 		int channels() const
 		{
-			GLint tif = get_param_i(GL_TEXTURE_INTERNAL_FORMAT);
-			switch(tif) {
+			switch(internalformat()) {
 				case GL_DEPTH_COMPONENT:
 				case GL_DEPTH_COMPONENT16:
 				case GL_DEPTH_COMPONENT24:
@@ -1388,8 +1390,7 @@ namespace pastry
 
 		GLenum format() const
 		{
-			GLint tif = get_param_i(GL_TEXTURE_INTERNAL_FORMAT);
-			switch(tif) {
+			switch(internalformat()) {
 				case GL_DEPTH_COMPONENT:
 				case GL_DEPTH_COMPONENT16:
 				case GL_DEPTH_COMPONENT24:
@@ -1478,13 +1479,19 @@ namespace pastry
 		std::vector<S> get_image() const
 		{
 			bind();
-			std::vector<S> buff(width()*height()*channels());
-			glGetTexImage(target,
-				0, // level: use base image level
-				format(),
-				detail::texture_type<S>::result,
-				buff.data());
-			return buff;
+			if(internalformat() == GL_DEPTH24_STENCIL8) {
+				std::vector<unsigned> buff(width()*height());
+				glGetTexImage(target, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, buff.data());
+				std::vector<unsigned char> buff2(width()*height());
+				for(size_t i=0; i<buff2.size(); i++) buff2[i] = (buff[i] >> 24); // depth
+				for(size_t i=0; i<buff2.size(); i++) buff2[i] = buff[i] & 0xFF; // stencil
+				return buff2;
+			}
+			else {
+				std::vector<S> buff(width()*height()*channels());
+				glGetTexImage(target, 0, format(), detail::texture_type<S>::result, buff.data());
+				return buff;
+			}
 		}
 
 		template<typename S, unsigned C>

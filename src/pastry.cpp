@@ -432,7 +432,7 @@ void texture_save(const texture_2d& tex, const std::string& fn)
 	SOIL_save_image(
 		fn.data(),
 		SOIL_SAVE_TYPE_PNG,
-		tex.width(), tex.height(), tex.channels(),
+		tex.width(), tex.height(), img.size() / (tex.width() * tex.height()), // hack for depth_stencil
 		img.data()
 	);
 }
