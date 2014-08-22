@@ -32,9 +32,6 @@ public:
 
 	const std::shared_ptr<Geometry>& geometry() const
 	{ return gameObject->geometry; }
-
-	const std::shared_ptr<Script>& script() const
-	{ return gameObject->script; }
 };
 
 }}

@@ -2,6 +2,7 @@
 
 #include <pastry/deferred/Forward.hpp>
 #include <memory>
+#include <vector>
 
 namespace pastry {
 namespace deferred {
@@ -21,7 +22,8 @@ public:
 	std::shared_ptr<SkyBox> skybox;
 	std::shared_ptr<Light> light;
 	std::shared_ptr<Geometry> geometry;
-	std::shared_ptr<Script> script;
+
+	std::vector<std::shared_ptr<Component>> components;
 
 };
 
@@ -35,7 +37,5 @@ std::shared_ptr<GameObject> FactorEnvironmentLight();
 std::shared_ptr<GameObject> FactorPointLight();
 
 std::shared_ptr<GameObject> FactorGeometry();
-
-std::shared_ptr<GameObject> FactorScript();
 
 }}

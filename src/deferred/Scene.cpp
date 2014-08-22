@@ -1,28 +1,8 @@
 #include <pastry/deferred/Scene.hpp>
-#include <algorithm>
+#include <pastry/deferred/Tools.hpp>
 
 namespace pastry {
 namespace deferred {
-
-template<typename T>
-void add_impl(std::vector<std::shared_ptr<T>>& v, const std::shared_ptr<T>& x)
-{
-	if(!x) return;
-	auto it = std::find(v.begin(), v.end(), x);
-	if(it == v.end()) {
-		v.push_back(x);
-	}
-}
-
-template<typename T>
-void remove_impl(std::vector<std::shared_ptr<T>>& v, const std::shared_ptr<T>& x)
-{
-	if(!x) return;
-	auto it = std::find(v.begin(), v.end(), x);
-	if(it != v.end()) {
-		v.erase(it);
-	}
-}
 
 
 Scene::Scene()
@@ -47,7 +27,8 @@ void Scene::setMainSkybox(const std::shared_ptr<GameObject>& go)
 
 void Scene::add(const std::shared_ptr<GameObject>& go)
 {
-	add_impl(game_objects_, go);
+	if(!go) return;
+	UniqueAdd(game_objects_, go);
 	if(go->geometry) {
 		add(go->geometry);
 	}
@@ -59,7 +40,8 @@ void Scene::add(const std::shared_ptr<GameObject>& go)
 
 void Scene::remove(const std::shared_ptr<GameObject>& go)
 {
-	remove_impl(game_objects_, go);
+	if(!go) return;
+	UniqueRemove(game_objects_, go);
 	if(go->geometry) {
 		remove(go->geometry);
 	}
@@ -71,22 +53,22 @@ void Scene::remove(const std::shared_ptr<GameObject>& go)
 
 void Scene::add(const std::shared_ptr<pastry::deferred::Geometry>& geometry)
 {
-	add_impl(geometry_, geometry);
+	UniqueAdd(geometry_, geometry);
 }
 
 void Scene::add(const std::shared_ptr<pastry::deferred::Light>& light)
 {
-	add_impl(lights_, light);
+	UniqueAdd(lights_, light);
 }
 
 void Scene::remove(const std::shared_ptr<Geometry>& geometry)
 {
-	remove_impl(geometry_, geometry);
+	UniqueRemove(geometry_, geometry);
 }
 
 void Scene::remove(const std::shared_ptr<Light>& light)
 {
-	remove_impl(lights_, light);
+	UniqueRemove(lights_, light);
 }
 
 }}

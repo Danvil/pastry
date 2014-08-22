@@ -4,6 +4,7 @@
 #include <pastry/deferred/SkyBox.hpp>
 #include <pastry/deferred/Geometry.hpp>
 #include <pastry/deferred/Light.hpp>
+#include <pastry/deferred/Script.hpp>
 #include <pastry/obj.hpp>
 #include <pastry/pastry.hpp>
 
@@ -20,8 +21,15 @@ void DeferredRenderer::setScene(const std::shared_ptr<Scene>& scene)
 
 void DeferredRenderer::update(float t, float dt)
 {
-	scene_->mainCamera()->update();
 	gbuff_.update();
+	scene_->mainCamera()->update();
+	for(const auto& v : scene_->gameObjects()) {
+		for(const auto& c : v->components) {
+			auto script = std::dynamic_pointer_cast<Script>(c);
+			if(script)
+				script->update(t,dt);
+		}
+	}
 }
 
 void DeferredRenderer::render()

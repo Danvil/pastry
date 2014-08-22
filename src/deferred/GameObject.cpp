@@ -5,41 +5,36 @@
 #include <pastry/deferred/Scene.hpp>
 #include <pastry/deferred/Script.hpp>
 #include <pastry/deferred/SkyBox.hpp>
+#include <pastry/deferred/Tools.hpp>
 #include <exception>
 
 namespace pastry {
 namespace deferred {
-
-template<typename C>
-bool IsOfType(const std::shared_ptr<Component>& c)
-{
-	return std::dynamic_pointer_cast<C>(c).get() != nullptr;
-}
 
 GameObject::GameObject()
 {
 
 }
 
-#define ITERATE_COMPONENTS(M) \
+#define ITERATE_COMPONENT_FASTLINKS(M) \
 	M(Camera, camera) \
 	M(SkyBox, skybox) \
 	M(Light, light) \
-	M(Geometry, geometry) \
-	M(Script, script)
+	M(Geometry, geometry)
 
 void GameObject::attach(const std::shared_ptr<Component>& c)
 {
 	// general
 	c->gameObject = shared_from_this();
+	UniqueAdd(c->gameObject->components, c);
 	// special
-	#define PDGO_ATTACH(T,N) if(IsOfType<T>(c)) { this->N = std::dynamic_pointer_cast<T>(c); return; }
-	ITERATE_COMPONENTS(PDGO_ATTACH)
+	#define PDGO_ATTACH(T,N) if(IsOfType<T>(c)) { \
+		if(this->N && scene) scene->remove(this->N); \
+		this->N = std::dynamic_pointer_cast<T>(c); \
+		if(scene) scene->add(c); \
+		return; }
+	ITERATE_COMPONENT_FASTLINKS(PDGO_ATTACH)
 	#undef PDGO_ATTACH
-	// active scene objects
-	if(scene) {
-		scene->add(c);
-	}
 	// special else:
 	throw std::runtime_error("Unknown Component type!");
 }
@@ -49,15 +44,15 @@ void GameObject::detach(const std::shared_ptr<Component>& c)
 	if(c->gameObject != shared_from_this()) {
 		throw std::runtime_error("Component is not attached to GameObject!");
 	}
+	UniqueRemove(c->gameObject->components, c);
 	c->gameObject = nullptr;
 	// special
-	#define PDGO_DETACH(T,N) if(IsOfType<T>(c)) { this->N = nullptr; return; }
-	ITERATE_COMPONENTS(PDGO_DETACH)
+	#define PDGO_DETACH(T,N) if(IsOfType<T>(c)) { \
+		if(scene) scene->remove(this->N); \
+		this->N = nullptr; \
+		return; }
+	ITERATE_COMPONENT_FASTLINKS(PDGO_DETACH)
 	#undef PDGO_DETACH
-	// active scene objects
-	if(scene) {
-		scene->remove(c);
-	}
 	// special else:
 	throw std::runtime_error("Unknown Component type!");
 }
@@ -104,14 +99,6 @@ std::shared_ptr<GameObject> FactorGeometry()
 {
 	auto go = FactorGameObject();
 	auto c = std::make_shared<Geometry>();
-	go->attach(c);
-	return go;
-}
-
-std::shared_ptr<GameObject> FactorScript()
-{
-	auto go = FactorGameObject();
-	auto c = std::make_shared<Script>();
 	go->attach(c);
 	return go;
 }

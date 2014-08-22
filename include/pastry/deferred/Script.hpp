@@ -10,7 +10,7 @@ class Script
 {
 public:
 	virtual void initialize() {}
-	virtual void update() {}
+	virtual void update(float t, float dt) {}
 };
 
 }}
