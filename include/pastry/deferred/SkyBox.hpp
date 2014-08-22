@@ -11,7 +11,7 @@ class Camera;
 class SkyBox
 {
 public:
-	SkyBox(const std::string& fn);
+	SkyBox(const std::string& fn_tex, const std::string& fn_obj);
 
 	void render(const std::shared_ptr<pastry::deferred::Camera>& camera);
 

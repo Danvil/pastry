@@ -38,7 +38,7 @@ int main(void)
 	auto dr = std::make_shared<pastry::deferred::DeferredRenderer>();
 	pastry::scene_add(dr);
 
-	auto skybox = std::make_shared<pastry::deferred::SkyBox>("assets/stormydays_cm.jpg");
+	auto skybox = std::make_shared<pastry::deferred::SkyBox>("assets/stormydays_cm.jpg", "assets/sphere_4.obj");
 
 	// camera
 	{

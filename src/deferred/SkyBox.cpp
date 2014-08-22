@@ -27,9 +27,9 @@ slimage::Image3ub Smooth(const slimage::Image3ub& v)
 	return result;
 }
 
-SkyBox::SkyBox(const std::string& fn)
+SkyBox::SkyBox(const std::string& fn_tex, const std::string& fn_obj)
 {
-	texture_2d tex = texture_load(fn);
+	texture_2d tex = texture_load(fn_tex);
 	std::vector<unsigned char> data = tex.get_image<unsigned char>();
 	unsigned width = tex.width();
 	unsigned height = tex.height();
@@ -60,7 +60,7 @@ SkyBox::SkyBox(const std::string& fn)
 		GL_STATIC_DRAW
 	);
 	mesh_.set_vertex_bo(vbo);
-	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh("assets/box.obj"), 15.0f, true));
+	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj), 15.0f, true));
 
 	sp_ = pastry::load_program("assets/skybox");
 	sp_.get_uniform<int>("gCubemapTexture").set(0);
