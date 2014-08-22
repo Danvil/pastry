@@ -83,7 +83,7 @@ void PointLight::render(const std::shared_ptr<Camera>& camera)
 {
 	sp_.use();
 
-	Eigen::Vector4f lightpos4 = camera->view*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
+	Eigen::Vector4f lightpos4 = camera->view()*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
 	Eigen::Vector3f lightpos(lightpos4[0],lightpos4[1],lightpos4[2]);
 	sp_.get_uniform<Eigen::Vector3f>("lightpos").set(lightpos);
 	sp_.get_uniform<Eigen::Vector3f>("lightcol").set(light_color_);

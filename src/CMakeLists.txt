@@ -8,6 +8,7 @@ ADD_LIBRARY(pastry SHARED
 	postfx.cpp
 	obj.cpp
 	# pastry.deferred
+	deferred/Camera.cpp
 	deferred/DeferredRenderer.cpp
 	deferred/GBuffer.cpp
 	deferred/Geometry.cpp

@@ -33,8 +33,8 @@ Geometry::Geometry(const std::string& fn_obj)
 void Geometry::render(const std::shared_ptr<Camera>& camera)
 {
 	sp_.use();
-	sp_.get_uniform<Eigen::Matrix4f>("proj").set(camera->projection);
-	sp_.get_uniform<Eigen::Matrix4f>("view").set(camera->view*pose_);
+	sp_.get_uniform<Eigen::Matrix4f>("proj").set(camera->projection());
+	sp_.get_uniform<Eigen::Matrix4f>("view").set(camera->view()*pose_);
 	va_.bind();
 	mesh_.render();
 }

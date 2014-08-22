@@ -55,7 +55,7 @@ void SkyBox::render(const std::shared_ptr<pastry::deferred::Camera>& camera)
 	sp_.use();
 	Eigen::Affine3f pose = Eigen::Translation3f(Eigen::Vector3f{0,0,0})
 		* Eigen::AngleAxisf(-1.570796327f, Eigen::Vector3f{1,0,0});
-	sp_.get_uniform<Eigen::Matrix4f>("gWVP").set(camera->projection*camera->view*pose.matrix());
+	sp_.get_uniform<Eigen::Matrix4f>("gWVP").set(camera->projection()*camera->view()*pose.matrix());
 
 	va_.bind();
 	mesh_.render();

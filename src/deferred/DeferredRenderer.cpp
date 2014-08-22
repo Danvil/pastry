@@ -21,7 +21,8 @@ void DeferredRenderer::add(const std::shared_ptr<pastry::deferred::Light>& light
 
 void DeferredRenderer::update(float t, float dt)
 {
-
+	camera_->update();
+	gbuff_.update();
 }
 
 void DeferredRenderer::render()

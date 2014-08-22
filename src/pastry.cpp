@@ -252,7 +252,7 @@ Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown
 		n, f);
 }
 
-Eigen::Matrix4f math_perspective_projection(float l, float r, float t, float b, float n, float f)
+Eigen::Matrix4f math_perspective_projection_impl(float l, float r, float t, float b, float n, float f)
 {
 	// see http://www.songho.ca/opengl/gl_projectionmatrix.html
 	Eigen::Matrix4f m;
@@ -264,16 +264,15 @@ Eigen::Matrix4f math_perspective_projection(float l, float r, float t, float b, 
 	return m;
 }
 
-Eigen::Matrix4f math_perspective_projection(float w, float h, float n, float f)
+Eigen::Matrix4f math_perspective_projection_impl(float w, float h, float n, float f)
 {
-	return math_perspective_projection(-0.5f*w, +0.5f*w, -0.5f*h, +0.5f*h, n, f);
+	return math_perspective_projection_impl(-0.5f*w, +0.5f*w, -0.5f*h, +0.5f*h, n, f);
 }
 
-Eigen::Matrix4f math_perspective_projection(float angle, float n, float f)
+Eigen::Matrix4f math_perspective_projection(float angle, float aspect, float n, float f)
 {
 	float q = std::tan(0.5f*angle);
-	float a = fb_get_aspect(); // w/h
-	return math_perspective_projection(a*q*n,q*n,n,f);
+	return math_perspective_projection_impl(q*n, aspect*q*n, n, f);
 }
 
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
