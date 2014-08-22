@@ -10,9 +10,11 @@ ADD_LIBRARY(pastry SHARED
 	# pastry.deferred
 	deferred/Camera.cpp
 	deferred/DeferredRenderer.cpp
+	deferred/GameObject.cpp
 	deferred/GBuffer.cpp
 	deferred/Geometry.cpp
 	deferred/Light.cpp
+	deferred/Scene.cpp
 	deferred/SkyBox.cpp
 	# SOIL
 	dep/SOIL2/etc1_utils.c

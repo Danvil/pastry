@@ -38,13 +38,13 @@ EnvironmentLight::EnvironmentLight()
 	va_.bind();
 }
 
-void EnvironmentLight::render(const std::shared_ptr<Camera>& camera)
+void EnvironmentLight::render()
 {
 	pastry::texture_cube_map::activate_unit(4);
-	camera->skybox()->bind();
+	mainSkybox()->bind();
 
 	sp_.use();
-	sp_.get_uniform<Eigen::Matrix3f>("cuberot").set(camera->skybox()->cubeRotate());
+	sp_.get_uniform<Eigen::Matrix3f>("cuberot").set(mainSkybox()->cubeRotate());
 
 	va_.bind();
 	mesh_.render();
@@ -86,11 +86,11 @@ PointLight::PointLight()
 	va_.bind();
 }
 
-void PointLight::render(const std::shared_ptr<Camera>& camera)
+void PointLight::render()
 {
 	sp_.use();
 
-	Eigen::Vector4f lightpos4 = camera->view()*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
+	Eigen::Vector4f lightpos4 = mainCamera()->view()*Eigen::Vector4f(light_pos_[0],light_pos_[1],light_pos_[2],1);
 	Eigen::Vector3f lightpos(lightpos4[0],lightpos4[1],lightpos4[2]);
 	sp_.get_uniform<Eigen::Vector3f>("lightpos").set(lightpos);
 	sp_.get_uniform<Eigen::Vector3f>("lightcol").set(light_color_);

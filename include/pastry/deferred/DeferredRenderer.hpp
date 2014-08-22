@@ -1,11 +1,9 @@
 #pragma once
 
+#include <pastry/deferred/Forward.hpp>
 #include <pastry/deferred/GBuffer.hpp>
-#include <pastry/deferred/Camera.hpp>
-#include <pastry/deferred/Light.hpp>
-#include <pastry/deferred/Geometry.hpp>
 #include <pastry/pastry.hpp>
-#include <pastry/gl.hpp>
+#include <memory>
 
 namespace pastry {
 namespace deferred {
@@ -16,22 +14,16 @@ class DeferredRenderer
 public:
 	DeferredRenderer();
 
-	void setCamera(const std::shared_ptr<pastry::deferred::Camera>& camera);
-
-	void add(const std::shared_ptr<pastry::deferred::Geometry>& mesh);
-
-	void add(const std::shared_ptr<pastry::deferred::Light>& light);
+	void setScene(const std::shared_ptr<Scene>& scene);
 
 	void update(float t, float dt);
 
 	void render();
 
-	pastry::deferred::GBuffer gbuff_;
+private:
+	GBuffer gbuff_;
 
-	std::shared_ptr<pastry::deferred::Camera> camera_;
-	
-	std::vector<std::shared_ptr<pastry::deferred::Geometry>> geometry_;
-	std::vector<std::shared_ptr<pastry::deferred::Light>> lights_;
+	std::shared_ptr<Scene> scene_;
 };
 
 }}

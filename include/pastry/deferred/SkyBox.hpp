@@ -1,6 +1,8 @@
 #pragma once
 
+#include <pastry/deferred/Component.hpp>
 #include <pastry/gl.hpp>
+#include <string>
 #include <memory>
 
 namespace pastry {
@@ -9,11 +11,16 @@ namespace deferred {
 class Camera;
 
 class SkyBox
+:	public Component
 {
 public:
-	SkyBox(const std::string& fn_tex, const std::string& fn_obj);
+	SkyBox();
 
-	void render(const std::shared_ptr<pastry::deferred::Camera>& camera);
+	void setTexture(const std::string& fn_tex);
+
+	void setGeometry(const std::string& fn_obj);
+
+	void render();
 
 	void bind()
 	{ cm_.bind(); }

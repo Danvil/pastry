@@ -1,4 +1,9 @@
 #include <pastry/deferred/DeferredRenderer.hpp>
+#include <pastry/deferred/Scene.hpp>
+#include <pastry/deferred/Camera.hpp>
+#include <pastry/deferred/SkyBox.hpp>
+#include <pastry/deferred/Geometry.hpp>
+#include <pastry/deferred/Light.hpp>
 #include <pastry/obj.hpp>
 #include <pastry/pastry.hpp>
 
@@ -8,18 +13,14 @@ namespace deferred {
 DeferredRenderer::DeferredRenderer()
 {}
 
-void DeferredRenderer::setCamera(const std::shared_ptr<pastry::deferred::Camera>& camera)
-{ camera_ = camera; }
-
-void DeferredRenderer::add(const std::shared_ptr<pastry::deferred::Geometry>& mesh)
-{ geometry_.push_back(mesh); }
-
-void DeferredRenderer::add(const std::shared_ptr<pastry::deferred::Light>& light)
-{ lights_.push_back(light); }
+void DeferredRenderer::setScene(const std::shared_ptr<Scene>& scene)
+{
+	scene_ = scene;
+}
 
 void DeferredRenderer::update(float t, float dt)
 {
-	camera_->update();
+	scene_->mainCamera()->update();
 	gbuff_.update();
 }
 
@@ -28,18 +29,18 @@ void DeferredRenderer::render()
 	gbuff_.prePass();
 
 	gbuff_.startGeometryPass();
-	for(const auto& v : geometry_) {
-		v->render(camera_);
+	for(const auto& v : scene_->geometry()) {
+		v->render();
 	}
 	gbuff_.stopGeometryPass();
 
 	gbuff_.startForwardPass();
-	camera_->skybox()->render(camera_);
+	scene_->mainSkybox()->render();
 	gbuff_.stopForwardPass();
 
 	gbuff_.startLightPass();
-	for(const auto& v : lights_) {
-		v->render(camera_);
+	for(const auto& v : scene_->lights()) {
+		v->render();
 	}
 	gbuff_.stopLightPass();
 

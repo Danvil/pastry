@@ -27,28 +27,10 @@ slimage::Image3ub Smooth(const slimage::Image3ub& v)
 	return result;
 }
 
-SkyBox::SkyBox(const std::string& fn_tex, const std::string& fn_obj)
+SkyBox::SkyBox()
 {
-	texture_2d tex = texture_load(fn_tex);
-	std::vector<unsigned char> data = tex.get_image<unsigned char>();
-	unsigned width = tex.width();
-	unsigned height = tex.height();
-	std::cout << "skybox " << width << "x" << height << ", size=" << data.size() << std::endl;
-	
-	slimage::Image3ub big(width, height);
-	std::copy(data.begin(), data.end(), big.pixel_pointer());
-
 	cm_.create();
 	cm_.set_filter(GL_LINEAR_MIPMAP_LINEAR);
-	for(unsigned k=0; k<6; k++) {
-		std::cout << "skybox side " << k << std::endl;
-		auto sub = slimage::SubImage(big, k*width/6, 0, width/6, height);
-		for(unsigned mm=0; (1<<mm) <= width && (1<<mm) <= height; mm++) {
-			std::cout << "skybox mipmap " << mm << ": " << sub.width() << "x" << sub.height() << std::endl;
-			cm_.set_image_mm<unsigned char, 3>(cm_.cube_map_type(k), GL_RGB8, mm, sub.width(), sub.height(), sub.pixel_pointer());
-			sub = Smooth(sub);
-		}
-	}
 
 	mesh_ = pastry::single_mesh(GL_TRIANGLES);
 	pastry::array_buffer vbo(
@@ -60,7 +42,6 @@ SkyBox::SkyBox(const std::string& fn_tex, const std::string& fn_obj)
 		GL_STATIC_DRAW
 	);
 	mesh_.set_vertex_bo(vbo);
-	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj), 15.0f, true));
 
 	sp_ = pastry::load_program("assets/skybox");
 	sp_.get_uniform<int>("gCubemapTexture").set(0);
@@ -71,7 +52,35 @@ SkyBox::SkyBox(const std::string& fn_tex, const std::string& fn_obj)
 	va_.bind();
 }
 
-void SkyBox::render(const std::shared_ptr<pastry::deferred::Camera>& camera)
+void SkyBox::setTexture(const std::string& fn_tex)
+{
+	texture_2d tex = texture_load(fn_tex);
+	std::vector<unsigned char> data = tex.get_image<unsigned char>();
+	unsigned width = tex.width();
+	unsigned height = tex.height();
+	std::cout << "skybox " << width << "x" << height << ", size=" << data.size() << std::endl;
+	
+	slimage::Image3ub big(width, height);
+	std::copy(data.begin(), data.end(), big.pixel_pointer());
+
+	for(unsigned k=0; k<6; k++) {
+		std::cout << "skybox side " << k << std::endl;
+		auto sub = slimage::SubImage(big, k*width/6, 0, width/6, height);
+		for(unsigned mm=0; (1<<mm) <= width && (1<<mm) <= height; mm++) {
+			std::cout << "skybox mipmap " << mm << ": " << sub.width() << "x" << sub.height() << std::endl;
+			cm_.set_image_mm<unsigned char, 3>(cm_.cube_map_type(k), GL_RGB8, mm, sub.width(), sub.height(), sub.pixel_pointer());
+			sub = Smooth(sub);
+		}
+	}
+
+}
+
+void SkyBox::setGeometry(const std::string& fn_obj)
+{
+	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj), 15.0f, true));
+}
+
+void SkyBox::render()
 {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
@@ -82,7 +91,7 @@ void SkyBox::render(const std::shared_ptr<pastry::deferred::Camera>& camera)
 	sp_.use();
 	Eigen::Affine3f pose = Eigen::Translation3f(Eigen::Vector3f{0,0,0})
 		* Eigen::AngleAxisf(-1.570796327f, Eigen::Vector3f{1,0,0});
-	sp_.get_uniform<Eigen::Matrix4f>("gWVP").set(camera->projection()*camera->view()*pose.matrix());
+	sp_.get_uniform<Eigen::Matrix4f>("gWVP").set(mainCamera()->projection()*mainCamera()->view()*pose.matrix());
 
 	va_.bind();
 	mesh_.render();

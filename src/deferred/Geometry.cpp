@@ -4,7 +4,7 @@
 namespace pastry {
 namespace deferred {
 
-Geometry::Geometry(const std::string& fn_obj)
+Geometry::Geometry()
 :	pose_(Eigen::Matrix4f::Identity()),
 	material_(0.5f, 0.0f, 0.5f)
 {
@@ -18,7 +18,6 @@ Geometry::Geometry(const std::string& fn_obj)
 		GL_STATIC_DRAW
 	);
 	mesh_.set_vertex_bo(vbo);
-	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj)));
 
 	sp_ = pastry::load_program("assets/deferred/render");
 
@@ -31,11 +30,16 @@ Geometry::Geometry(const std::string& fn_obj)
 
 }
 
-void Geometry::render(const std::shared_ptr<Camera>& camera)
+void Geometry::load(const std::string& fn_obj)
+{
+	mesh_.set_vertices(pastry::GetVertexData(pastry::LoadObjMesh(fn_obj)));
+}
+
+void Geometry::render()
 {
 	sp_.use();
-	sp_.get_uniform<Eigen::Matrix4f>("proj").set(camera->projection());
-	sp_.get_uniform<Eigen::Matrix4f>("view").set(camera->view()*pose_);
+	sp_.get_uniform<Eigen::Matrix4f>("proj").set(mainCamera()->projection());
+	sp_.get_uniform<Eigen::Matrix4f>("view").set(mainCamera()->view()*pose_);
 	sp_.get_uniform<Eigen::Vector3f>("material").set(material_);
 	va_.bind();
 	mesh_.render();

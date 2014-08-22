@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pastry/deferred/Component.hpp>
 #include <pastry/gl.hpp>
 #include <Eigen/Dense>
 
@@ -10,12 +11,13 @@ class Camera;
 class SkyBox;
 
 class Light
+:	public Component
 {
 public:
 	virtual ~Light()
 	{}
 
-	virtual void render(const std::shared_ptr<Camera>& camera) = 0;
+	virtual void render() = 0;
 
 };
 
@@ -25,7 +27,7 @@ class EnvironmentLight
 public:
 	EnvironmentLight();
 
-	void render(const std::shared_ptr<Camera>& camera);
+	void render();
 
 private:
 	pastry::program sp_;
@@ -49,7 +51,7 @@ public:
 	void setLightFalloff(float falloff)
 	{ falloff_ = falloff; }
 
-	void render(const std::shared_ptr<Camera>& camera);
+	void render();
 
 private:
 	pastry::program sp_;

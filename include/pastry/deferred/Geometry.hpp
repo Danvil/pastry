@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pastry/deferred/Component.hpp>
 #include <pastry/deferred/Camera.hpp>
 #include <pastry/gl.hpp>
 #include <Eigen/Dense>
@@ -9,9 +10,12 @@ namespace pastry {
 namespace deferred {
 
 class Geometry
+:	public Component
 {
 public:
-	Geometry(const std::string& fn_obj);
+	Geometry();
+
+	void load(const std::string& fn_obj);
 
 	void setPose(const Eigen::Matrix4f& pose)
 	{ pose_ = pose; }
@@ -19,7 +23,7 @@ public:
 	void setRoughness(float rough)
 	{ material_[0] = rough; }
 
-	void render(const std::shared_ptr<Camera>& camera);
+	void render();
 
 public:
 	pastry::program sp_;

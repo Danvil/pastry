@@ -4,6 +4,7 @@
 #include <pastry/deferred/Geometry.hpp>
 #include <pastry/deferred/Light.hpp>
 #include <pastry/deferred/SkyBox.hpp>
+#include <pastry/deferred/Scene.hpp>
 #include <pastry/obj.hpp>
 #include <pastry/pastry.hpp>
 #include <pastry/gl.hpp>
@@ -38,15 +39,24 @@ int main(void)
 	auto dr = std::make_shared<pastry::deferred::DeferredRenderer>();
 	pastry::scene_add(dr);
 
-	auto skybox = std::make_shared<pastry::deferred::SkyBox>("assets/stormydays_cm.jpg", "assets/sphere_4.obj");
+	// scene (need this first!)
+	auto scene = std::make_shared<pastry::deferred::Scene>();
+	dr->setScene(scene);
+
+	// skybox
+	{
+		auto go = pastry::deferred::FactorSkyBox();
+		go->skybox->setTexture("assets/stormydays_cm.jpg");
+		go->skybox->setGeometry("assets/sphere_4.obj");
+		scene->setMainSkybox(go);
+	}
 
 	// camera
 	{
-		auto camera = std::make_shared<pastry::deferred::Camera>();
-		camera->setProjection(90.0f, 1.0f, 100.0f);
-		camera->setView({4,14,6},{2,3,0},{0,0,-1});
-		camera->setSkybox(skybox);
-		dr->setCamera(camera);
+		auto go = pastry::deferred::FactorCamera();
+		go->camera->setProjection(90.0f, 1.0f, 100.0f);
+		go->camera->setView({4,14,6},{2,3,0},{0,0,-1});
+		scene->setMainCamera(go);
 	}
 
 	constexpr float SPACE = 3.0f;
@@ -56,13 +66,14 @@ int main(void)
 		constexpr int R = 3;
 		for(int x=-R; x<=+R; x++) {
 			for(int y=-R; y<=+R; y++) {
-				auto geom = std::make_shared<pastry::deferred::Geometry>("assets/suzanne.obj");
+				auto go = pastry::deferred::FactorGeometry();
+				go->geometry->load("assets/suzanne.obj");
 				Eigen::Affine3f pose = Eigen::Translation3f(Eigen::Vector3f(SPACE*x,SPACE*y,0))
 					* Eigen::AngleAxisf(0.0f,Eigen::Vector3f{0,0,1});
-				geom->setPose(pose.matrix());
+				go->geometry->setPose(pose.matrix());
 				float p = static_cast<float>(x+R)/static_cast<float>(2*R);
-				geom->setRoughness(0.2f + 0.8f*p);
-				dr->add(geom);				
+				go->geometry->setRoughness(0.2f + 0.8f*p);
+				scene->add(go);				
 			}
 		}
 	}
@@ -72,27 +83,27 @@ int main(void)
 	// 	auto light = std::make_shared<pastry::deferred::PointLight>();
 	// 	light->setLightPosition({+3,3,4});
 	// 	light->setLightColor(20.0f*Eigen::Vector3f{1,1,1});
-	// 	dr->add(light);
+	// 	scene->add(light);
 	// }
 	// {
 	// 	auto light = std::make_shared<pastry::deferred::PointLight>();
 	// 	light->setLightPosition({-4,1,4});
 	// 	light->setLightColor(20.0f*Eigen::Vector3f{1,0.5,0.5});
-	// 	dr->add(light);
+	// 	scene->add(light);
 	// }
 	{
-		auto light = std::make_shared<pastry::deferred::EnvironmentLight>();
-		dr->add(light);
+		auto go = pastry::deferred::FactorEnvironmentLight();
+		scene->add(go);
 	}
 	{
 		constexpr int R = 3;
 		for(int x=-R; x<=+R; x++) {
 			for(int y=-R; y<=+R; y++) {
-				auto light = std::make_shared<pastry::deferred::PointLight>();
-				light->setLightPosition({SPACE*x,SPACE*y,1.5});
-				light->setLightColor(35.0f*HSL(std::atan2(y,x)/6.2831853f,0.5f,0.5f));
-				light->setLightFalloff(0.05f);
-				dr->add(light);
+				auto go = pastry::deferred::FactorPointLight();
+				((pastry::deferred::PointLight*)(go->light.get()))->setLightPosition({SPACE*x,SPACE*y,1.5});
+				((pastry::deferred::PointLight*)(go->light.get()))->setLightColor(35.0f*HSL(std::atan2(y,x)/6.2831853f,0.5f,0.5f));
+				((pastry::deferred::PointLight*)(go->light.get()))->setLightFalloff(0.05f);
+				scene->add(go);
 			}
 		}
 	}
