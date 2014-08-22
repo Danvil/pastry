@@ -63,28 +63,29 @@ int main(void)
 
 	// lights
 	// {
-	// 	auto light = std::make_shared<pastry::deferred::Light>();
+	// 	auto light = std::make_shared<pastry::deferred::PointLight>();
 	// 	light->setLightPosition({+3,3,4});
+	// 	light->setLightColor(20.0f*Eigen::Vector3f{1,1,1});
 	// 	dr->add(light);
 	// }
 	// {
-	// 	auto light = std::make_shared<pastry::deferred::Light>();
+	// 	auto light = std::make_shared<pastry::deferred::PointLight>();
 	// 	light->setLightPosition({-4,1,4});
-	// 	light->setLightColor({1,0,0});
+	// 	light->setLightColor(20.0f*Eigen::Vector3f{1,0.5,0.5});
 	// 	dr->add(light);
 	// }
-	{
-		auto light = std::make_shared<pastry::deferred::EnvironmentLight>();
-		light->setSkybox(dr->skybox_);
-		dr->add(light);
-	}
+	// {
+	// 	auto light = std::make_shared<pastry::deferred::EnvironmentLight>();
+	// 	light->setSkybox(dr->skybox_);
+	// 	dr->add(light);
+	// }
 	{
 		constexpr int R = 3;
 		for(int x=-R; x<=+R; x++) {
 			for(int y=-R; y<=+R; y++) {
 				auto light = std::make_shared<pastry::deferred::PointLight>();
 				light->setLightPosition({SPACE*x,SPACE*y,1.5});
-				light->setLightColor(HSL(std::atan2(y,x)/6.2831853f,1.0f,0.5f));
+				light->setLightColor(10.0f*HSL(std::atan2(y,x)/6.2831853f,1.0f,0.5f));
 				light->setLightFalloff(1.65f);
 				dr->add(light);
 			}
