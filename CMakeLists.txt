@@ -1,6 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 set(EIGEN3_INCLUDE_DIR "/usr/include/eigen3" CACHE STRING "Eigen3 include directory")
+set(SLIMAGE_INCLUDE_DIR "/home/david/git/slimage/include" CACHE STRING "slimage include directory")
 
 INCLUDE_DIRECTORIES(include)
 
@@ -8,8 +9,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -std=c++0x")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -std=c99")
 
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${SLIMAGE_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(src)
 
 PROJECT(pastry)
 ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(src)
+

@@ -1,4 +1,6 @@
 #include <pastry/deferred/Light.hpp>
+#include <pastry/deferred/Camera.hpp>
+#include <pastry/deferred/SkyBox.hpp>
 
 namespace pastry {
 namespace deferred {
@@ -38,7 +40,12 @@ EnvironmentLight::EnvironmentLight()
 
 void EnvironmentLight::render(const std::shared_ptr<Camera>& camera)
 {
+	pastry::texture_cube_map::activate_unit(4);
+	camera->skybox()->bind();
+
 	sp_.use();
+	sp_.get_uniform<Eigen::Matrix3f>("cuberot").set(camera->skybox()->cubeRotate());
+
 	va_.bind();
 	mesh_.render();
 }

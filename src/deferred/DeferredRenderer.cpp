@@ -6,9 +6,7 @@ namespace pastry {
 namespace deferred {
 
 DeferredRenderer::DeferredRenderer()
-{
-	skybox_ = std::make_shared<SkyBox>("assets/stormydays_cm.jpg");
-}
+{}
 
 void DeferredRenderer::setCamera(const std::shared_ptr<pastry::deferred::Camera>& camera)
 { camera_ = camera; }
@@ -36,12 +34,10 @@ void DeferredRenderer::render()
 	gbuff_.stopGeometryPass();
 
 	gbuff_.startForwardPass();
-	skybox_->render(camera_);
+	camera_->skybox()->render(camera_);
 	gbuff_.stopForwardPass();
 
 	gbuff_.startLightPass();
-	pastry::texture_cube_map::activate_unit(4);
-	skybox_->bind();
 	for(const auto& v : lights_) {
 		v->render(camera_);
 	}

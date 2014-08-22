@@ -1,9 +1,31 @@
 #include <pastry/deferred/SkyBox.hpp>
+#include <pastry/deferred/Camera.hpp>
 #include <pastry/obj.hpp>
 #include <pastry/pastry.hpp>
+#include <slimage/image.hpp>
+#include <slimage/algorithm.hpp>
 
 namespace pastry {
 namespace deferred {
+
+slimage::Image3ub Smooth(const slimage::Image3ub& v)
+{
+	slimage::Image3ub result(v.width()/2, v.height()/2);
+	for(unsigned y=0; y<result.height(); y++) {
+		for(unsigned x=0; x<result.width(); x++) {
+			slimage::Pixel3ub px0 = v(2*x  ,2*y  );
+			slimage::Pixel3ub px1 = v(2*x+1,2*y  );
+			slimage::Pixel3ub px2 = v(2*x  ,2*y+1);
+			slimage::Pixel3ub px3 = v(2*x+1,2*y+1);
+			auto dst = result(x,y);
+			for(unsigned k=0; k<3; k++) {
+				dst[k] = static_cast<unsigned char>(
+					(static_cast<unsigned>(px0[k]) + static_cast<unsigned>(px1[k]) + static_cast<unsigned>(px2[k]) + static_cast<unsigned>(px3[k])) / 4);
+			}
+		}
+	}
+	return result;
+}
 
 SkyBox::SkyBox(const std::string& fn)
 {
@@ -12,15 +34,20 @@ SkyBox::SkyBox(const std::string& fn)
 	unsigned width = tex.width();
 	unsigned height = tex.height();
 	std::cout << "skybox " << width << "x" << height << ", size=" << data.size() << std::endl;
-	cm_.create();
+	
+	slimage::Image3ub big(width, height);
+	std::copy(data.begin(), data.end(), big.pixel_pointer());
 
+	cm_.create();
+	cm_.set_filter(GL_LINEAR_MIPMAP_LINEAR);
 	for(unsigned k=0; k<6; k++) {
-		std::vector<unsigned char> sub(width/6*height*3);
-		for(unsigned i=0; i<height; i++) {
-			const unsigned char* src = data.data() + i*3*width + k*3*width/6;
-			std::copy(src, src + 3*width/6, sub.data() + i*3*width/6);
+		std::cout << "skybox side " << k << std::endl;
+		auto sub = slimage::SubImage(big, k*width/6, 0, width/6, height);
+		for(unsigned mm=0; (1<<mm) <= width && (1<<mm) <= height; mm++) {
+			std::cout << "skybox mipmap " << mm << ": " << sub.width() << "x" << sub.height() << std::endl;
+			cm_.set_image_mm<unsigned char, 3>(cm_.cube_map_type(k), GL_RGB8, mm, sub.width(), sub.height(), sub.pixel_pointer());
+			sub = Smooth(sub);
 		}
-		cm_.set_image<unsigned char, 3>(cm_.cube_map_type(k), GL_RGB8, width/6, height, sub.data());
 	}
 
 	mesh_ = pastry::single_mesh(GL_TRIANGLES);
@@ -62,5 +89,13 @@ void SkyBox::render(const std::shared_ptr<pastry::deferred::Camera>& camera)
 
 	glCullFace(GL_BACK);
 }
+
+Eigen::Matrix3f SkyBox::cubeRotate() const
+{
+	Eigen::Affine3f pose = Eigen::Translation3f(Eigen::Vector3f{0,0,0})
+		* Eigen::AngleAxisf(-1.570796327f, Eigen::Vector3f{1,0,0});
+	return pose.matrix().block<3,3>(0,0);
+}
+
 
 }}

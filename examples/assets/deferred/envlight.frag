@@ -1,14 +1,12 @@
 #version 150
 
-uniform vec3 lightpos;
-uniform vec3 lightcol;
-uniform float lightfalloff;
-
 uniform sampler2D texPosition;
 uniform sampler2D texNormal;
 uniform sampler2D texColor;
 uniform sampler2D texMaterial;
 uniform samplerCube gCubemapTexture;
+
+uniform mat3 cuberot;
 
 in vec2 uv;
 out vec4 outColor;
@@ -24,7 +22,7 @@ void main()
 	float specular = mat.z;
 
 	vec3 reflectray = reflect(-pos, normal);
-	vec3 reflcolor = texture(gCubemapTexture, reflectray).xyz;
+	vec3 reflcolor = textureLod(gCubemapTexture, cuberot*reflectray, 10.0f*roughness).xyz;
 
-	outColor = vec4(roughness*color*reflcolor, 1);
+	outColor = vec4(color*reflcolor, 1);
 }

@@ -28,7 +28,8 @@ void main()
 	float roughness = mat.x;
 	float metallic = mat.y;
 	float specularity = mat.z;
-	vec3 F0 = vec3(1.00f,0.71f,0.29f);//vec3(0.04f,0.04f,0.04f);
+//	vec3 F0 = vec3(1.00f,0.71f,0.29f);
+	vec3 F0 = vec3(0.04f,0.04f,0.04f);
 
 	vec3 n = normal;
 	vec3 l = normalize(lightpos - pos);

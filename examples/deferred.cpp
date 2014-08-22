@@ -3,6 +3,7 @@
 #include <pastry/deferred/Camera.hpp>
 #include <pastry/deferred/Geometry.hpp>
 #include <pastry/deferred/Light.hpp>
+#include <pastry/deferred/SkyBox.hpp>
 #include <pastry/obj.hpp>
 #include <pastry/pastry.hpp>
 #include <pastry/gl.hpp>
@@ -37,11 +38,14 @@ int main(void)
 	auto dr = std::make_shared<pastry::deferred::DeferredRenderer>();
 	pastry::scene_add(dr);
 
+	auto skybox = std::make_shared<pastry::deferred::SkyBox>("assets/stormydays_cm.jpg");
+
 	// camera
 	{
 		auto camera = std::make_shared<pastry::deferred::Camera>();
 		camera->setProjection(90.0f, 1.0f, 100.0f);
 		camera->setView({4,14,6},{2,3,0},{0,0,-1});
+		camera->setSkybox(skybox);
 		dr->setCamera(camera);
 	}
 
@@ -56,7 +60,8 @@ int main(void)
 				Eigen::Affine3f pose = Eigen::Translation3f(Eigen::Vector3f(SPACE*x,SPACE*y,0))
 					* Eigen::AngleAxisf(0.0f,Eigen::Vector3f{0,0,1});
 				geom->setPose(pose.matrix());
-				geom->setRoughness(static_cast<float>(x+R)/static_cast<float>(2*R));
+				float p = static_cast<float>(x+R)/static_cast<float>(2*R);
+				geom->setRoughness(0.2f + 0.8f*p);
 				dr->add(geom);				
 			}
 		}
@@ -75,19 +80,18 @@ int main(void)
 	// 	light->setLightColor(20.0f*Eigen::Vector3f{1,0.5,0.5});
 	// 	dr->add(light);
 	// }
-	// {
-	// 	auto light = std::make_shared<pastry::deferred::EnvironmentLight>();
-	// 	light->setSkybox(dr->skybox_);
-	// 	dr->add(light);
-	// }
+	{
+		auto light = std::make_shared<pastry::deferred::EnvironmentLight>();
+		dr->add(light);
+	}
 	{
 		constexpr int R = 3;
 		for(int x=-R; x<=+R; x++) {
 			for(int y=-R; y<=+R; y++) {
 				auto light = std::make_shared<pastry::deferred::PointLight>();
 				light->setLightPosition({SPACE*x,SPACE*y,1.5});
-				light->setLightColor(15.0f*HSL(std::atan2(y,x)/6.2831853f,0.5f,0.5f));
-				light->setLightFalloff(1.65f);
+				light->setLightColor(35.0f*HSL(std::atan2(y,x)/6.2831853f,0.5f,0.5f));
+				light->setLightFalloff(0.05f);
 				dr->add(light);
 			}
 		}
