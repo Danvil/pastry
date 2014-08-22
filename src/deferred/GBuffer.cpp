@@ -68,6 +68,7 @@ void GBuffer::prePass()
 	GLenum buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 	glDrawBuffers(5, buffers);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClearStencil(0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	fbo.unbind();
 
@@ -86,10 +87,19 @@ void GBuffer::startGeometryPass()
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+
+	// setup stencil buffer
+	// all pixel which pass the depth test are marked with 255
+	// pixel which are not rendered are 0 (due to glClearStencil)
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_ALWAYS, 255, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 }
 
 void GBuffer::stopGeometryPass()
 {
+	glDisable(GL_STENCIL_TEST);
+
 	if(dbg_ == 0) {
 		std::cout << "Storing GBuffer to files (1)" << std::endl;
 		pastry::texture_save(tex_position, "/tmp/deferred_pos.png");
@@ -132,6 +142,11 @@ void GBuffer::startLightPass()
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
 
+	// use stencil buffer to mask fragments
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_LEQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
 	// enable blending to add light
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
@@ -151,6 +166,7 @@ void GBuffer::startLightPass()
 void GBuffer::stopLightPass()
 {
 	glDisable(GL_BLEND);
+	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_TRUE);
 
 	if(dbg_ == 0) {

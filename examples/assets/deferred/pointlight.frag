@@ -54,8 +54,5 @@ void main()
 	vec3 Fvh = F0 + (1.0f - F0)*pow(2.0f, (-5.55473f*dot_vh-6.98316f)*dot_vh);
 
 	vec3 final = (Dh * Fvh * Glvh / z) * L * color;
-	if(length(pos) == 0) {
-		final = vec3(0,0,0);
-	}
 	outColor = vec4(final, 1);
 }

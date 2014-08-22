@@ -23,13 +23,8 @@ void main()
 	float metallic = mat.y;
 	float specular = mat.z;
 
-	if(length(pos) == 0) {
-		outColor = vec4(0,0,0,1);
-	}
-	else {
-		vec3 reflectray = reflect(-pos, normal);
-		vec3 reflcolor = texture(gCubemapTexture, reflectray).xyz;
+	vec3 reflectray = reflect(-pos, normal);
+	vec3 reflcolor = texture(gCubemapTexture, reflectray).xyz;
 
-		outColor = vec4(roughness*color*reflcolor, 1);
-	}
+	outColor = vec4(roughness*color*reflcolor, 1);
 }
