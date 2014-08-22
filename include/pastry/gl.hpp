@@ -1538,17 +1538,23 @@ namespace pastry
 		{}
 		
 		template<typename S, unsigned C>
-		void set_image(GLenum target, GLint internalformat, unsigned w, unsigned h, const S* data=0)
+		void set_image_mm(GLenum target, GLint internalformat, unsigned level, unsigned w, unsigned h, const S* data=0)
 		{
 			bind();
 			glTexImage2D(target,
-				0, // level: use base image level
+				level, // level: use base image level
 				internalformat, // i.e. GL_RGBA8, GL_R32F, GL_RG16UI ...
 				w, h,
 				0, // must be 0
 				detail::texture_format<C>::result, // format of source data
 				detail::texture_type<S>::result, // type of source data
 				data);
+		}
+
+		template<typename S, unsigned C>
+		void set_image(GLenum target, GLint internalformat, unsigned level, unsigned w, unsigned h, const S* data=0)
+		{
+			set_image_mm(target, internalformat, 0, w, h, data);
 		}
 
 		template<typename S, unsigned C>
