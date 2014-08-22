@@ -559,9 +559,9 @@ namespace pastry
 	protected:
 		void prepare() const
 		{
-			if(!valid()) {
-				throw invalid_uniform_location{name};
-			}
+			// if(!valid()) {
+			// 	throw invalid_uniform_location{name};
+			// }
 			spo.use();
 		}
 	};
@@ -580,6 +580,9 @@ namespace pastry
 				std::cerr << "ERROR in uniform::set: Wrong number of arrays!" << std::endl;
 				return;
 			}
+			if(!valid()) {
+				return;
+			}
 			prepare();
 			detail::uniform_impl<T,1,1,NUM>::set(loc, values_list.begin());
 		}
@@ -587,6 +590,9 @@ namespace pastry
 		std::array<T,NUM> get(glid_t prog_id)
 		{
 			std::array<T,NUM> a;
+			if(!valid()) {
+				return a;
+			}
 			prepare();
 			detail::uniform_impl<T,1,1,NUM>::get(prog_id, loc, a.begin());
 			return a;
@@ -600,6 +606,9 @@ namespace pastry
 	{
 		void set(const T& v)
 		{
+			if(!valid()) {
+				return;
+			}
 			prepare();
 			detail::uniform_impl<T,1,1,1>::set(loc, &v);
 		}
@@ -607,6 +616,9 @@ namespace pastry
 		T get(glid_t prog_id)
 		{
 			T v;
+			if(!valid()) {
+				return v;
+			}
 			prepare();
 			detail::uniform_impl<T,1,1,1>::get(prog_id, loc, &v);
 			return v;
@@ -621,6 +633,9 @@ namespace pastry
 
 		void set(const mat_t& v)
 		{
+			if(!valid()) {
+				return;
+			}
 			prepare();
 			detail::uniform_impl<K,R,C,1>::set(loc, v.data());
 		}
@@ -628,6 +643,9 @@ namespace pastry
 		mat_t get(glid_t prog_id)
 		{
 			mat_t v;
+			if(!valid()) {
+				return v;
+			}
 			prepare();
 			detail::uniform_impl<K,R,C,1>::get(prog_id, loc, v.data());
 			return v;
@@ -660,18 +678,24 @@ namespace pastry
 				std::copy(p, p+R*C, &buff[i*R*C]);
 			}
 			// write to opengl
+			if(!valid()) {
+				return;
+			}
 			prepare();
 			detail::uniform_impl<K,R,C,NUM>::set(loc, buff);
 		}
 
 		std::array<mat_t,NUM> get(glid_t prog_id)
 		{
+			std::array<mat_t,NUM> a;
 			// read from opengl
-			K buff[R*C*NUM];
+			if(!valid()) {
+				return;
+			}
 			prepare();
+			K buff[R*C*NUM];
 			detail::uniform_impl<K,R,C,NUM>::get(prog_id, loc, buff);
 			// create array
-			std::array<mat_t,NUM> a;
 			for(unsigned int i=0; i<NUM; i++) {
 				const K* p = &buff[i*R*C];
 				std::copy(p, p+R*C, a[i].data());
