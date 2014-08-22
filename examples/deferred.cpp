@@ -41,7 +41,7 @@ int main(void)
 	{
 		auto camera = std::make_shared<pastry::deferred::Camera>();
 		camera->setProjection(90.0f, 1.0f, 100.0f);
-		camera->setView({6,10,4},{0,0,0},{0,0,-1});
+		camera->setView({4,14,6},{2,3,0},{0,0,-1});
 		dr->setCamera(camera);
 	}
 
@@ -56,6 +56,7 @@ int main(void)
 				Eigen::Affine3f pose = Eigen::Translation3f(Eigen::Vector3f(SPACE*x,SPACE*y,0))
 					* Eigen::AngleAxisf(0.0f,Eigen::Vector3f{0,0,1});
 				geom->setPose(pose.matrix());
+				geom->setRoughness(static_cast<float>(x+R)/static_cast<float>(2*R));
 				dr->add(geom);				
 			}
 		}
@@ -85,7 +86,7 @@ int main(void)
 			for(int y=-R; y<=+R; y++) {
 				auto light = std::make_shared<pastry::deferred::PointLight>();
 				light->setLightPosition({SPACE*x,SPACE*y,1.5});
-				light->setLightColor(10.0f*HSL(std::atan2(y,x)/6.2831853f,0.5f,0.5f));
+				light->setLightColor(15.0f*HSL(std::atan2(y,x)/6.2831853f,0.5f,0.5f));
 				light->setLightFalloff(1.65f);
 				dr->add(light);
 			}

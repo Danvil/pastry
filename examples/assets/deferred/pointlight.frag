@@ -25,7 +25,7 @@ void main()
 	vec3 normal = texture(texNormal, uv).xyz;
 	vec3 color = texture(texColor, uv).xyz;
 	vec3 mat = texture(texMaterial, uv).xyz;
-	float roughness = 0.5f;//mat.x;
+	float roughness = mat.x;
 	float metallic = mat.y;
 	float specularity = mat.z;
 	vec3 F0 = vec3(1.00f,0.71f,0.29f);//vec3(0.04f,0.04f,0.04f);

@@ -1,5 +1,6 @@
 #version 150
 
+uniform vec3 material;
 in vec3 Position;
 in vec2 Texcoord;
 in vec3 Normal;
@@ -15,5 +16,5 @@ void main()
 	outNormal = Normal;
 	//outColor = mix(texture(texKitten, Texcoord), vec4(Color,1.0), 0.5);
 	outColor = Color;
-	outMaterial = vec3(0.5, 0.5, 0.5f); // roughness, metallic, specular
+	outMaterial = material;
 }

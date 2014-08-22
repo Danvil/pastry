@@ -5,7 +5,8 @@ namespace pastry {
 namespace deferred {
 
 Geometry::Geometry(const std::string& fn_obj)
-: pose_(Eigen::Matrix4f::Identity())
+:	pose_(Eigen::Matrix4f::Identity()),
+	material_(0.5f, 0.0f, 0.5f)
 {
 	mesh_ = pastry::single_mesh(GL_TRIANGLES);
 	pastry::array_buffer vbo(
@@ -35,6 +36,7 @@ void Geometry::render(const std::shared_ptr<Camera>& camera)
 	sp_.use();
 	sp_.get_uniform<Eigen::Matrix4f>("proj").set(camera->projection());
 	sp_.get_uniform<Eigen::Matrix4f>("view").set(camera->view()*pose_);
+	sp_.get_uniform<Eigen::Vector3f>("material").set(material_);
 	va_.bind();
 	mesh_.render();
 }
