@@ -187,6 +187,20 @@ bool mouse_is_middle_button_pressed();
 /** Gets the position of the mouse cursor */
 Eigen::Vector2f mouse_get_position();
 
+// ----- PRIMITVE RENDERING ---------------------------------------------------------------
+
+void setPrimitiveColor(const Eigen::Vector3f& color);
+
+void setCamera2D(const Eigen::Vector2f& center, float width);
+
+void renderLine2D(const Eigen::Vector2f& start, const Eigen::Vector2f& end);
+
+void renderCircle2D(const Eigen::Vector2f& center, float radius);
+
+void renderBox2D(const Eigen::Vector2f& center, float angle, const Eigen::Vector2f& size);
+
+void renderPolygon2D(const std::vector<Eigen::Vector2f>& points);
+
 // ----- TEXTURE LOADING -------------------------------------------------------
 
 /** Loads an image from file into a texture (only some image formats supported) */

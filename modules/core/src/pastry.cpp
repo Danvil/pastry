@@ -90,8 +90,8 @@ void input_onkey(GLFWwindow*, int key, int scancode, int action, int mods)
 	}
 }
 
+void initializePrimitives();
 void initialize_text();
-void postfx_init();
 
 void initialize()
 {
@@ -141,6 +141,8 @@ void initialize()
 
 	g_scene = std::make_shared<render_group>();
 
+	initializePrimitives();
+	
 	initialize_text();
 }
 
