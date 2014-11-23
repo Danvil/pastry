@@ -18,9 +18,11 @@ INCLUDE_DIRECTORIES(include)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	TARGET_LINK_LIBRARIES(pastry_core
-		glfw
+		glfw3
 		GLEW
 		GL
+		X11 Xrandr Xi Xxf86vm Xcursor Xinerama
+		pthread
 	)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
