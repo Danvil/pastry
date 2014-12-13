@@ -1,7 +1,7 @@
 #ifndef INCLUDED_PASTRY_PASTRY_HPP
 #define INCLUDED_PASTRY_PASTRY_HPP
 
-#include "gl.hpp"
+#include <pastry/gl.hpp>
 #include <functional>
 #include <map>
 #include <string>
