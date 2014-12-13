@@ -1,5 +1,6 @@
-
+#include <pastry/gl.hpp>
 #include <pastry/pastry.hpp>
+#include <pastry/sprites.hpp>
 
 namespace pastry
 {
@@ -131,7 +132,7 @@ namespace pastry
 
 	std::shared_ptr<sprite_manager> g_sprite_manager;
 
-	void initialize_sprites()
+	void sprites_initialize()
 	{
 		g_sprite_manager = std::make_shared<sprite_manager>();
 	}

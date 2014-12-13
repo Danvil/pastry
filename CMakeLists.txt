@@ -15,5 +15,7 @@ INCLUDE_DIRECTORIES(include)
 PROJECT(pastry)
 ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(modules/core)
+ADD_SUBDIRECTORY(modules/sprites)
+ADD_SUBDIRECTORY(modules/postfx)
 ADD_SUBDIRECTORY(modules/deferred)
 

@@ -6,7 +6,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <map>
 #include <memory>
 
 #include <GL/glew.h> // must be included before glfw header!
@@ -210,102 +209,6 @@ void text_render(float x, float y, const std::string& txt);
 /** Renders colored and transparent text */
 void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba, const std::string& font);
 void text_render(float x, float y, const std::string& txt, const Eigen::Vector4f& rgba);
-
-// ----- SPRITES ---------------------------------------------------------------
-
-namespace detail
-{
-	struct def_sprite
-	{
-		std::string tag;
-		float u_px, v_px;
-		float su_px, sv_px;
-	};
-
-	struct def_sheet
-	{
-		std::string tag;
-		texture_2d tex;
-		std::vector<def_sprite> sprites;
-	};
-
-	struct def_anim_frame
-	{
-		std::string sprite_tag;
-		float dt;
-	};
-
-	struct def_anim
-	{
-		std::string tag;
-		std::vector<def_anim_frame> frames;
-	};
-
-	struct sprite_vertex
-	{
-		float x, y;
-		float u, v;
-	};
-}
-
-struct sprite
-{
-	/** The tag under which the sprite definition is found */
-	std::string tag;
-	/** Sprite position */
-	float x, y;
-	/** Sprite scale factors */
-	float sx, sy;
-	/** internal */
-	float t;
-};
-
-PASTRY_DEFINE_PTR(sprite)
-
-/** Adds a sprite sheet */
-void sprites_add_sheet(const detail::def_sheet& sheet, bool filter_nearest=true);
-
-/** Adds a sprite animation */
-void sprites_add_animation(const detail::def_anim& anim);
-
-/** A group of sprites */
-class sprite_group
-: public renderling
-{
-public:
-	/** Creates a new sprite with given tag */
-	sprite_ptr add_sprite(const std::string& tag);
-	/** Removes the specified sprite */
-	void remove_sprite(const sprite_ptr& s);
-	/** Updates sprite animations preparse for rendering */
-	void update(float t, float dt);
-	/** Renders all sprites */
-	void render();
-private:
-	std::vector<sprite_ptr> sprites_;
-	std::map<std::string, std::vector<detail::sprite_vertex>> vertices_;
-};
-
-// ----- POST PROCESSING EFFECTS -----------------------------------------------
-
-class post_effect
-{
-public:
-	virtual std::string source() const { return "vec4 sfx(vec2 uv) { return sfx_read_fb(uv); }"; }
-	virtual void update(float t, float dt, const program& spo) {}
-};
-
-PASTRY_DEFINE_PTR(post_effect)
-
-post_effect_ptr postfx_add(const std::string& source);
-
-typedef std::function<void(float,float,const pastry::program& spo)> func_postfx_update;
-
-post_effect_ptr postfx_add(const std::string& source, func_postfx_update f);
-
-void postfx_add(const post_effect_ptr& p);
-
-void postfx_remove(const post_effect_ptr& p);
 
 // ----- THE END ---------------------------------------------------------------
 

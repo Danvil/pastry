@@ -1,5 +1,6 @@
 
 #include <pastry/pastry.hpp>
+#include <pastry/sprites.hpp>
 #include <random>
 #include <memory>
 #include <string>
@@ -10,6 +11,8 @@ int main()
 	pastry::initialize();
 
 	std::cout << "Initialize sprites" << std::endl;
+
+	pastry::sprites_initialize();
 
 	pastry::sprites_add_sheet({
 		"player",

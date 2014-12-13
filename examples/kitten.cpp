@@ -1,5 +1,6 @@
 
 #include <pastry/pastry.hpp>
+#include <pastry/sprites.hpp>
 #include <random>
 #include <memory>
 #include <string>
@@ -73,6 +74,7 @@ public:
 int main()
 {
 	pastry::initialize();
+	pastry::sprites_initialize();
 
 	pastry::scene_add(std::make_shared<kitten_manager>());
 

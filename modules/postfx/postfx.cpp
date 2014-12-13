@@ -1,4 +1,5 @@
 #include <pastry/pastry.hpp>
+#include <pastry/postfx.hpp>
 
 namespace pastry {
 namespace postfx {	
@@ -230,7 +231,7 @@ public:
 
 std::shared_ptr<postfx::manager> g_postfx_manager;
 
-void postfx_init()
+void postfx_initialize()
 {
 	g_postfx_manager = std::make_shared<postfx::manager>();
 	scene_add(g_postfx_manager, std::numeric_limits<int>::max());
