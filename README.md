@@ -1,27 +1,33 @@
-pastry - A C++ toolbox for modern OpenGL
+pastry
 ====
 
+A C\+\+ toolbox for modern OpenGL 3.x/4.x programming.
 
-Overview
+gl.hpp
 ----
 
-pastry is a C\+\+ toolbox for modern OpenGL 3.x/4.x programming.
+This single header file provides light-weight wrappers for OpenGL functionalities. They make using OpenGL easier but do not require the overhead of a full 3D engine.
 
-List of features:
+Currently provided:
+* shaders: Simplifies in-source writing, loading, compiling and linking of OpenGL shaders
+* uniforms: Use Eigen types, std::vector and std::array to set and get uniforms
+* textures: Load images into OpenGL textures
+* buffer objects: Manage buffer objects which can for example hold vertex data.
 
-* Light-weight C++ OpenGL wrappers for e.g. shader programs, vertex buffers and textures
-* Various OpenGL helpers
-* 3D math (thanks to [Eigen](http://eigen.tuxfamily.org))
-* Texture loading (thanks to [stb_image](http://nothings.org/) and [SOIL2](https://bitbucket.org/SpartanJ/soil2))
-* Text rendering (thanks to [stb_truetype](http://nothings.org/))
-* Sprites (static/animated)
-* Post effects
+More modules
+---
+
+I use pastry for my own OpenGL experiments. Some of theses experiments can be found in the folder modules and are mostly highly experimental code.
+
+* core: 3D math (thanks to [Eigen](http://eigen.tuxfamily.org)), texture loading (thanks to [stb_image](http://nothings.org/) and [SOIL2](https://bitbucket.org/SpartanJ/soil2)), text rendering (thanks to [stb_truetype](http://nothings.org/))
+* sprites: static and animated 2D sprites
+* postfx: Post effect shaders
+* deferred: Deferred rendering engine (just for fun and highly experimental)
 
 I plan to use pastry for the [Ludum Dare 48h game competition](http://www.ludumdare.com/compo/).
 To the Ludum Dare folks: Feel free to try pastry and give me feedback :)
 
 Runs and compiles well under Ubuntu 13.10 64-bit. Also runs under Windows 7 64-bit using mingw-w64 as cross compiler.
-
 
 Installation
 ----
