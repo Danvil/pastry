@@ -19,9 +19,6 @@ INCLUDE_DIRECTORIES(
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	TARGET_LINK_LIBRARIES(pastry_deferred
 		pastry_core
-		glfw
-		GLEW
-		GL
 	)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 

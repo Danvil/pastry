@@ -5,6 +5,7 @@ ADD_LIBRARY(pastry_core SHARED
 	src/obj.cpp
 	src/pastry.cpp
 	src/text.cpp
+	src/primitives.cpp
 	# SOIL
 	src/dep/SOIL2/etc1_utils.c
 	src/dep/SOIL2/image_DXT.c
