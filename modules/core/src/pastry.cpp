@@ -95,9 +95,14 @@ void initialize_text();
 
 void initialize()
 {
+	initialize(512, 512, "pastry");
+}
+
+void initialize(int width, int height, const std::string& titel)
+{
 	g_window = 0;
-	g_fb_width = 512;
-	g_fb_height = 512;
+	g_fb_width = width;
+	g_fb_height = height;
 
 	// initialize glfw
 	if(!glfwInit()) {
@@ -110,7 +115,7 @@ void initialize()
 //	glfwWindowHint(GLFW_DEPTH_BITS, 16);
 
 	// create window (windowed)
-	g_window = glfwCreateWindow(g_fb_width, g_fb_height, "pastry", NULL, NULL);
+	g_window = glfwCreateWindow(g_fb_width, g_fb_height, titel.c_str(), NULL, NULL);
 	if(!g_window) {
 		std::cerr << "ERROR: glfwCreateWindow failed!" << std::endl;
 		return;

@@ -89,6 +89,7 @@ PASTRY_DEFINE_PTR(render_group)
 
 /** Initialized pastry OpenGL engine. Call this before doing everything else. */
 void initialize();
+void initialize(int width, int height, const std::string& titel);
 
 /** Checks wether the framebuffer size changed since the last call to upate */
 bool fb_has_changed();
