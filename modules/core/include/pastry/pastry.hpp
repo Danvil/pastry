@@ -94,10 +94,10 @@ void initialize(int width, int height, const std::string& titel);
 /** Checks wether the framebuffer size changed since the last call to upate */
 bool fb_has_changed();
 
-/** Gets the size of the framebuffer */
+/** @brief Gets the dimensions of the framebuffer */
 void fb_get_dimensions(int& width, int& height);
 
-/** Gets the aspect ratio of the framebuffer */
+/** @brief Gets the ratio of width to height of the framebuffer */
 float fb_get_aspect();
 
 /** Run the main loop. Call this once your initial setup is finished. */
@@ -148,12 +148,18 @@ Eigen::Matrix4f math_orthogonal_projection(float n, float f, bool ydown=false);
 
 Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown=false);
 
-Eigen::Matrix4f math_perspective_projection(float angle, float aspect, float n, float f);
+/** @brief OpenGL perspective projection matrix
+ * @param angle Horizontal field of view angle
+ * @param aspect Ratio of width to height
+ * @param near distance to near clipping plane
+ * @param far distance to far clipping plane
+ */
+Eigen::Matrix4f math_perspective_projection(float angle, float aspect, float near, float far);
 
 /** Create a 2D transformation matrix */
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta);
 
-Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& center, const Eigen::Vector3f& up);
+Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& target, const Eigen::Vector3f& up);
 
 void math_backproject(
 	const Eigen::Matrix4f& proj, const Eigen::Matrix4f& view,

@@ -74,7 +74,7 @@ void fb_get_dimensions(int& width, int& height)
 
 float fb_get_aspect()
 {
-	return static_cast<float>(g_fb_height)/static_cast<float>(g_fb_width);
+	return static_cast<float>(g_fb_width)/static_cast<float>(g_fb_height);
 }
 
 std::set<int> input_pressed_keys;
@@ -249,8 +249,8 @@ Eigen::Matrix4f math_orthogonal_projection(float s, float n, float f, bool ydown
 	float aspect = fb_get_aspect();
 	aspect *= (ydown ? 1.0f : -1.0f);
 	return pastry::math_orthogonal_projection(
-		-s, +s,
 		-s*aspect, +s*aspect,
+		-s, +s,
 		n, f);
 }
 
@@ -268,13 +268,13 @@ Eigen::Matrix4f math_perspective_projection_impl(float l, float r, float t, floa
 
 Eigen::Matrix4f math_perspective_projection_impl(float w, float h, float n, float f)
 {
-	return math_perspective_projection_impl(-0.5f*w, +0.5f*w, -0.5f*h, +0.5f*h, n, f);
+	return math_perspective_projection_impl(-0.5f*w, +0.5f*w, +0.5f*h, -0.5f*h, n, f);
 }
 
 Eigen::Matrix4f math_perspective_projection(float angle, float aspect, float n, float f)
 {
 	float q = std::tan(0.5f*angle);
-	return math_perspective_projection_impl(q*n, aspect*q*n, n, f);
+	return math_perspective_projection_impl(2.0f*aspect*q*n, 2.0f*q*n, n, f);
 }
 
 Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
@@ -290,26 +290,21 @@ Eigen::Matrix4f math_transform_2d(float x, float y, float theta)
 	return m;
 }
 
-Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& center, const Eigen::Vector3f& up)
+Eigen::Matrix4f lookAt(const Eigen::Vector3f& eye, const Eigen::Vector3f& target, const Eigen::Vector3f& up)
 {
 	// https://github.com/g-truc/glm/blob/2b747cbbadfd3af39b443e88902f1c98bd231083/glm/gtc/matrix_transform.inl
-	const Eigen::Vector3f f = (center - eye).normalized();
+	const Eigen::Vector3f f = (target - eye).normalized();
 	const Eigen::Vector3f s = f.cross(up).normalized();
 	const Eigen::Vector3f u = s.cross(f);
-	Eigen::Matrix4f Result = Eigen::Matrix4f::Identity();
-	Result(0,0) = s.x();
-	Result(1,0) = s.y();
-	Result(2,0) = s.z();
-	Result(0,1) = u.x();
-	Result(1,1) = u.y();
-	Result(2,1) = u.z();
-	Result(0,2) =-f.x();
-	Result(1,2) =-f.y();
-	Result(2,2) =-f.z();
-	Result(3,0) =-s.dot(eye);
-	Result(3,1) =-u.dot(eye);
-	Result(3,2) = f.dot(eye);
-	return Result.transpose();
+	Eigen::Matrix3f rot;
+	rot.block<3, 1>(0, 0) = s;
+	rot.block<3, 1>(0, 1) = u;
+	rot.block<3, 1>(0, 2) = -f;
+	Eigen::Matrix3f rot_inverse = rot.inverse();
+	Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
+	result.block<3, 3>(0, 0) = rot_inverse;
+	result.block<3, 1>(0, 3) = -rot_inverse * eye;
+	return result;
 }
 
 void math_backproject(
