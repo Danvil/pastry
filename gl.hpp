@@ -34,6 +34,7 @@
 
 #define PASTRY_GLSL(src) "#version 150\n" #src
 
+namespace danvil {
 namespace pastry
 {
 	typedef GLuint glid_t;
@@ -1722,44 +1723,56 @@ namespace pastry
 
 	/** Enables/disables an OpenGL capability like GL_BLEND and automatically restores the state
 	 * Usage example:
-	 *		{ capability(GL_BLEND,true);
+	 *		{ capability{{GL_BLEND, true}};
 	 *			// ... code to execute with blending enabled
 	 * 		}
 	 */
-	struct capability
-	{
-		capability(GLenum cap, bool set_to)
-		{
-			cap_ = cap;
-			was_enabled_ = glIsEnabled(cap_);
-			set_to_ = set_to;
-			if(was_enabled_ != set_to_) {
-				if(set_to_) {
-					glEnable(cap_);
-				}
-				else {
-					glDisable(cap_);
-				}
-			}
-		}
-
-		~capability()
-		{
-			if(was_enabled_ != set_to_) {
-				if(was_enabled_) {
-					glEnable(cap_);
-				}
-				else {
-					glDisable(cap_);
-				}
-			}
-		}
-
+	struct capability {
 	private:
-		GLenum cap_;
-		bool was_enabled_;
-		bool set_to_;
+		struct capability_impl {
+			capability_impl(GLenum cap, bool set_to) {
+				cap_ = cap;
+				was_enabled_ = glIsEnabled(cap_);
+				set_to_ = set_to;
+				if(was_enabled_ != set_to_) {
+					if(set_to_) {
+						glEnable(cap_);
+					}
+					else {
+						glDisable(cap_);
+					}
+				}
+			}
+
+			~capability_impl() {
+				if(was_enabled_ != set_to_) {
+					if(was_enabled_) {
+						glEnable(cap_);
+					}
+					else {
+						glDisable(cap_);
+					}
+				}
+			}
+
+		private:
+			GLenum cap_;
+			bool was_enabled_;
+			bool set_to_;
+		};
+	public:
+		capability(GLenum cap, bool set_to)
+		: capabilities_{{cap, set_to}} {}
+		capability(std::initializer_list<capability_impl> caps_list)
+		: capabilities_(caps_list) {}
+	private:
+		std::vector<capability_impl> capabilities_;
 	};
 
-}
+	template<typename F>
+	void with_capabilities(const capability& caps, F f) {
+		f();
+	}
+
+}}
 #endif
